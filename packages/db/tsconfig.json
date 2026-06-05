@@ -1,6 +1,4 @@
 {
-  "name": "@repo/db",
-  "version": "0.0.0",
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "rootDir": "./src",
