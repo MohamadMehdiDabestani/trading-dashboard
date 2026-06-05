@@ -3,13 +3,17 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:generate": "drizzle-kit generate --config ./src/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config ./src/drizzle.config.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "drizzle-kit": "^0.31.10"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
