@@ -1,31 +1,42 @@
+import { config } from 'dotenv';
+config();
 import Fastify from "fastify";
-import { engine } from "./engine";
+import cookie from "@fastify/cookie";
+import jwt from "@fastify/jwt";
+import dbPlugin from "./plugins/db";
+import smsPlugin from "./plugins/sms";
+import { authRoutes } from "./routes/auth/auth.route";
+import errorHandlerPlugin from "./plugins/errorHandler"
 
 const app = Fastify({
   logger: true,
 });
 
+await app.register(errorHandlerPlugin);
+await app.register(dbPlugin);
+
+await app.register(cookie);
+
+await app.register(jwt, {
+  secret: process.env.JWT_SECRET!,
+});
+await app.register(smsPlugin);
+
+app.decorate("authenticate", async function (req: any, reply: any) {
+  try {
+    await req.jwtVerify();
+  } catch {
+    reply.code(401).send({ error: "Unauthorized" });
+    throw new AppError("OTP_INVALID");
+  }
+});
+
+
 app.get("/health", async () => {
   return { status: "ok" };
 });
+await app.register(authRoutes, { prefix: "/auth" });
 
-const schema = {
-  schema: {
-    response: {
-      200: {
-        type: 'object',
-        properties: {
-          hello: {
-            type: 'string'
-          }
-        }
-      }
-    }
-  }
-}
-app.get('/', schema, function (_req, reply) {
-  reply.send({ hello: 'world' })
-})
 
 
 // ALL OF THESE CODES ARE UNDER TEST ...
