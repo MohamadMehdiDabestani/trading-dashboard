@@ -1,20 +1,27 @@
+import {
+  AllSuccessCodes,
+  AllErrorCode,
+  ValidationErrorCode,
+} from "../i18n/index";
 export type FieldError = {
-  key: string;
+  key: ValidationErrorCode;
   params?: Record<string, string | number>;
 };
-
 export type APIResult<T = unknown> =
   | {
       success: true;
       data: T;
       meta?: { requestId?: string; timestamp?: number };
-      message?: { key: string; params?: Record<string, string | number> };
+      message?: {
+        key: AllSuccessCodes;
+        params?: Record<string, string | number>;
+      };
     }
   | {
       success: false;
       error: {
-        code: string;
-        message: { key: string; params?: Record<string, string | number> };
+        code: AllErrorCode;
+        params?: Record<string, string | number>;
         fields?: Record<string, FieldError>;
       };
       meta?: { requestId?: string; timestamp?: number };

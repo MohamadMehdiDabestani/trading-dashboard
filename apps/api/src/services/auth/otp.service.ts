@@ -2,7 +2,7 @@ import { type Db, otpCodes } from "@repo/db/src";
 import { eq, and, gt, desc } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { SmsService } from "../sms/sms.service";
-import { AppError } from "@/errors";
+import { AppError } from "@/errors/appError";
 
 const OTP_TTL_MS = 3 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -74,11 +74,9 @@ export class OtpService {
       .orderBy(desc(otpCodes.createdAt))
       .limit(1);
 
-    if (!record)
-      throw new AppError("OTP_INVALID");
+    if (!record) throw new AppError("OTP_INVALID");
 
-    if (record.attempts >= MAX_ATTEMPTS)
-      throw new AppError("OTP_MAX_ATTEMPTS");
+    if (record.attempts >= MAX_ATTEMPTS) throw new AppError("OTP_MAX_ATTEMPTS");
 
     if (record.code !== code) {
       await this.db

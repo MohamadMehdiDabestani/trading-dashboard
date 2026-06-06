@@ -1,11 +1,9 @@
-import type { APIResult, FieldError } from "@repo/types";
+import type { AllErrorCode,AllSuccessCodes, APIResult, FieldError } from "@repo/types";
 
 export function ok<T>(
   data: T,
   opts?: {
-    message?: APIResult<T> & { success: true } extends { message?: infer M }
-      ? M
-      : never;
+    message?: { key: AllSuccessCodes; params?: Record<string, string | number> };
     meta?: { requestId?: string; timestamp?: number };
   },
 ): APIResult<T> {
@@ -18,8 +16,7 @@ export function ok<T>(
 }
 
 export function fail(
-  code: string,
-  messageKey: string,
+  code: AllErrorCode,
   params?: Record<string, string | number>,
   meta?: { requestId?: string },
   fields?: Record<string, FieldError>,
@@ -28,7 +25,7 @@ export function fail(
     success: false,
     error: {
       code,
-      message: { key: messageKey, params },
+      params,
       fields,
     },
     meta: { timestamp: Date.now(), ...meta },
