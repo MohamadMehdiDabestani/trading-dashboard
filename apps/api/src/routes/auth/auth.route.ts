@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { AuthService } from "@/services/auth/auth.service";
-import { ok } from "@/utils/apiResponse";
+import { fail, ok } from "@/utils/apiResponse";
 const REFRESH_COOKIE = "refresh_token";
 
 const cookieOpts = {
@@ -30,7 +30,9 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     },
     async (req, reply) => {
       await auth.sendOtp(req.body.phone);
-      return reply.code(200).send(ok(undefined, { message: { key: "OTP_SENT" } }));
+      return reply
+        .code(200)
+        .send(ok(undefined, { message: { key: "OTP_SENT" } }));
     },
   );
 
@@ -55,18 +57,24 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         req.body.code,
       );
       reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
-      return reply.code(200).send({ accessToken, isNew });
+      return reply
+        .code(200)
+        .send(
+          ok({ accessToken, isNew }, { message: { key: "LOGIN_SUCCESS" } }),
+        );
     },
   );
 
   // POST /auth/refresh
   fastify.post("/refresh", async (req, reply) => {
     const raw = req.cookies?.[REFRESH_COOKIE];
-    if (!raw) return reply.code(401).send({ error: "Missing refresh token" });
+    if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
 
     const { accessToken, refreshToken } = await auth.refresh(raw);
     reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
-    return reply.code(200).send({ accessToken });
+    return reply
+      .code(200)
+      .send(ok({ accessToken }, { message: { key: "REFRESH_SUCCESS" } }));
   });
 
   // POST /auth/logout  (protected)

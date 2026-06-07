@@ -36,9 +36,7 @@ export class TokenService {
     return raw;
   }
 
-  async rotateRefreshToken(
-    raw: string,
-  ): Promise<{
+  async rotateRefreshToken(raw: string): Promise<{
     accessToken: string;
     refreshToken: string;
     userId: string;
@@ -61,8 +59,7 @@ export class TokenService {
 
     // revoke old token
     await this.db
-      .update(refreshTokens)
-      .set({ revokedAt: now })
+      .delete(refreshTokens) // Maybe you want to use update :  .set({ revokedAt: new Date() })
       .where(eq(refreshTokens.id, stored.id));
 
     const newRaw = await this.createRefreshToken(stored.userId);
@@ -73,8 +70,7 @@ export class TokenService {
 
   async revokeAllForUser(userId: string): Promise<void> {
     await this.db
-      .update(refreshTokens)
-      .set({ revokedAt: new Date() })
+      .delete(refreshTokens) // Maybe you want to use update :  .set({ revokedAt: new Date() })
       .where(eq(refreshTokens.userId, userId));
   }
 }

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { OtpService } from "./otp.service";
 import { TokenService } from "./token.service";
+import { AppError } from "@/errors/appError";
 
 export class AuthService {
   private readonly db: Db;
@@ -34,7 +35,12 @@ export class AuthService {
     const isNew = !found;
     const user =
       found ??
-      (await this.db.insert(users).values({ phone }).returning({id : users.id , phone : users.phone})).at(0);
+      (
+        await this.db
+          .insert(users)
+          .values({ phone })
+          .returning({ id: users.id, phone: users.phone })
+      ).at(0);
 
     if (!user) throw new Error("Failed to create user");
     const accessToken = this.tokens.signAccessToken({
@@ -50,21 +56,14 @@ export class AuthService {
     rawRefreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const result = await this.tokens.rotateRefreshToken(rawRefreshToken);
-    if (!result)
-      throw Object.assign(new Error("Invalid or expired refresh token"), {
-        code: "INVALID_REFRESH",
-      });
+    if (!result) throw new AppError("INVALID_REFRESH");
 
     const [user] = await this.db
       .select()
       .from(users)
       .where(eq(users.id, result.userId))
       .limit(1);
-    if (!user || !user.isActive)
-      throw Object.assign(new Error("User not found"), {
-        code: "USER_NOT_FOUND",
-      });
-
+    if (!user || !user.isActive) throw new AppError("USER_NOTFOUND");
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
       phone: user.phone,

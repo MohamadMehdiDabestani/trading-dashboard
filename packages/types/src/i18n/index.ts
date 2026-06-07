@@ -7,12 +7,12 @@ import {
   type ValidationErrorCode,
 } from "./validation/error";
 export const ALL_ERROR_CODES = [
-  //   ...AUTH_ERROR_CODES,
+  ...AUTH_ERROR_CODES,
   ...OTP_ERROR_CODES,
   ...TOKEN_ERROR_CODES,
   ...VALIDATION_ERROR_CODES,
 ] as const;
-export const ALL_SUCCESS_CODES = [...AUTH_SUCCESS_CODES]
+export const ALL_SUCCESS_CODES = [...AUTH_SUCCESS_CODES];
 export type AllErrorCode = (typeof ALL_ERROR_CODES)[number];
 export type AllSuccessCodes = (typeof ALL_SUCCESS_CODES)[number];
 export {
