@@ -5,8 +5,9 @@ import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import dbPlugin from "./plugins/db";
 import smsPlugin from "./plugins/sms";
-import { authRoutes } from "./routes/auth/auth.route";
 import errorHandlerPlugin from "./plugins/errorHandler"
+import { authPlugin } from './modules/auth/plugin';
+import { fail } from './utils/apiResponse';
 
 const app = Fastify({
   logger: true,
@@ -26,8 +27,7 @@ app.decorate("authenticate", async function (req: any, reply: any) {
   try {
     await req.jwtVerify();
   } catch {
-    reply.code(401).send({ error: "Unauthorized" });
-    throw new AppError("OTP_INVALID");
+    reply.code(401).send(fail("UNAUTHORIZED"));
   }
 });
 
@@ -35,7 +35,7 @@ app.decorate("authenticate", async function (req: any, reply: any) {
 app.get("/health", async () => {
   return { status: "ok" };
 });
-await app.register(authRoutes, { prefix: "/auth" });
+await app.register(authPlugin);
 
 
 

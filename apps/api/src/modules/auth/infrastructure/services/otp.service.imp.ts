@@ -1,8 +1,7 @@
 import { type Db, otpCodes } from "@repo/db/src";
 import { eq, and, gt, desc } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
-import { SmsService } from "../sms/sms.service";
 import { AppError } from "@/errors/appError";
+import { IOtpService } from "../../application/interfaces/otp.interface";
 
 const OTP_TTL_MS = 3 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -11,13 +10,15 @@ function generateCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-export class OtpService {
-  private readonly db: Db;
-  private readonly sms: Pick<SmsService, "sendOtp">;
-  constructor(fastify: FastifyInstance) {
-    this.db = fastify.db;
-    this.sms = fastify.sms;
-  }
+export interface SmsGateway {
+  sendOtp(phone: string, code: string): Promise<void>;
+}
+
+export class OtpServiceImpl implements IOtpService {
+  constructor(
+    private db: Db,
+    private sms: SmsGateway
+  ) {}
 
   async send(phone: string): Promise<void> {
     const [recent] = await this.db
@@ -27,8 +28,8 @@ export class OtpService {
         and(
           eq(otpCodes.phone, phone),
           eq(otpCodes.used, false),
-          gt(otpCodes.expiresAt, new Date()),
-        ),
+          gt(otpCodes.expiresAt, new Date())
+        )
       )
       .orderBy(desc(otpCodes.createdAt))
       .limit(1);
@@ -50,17 +51,19 @@ export class OtpService {
 
     try {
       await this.sms.sendOtp(phone, code);
-    } catch (err) {
-      if (!otp) throw new AppError("OTP_INVALID");
-      await this.db
-        .update(otpCodes)
-        .set({ used: true })
-        .where(eq(otpCodes.id, otp.id));
+    } catch {
+      if (otp) {
+        await this.db
+          .update(otpCodes)
+          .set({ used: true })
+          .where(eq(otpCodes.id, otp.id));
+      }
+
       throw new AppError("OTP_INVALID");
     }
   }
 
-  async verify(phone: string, code: string): Promise<boolean> {
+  async verify(phone: string, code: string): Promise<void> {
     const [record] = await this.db
       .select()
       .from(otpCodes)
@@ -68,21 +71,24 @@ export class OtpService {
         and(
           eq(otpCodes.phone, phone),
           eq(otpCodes.used, false),
-          gt(otpCodes.expiresAt, new Date()),
-        ),
+          gt(otpCodes.expiresAt, new Date())
+        )
       )
       .orderBy(desc(otpCodes.createdAt))
       .limit(1);
 
     if (!record) throw new AppError("OTP_INVALID");
 
-    if (record.attempts >= MAX_ATTEMPTS) throw new AppError("OTP_MAX_ATTEMPTS");
+    if (record.attempts >= MAX_ATTEMPTS) {
+      throw new AppError("OTP_MAX_ATTEMPTS");
+    }
 
     if (record.code !== code) {
       await this.db
         .update(otpCodes)
         .set({ attempts: record.attempts + 1 })
         .where(eq(otpCodes.id, record.id));
+
       throw new AppError("OTP_INVALID");
     }
 
@@ -90,6 +96,5 @@ export class OtpService {
       .update(otpCodes)
       .set({ used: true })
       .where(eq(otpCodes.id, record.id));
-    return true;
   }
 }

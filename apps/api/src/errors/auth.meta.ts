@@ -6,4 +6,8 @@ export const ERROR_AUTH_HTTP_META: Record<
 > = {
   AUTH_FAIL: { status: 429, messageKey: "AUTH_FAIL" },
   USER_NOTFOUND: { status: 404, messageKey: "USER_NOTFOUND" },
+  UNAUTHORIZED: {
+    status: 401,
+    messageKey: "UNAUTHORIZED",
+  },
 };
