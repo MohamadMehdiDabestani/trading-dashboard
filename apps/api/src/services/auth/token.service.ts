@@ -2,14 +2,11 @@ import crypto from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { refreshTokens, type Db } from "@repo/db/src";
 import { eq, and, gt } from "drizzle-orm";
+import { JwtPayload } from "@repo/types";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-export interface JwtPayload {
-  sub: string; // userId
-  phone: string;
-}
 
 function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
