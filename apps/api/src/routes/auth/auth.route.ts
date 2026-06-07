@@ -1,6 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { AuthService } from "@/services/auth/auth.service";
 import { fail, ok } from "@/utils/apiResponse";
+import {
+  APIResult,
+  OtpVerifyBody,
+  OtpSentBody,
+  RefreshBody,
+  LogoutBody,
+} from "@repo/types";
 const REFRESH_COOKIE = "refresh_token";
 
 const cookieOpts = {
@@ -15,7 +22,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   const auth = new AuthService(fastify);
 
   // POST /auth/otp/send
-  fastify.post<{ Body: { phone: string } }>(
+  fastify.post<{ Body: { phone: string }; Reply: APIResult<OtpSentBody> }>(
     "/otp/send",
     {
       schema: {
@@ -37,7 +44,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   // POST /auth/otp/verify  → login / register
-  fastify.post<{ Body: { phone: string; code: string } }>(
+  fastify.post<{
+    Body: { phone: string; code: string };
+    Reply: APIResult<OtpVerifyBody>;
+  }>(
     "/otp/verify",
     {
       schema: {
@@ -66,26 +76,31 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   // POST /auth/refresh
-  fastify.post("/refresh", async (req, reply) => {
-    const raw = req.cookies?.[REFRESH_COOKIE];
-    if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
+  fastify.post<{ Reply: APIResult<RefreshBody> }>(
+    "/refresh",
+    async (req, reply) => {
+      const raw = req.cookies?.[REFRESH_COOKIE];
+      if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
 
-    const { accessToken, refreshToken } = await auth.refresh(raw);
-    reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
-    return reply
-      .code(200)
-      .send(ok({ accessToken }, { message: { key: "REFRESH_SUCCESS" } }));
-  });
+      const { accessToken, refreshToken } = await auth.refresh(raw);
+      reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
+      return reply
+        .code(200)
+        .send(ok({ accessToken }, { message: { key: "REFRESH_SUCCESS" } }));
+    },
+  );
 
   // POST /auth/logout  (protected)
-  fastify.post(
+  fastify.post<{ Reply: APIResult<LogoutBody> }>(
     "/logout",
     { preHandler: [fastify.authenticate] },
     async (req, reply) => {
       const user = req.user as { sub: string };
       await auth.logout(user.sub);
       reply.clearCookie(REFRESH_COOKIE, { path: "/auth/refresh" });
-      return reply.code(200).send({ ok: true });
+      return reply
+        .code(200)
+        .send(ok(undefined, { message: { key: "LOGOUT_SUCCESS" } }));
     },
   );
 }

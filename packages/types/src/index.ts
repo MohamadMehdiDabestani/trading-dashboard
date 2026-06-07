@@ -1,4 +1,5 @@
 export * from "./api/order";
+export * from "./api/auth";
 export * from "./entities/user";
 export * from "./trading/order";
 export * from "./ws/events";

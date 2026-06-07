@@ -1,21 +1,19 @@
 export interface JwtPayload {
-  sub: string;   // userId
-  email: string;
+  sub: string; // userId
+  phone: string;
   iat?: number;
   exp?: number;
 }
 
-export interface TokenPair {
+export interface RefreshBody {
   accessToken: string;
-  expiresIn: number;
 }
 
-export interface RegisterBody {
-  email: string;
-  password: string;
+export type OtpSentBody = undefined;
+
+export interface OtpVerifyBody {
+  accessToken: string;
+  isNew: boolean;
 }
 
-export interface LoginBody {
-  email: string;
-  password: string;
-}
+export type LogoutBody = undefined
