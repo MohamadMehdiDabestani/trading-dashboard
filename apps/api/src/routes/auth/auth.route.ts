@@ -1,7 +1,6 @@
-// apps/api/src/auth/auth.routes.ts
 import type { FastifyInstance } from "fastify";
 import { AuthService } from "@/services/auth/auth.service";
-
+import { ok } from "@/utils/apiResponse";
 const REFRESH_COOKIE = "refresh_token";
 
 const cookieOpts = {
@@ -31,8 +30,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     },
     async (req, reply) => {
       await auth.sendOtp(req.body.phone);
-      return reply.code(200).send({ ok: true });
-    }
+      return reply.code(200).send(ok(undefined, { message: { key: "OTP_SENT" } }));
+    },
   );
 
   // POST /auth/otp/verify  → login / register
@@ -53,25 +52,22 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const { accessToken, refreshToken, isNew } = await auth.loginWithOtp(
         req.body.phone,
-        req.body.code
+        req.body.code,
       );
       reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
       return reply.code(200).send({ accessToken, isNew });
-    }
+    },
   );
 
   // POST /auth/refresh
-  fastify.post(
-    "/refresh",
-    async (req, reply) => {
-      const raw = req.cookies?.[REFRESH_COOKIE];
-      if (!raw) return reply.code(401).send({ error: "Missing refresh token" });
+  fastify.post("/refresh", async (req, reply) => {
+    const raw = req.cookies?.[REFRESH_COOKIE];
+    if (!raw) return reply.code(401).send({ error: "Missing refresh token" });
 
-      const { accessToken, refreshToken } = await auth.refresh(raw);
-      reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
-      return reply.code(200).send({ accessToken });
-    }
-  );
+    const { accessToken, refreshToken } = await auth.refresh(raw);
+    reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
+    return reply.code(200).send({ accessToken });
+  });
 
   // POST /auth/logout  (protected)
   fastify.post(
@@ -82,6 +78,6 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       await auth.logout(user.sub);
       reply.clearCookie(REFRESH_COOKIE, { path: "/auth/refresh" });
       return reply.code(200).send({ ok: true });
-    }
+    },
   );
 }
