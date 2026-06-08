@@ -2,12 +2,13 @@ import { AppError } from "@/errors/appError";
 import { IOtpService } from "./interfaces/otp.interface";
 import { ITokenService } from "./interfaces/token.interface";
 import { UserRepository } from "./interfaces/user.repository";
+import { EditProfileDto } from "@repo/types";
 
 export class AuthService {
   constructor(
     private users: UserRepository,
     private otp: IOtpService,
-    readonly tokens: ITokenService
+    readonly tokens: ITokenService,
   ) {}
 
   async sendOtp(phone: string): Promise<void> {
@@ -16,9 +17,8 @@ export class AuthService {
 
   async loginWithOtp(
     phone: string,
-    code: string
+    code: string,
   ): Promise<{ accessToken: string; refreshToken: string; isNew: boolean }> {
-
     await this.otp.verify(phone, code);
 
     const found = await this.users.findByPhone(phone);
@@ -29,7 +29,7 @@ export class AuthService {
 
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
-      phone: user.phone
+      phone: user.phone,
     });
 
     const refreshToken = await this.tokens.createRefreshToken(user.id);
@@ -38,9 +38,8 @@ export class AuthService {
   }
 
   async refresh(
-    rawRefreshToken: string
+    rawRefreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-
     const result = await this.tokens.rotateRefreshToken(rawRefreshToken);
 
     if (!result) throw new AppError("INVALID_REFRESH");
@@ -53,13 +52,22 @@ export class AuthService {
 
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
-      phone: user.phone
+      phone: user.phone,
     });
 
     return {
       accessToken,
-      refreshToken: result.refreshToken
+      refreshToken: result.refreshToken,
     };
+  }
+  async editProfile(userId: string, data: EditProfileDto): Promise<void> {
+    try {
+      const user = await this.users.findById(userId);
+      if (!user) throw new AppError("USER_NOTFOUND");
+      await this.users.simpleUpdate(userId, data);
+    } catch (error) {
+      throw new AppError("INTERNAL_SERVER_ERROR");
+    }
   }
 
   async logout(userId: string): Promise<void> {

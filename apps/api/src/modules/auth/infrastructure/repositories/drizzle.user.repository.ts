@@ -1,9 +1,21 @@
 import { Db, users } from "@repo/db/src";
 import { UserRepository } from "../../application/interfaces/user.repository";
 import { eq } from "drizzle-orm";
+import { EditProfileDto } from "@repo/types";
 
 export class DrizzleUserRepository implements UserRepository {
   constructor(private db: Db) {}
+  
+  async simpleUpdate(userId: string, data: EditProfileDto): Promise<undefined> {
+    await this.db
+      .update(users)
+      .set({
+        email: data.email,
+        userName: data.userName,
+      })
+      .where(eq(users.id, userId));
+    return undefined;
+  }
 
   async findByPhone(phone: string) {
     const [user] = await this.db

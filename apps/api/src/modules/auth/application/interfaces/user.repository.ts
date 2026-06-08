@@ -1,3 +1,5 @@
+import { EditProfileDto } from "@repo/types";
+
 export interface UserRepository {
   findByPhone(phone: string): Promise<{
     id: string;
@@ -15,4 +17,6 @@ export interface UserRepository {
     id: string;
     phone: string;
   }>;
+
+  simpleUpdate(userId : string , data : EditProfileDto) : Promise<undefined>
 }

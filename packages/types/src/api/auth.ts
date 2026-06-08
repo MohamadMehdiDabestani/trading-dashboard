@@ -5,15 +5,15 @@ export interface JwtPayload {
   exp?: number;
 }
 
-export interface RefreshBody {
+export interface RefreshReply {
   accessToken: string;
 }
 
-export type OtpSentBody = undefined;
+export type OtpSentReply = undefined;
 
-export interface OtpVerifyBody {
+export interface OtpVerifyReply {
   accessToken: string;
   isNew: boolean;
 }
 
-export type LogoutBody = undefined
+export type LogoutReply = undefined
