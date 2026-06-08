@@ -15,6 +15,13 @@
       "when": 1780909537453,
       "tag": "0001_numerous_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780919864391,
+      "tag": "0002_serious_madame_web",
+      "breakpoints": true
     }
   ]
 }
