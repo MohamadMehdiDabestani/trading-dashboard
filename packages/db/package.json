@@ -1,22 +1,33 @@
 {
   "name": "@repo/db",
   "version": "1.0.0",
-  "description": "",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "db:generate": "drizzle-kit generate --config ./src/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config ./src/drizzle.config.ts",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "build": "tsc"
   },
+
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
+    "big.js": "^7.0.1",
     "drizzle-kit": "^0.31.10"
   },
   "dependencies": {
+    "@types/big.js": "^7.0.0",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
   }
