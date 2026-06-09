@@ -1,10 +1,8 @@
 export { createDb, type Db } from "./client";
-export {
-  type NewUser,
-  type OtpCode,
-  type RefreshToken,
-  type User,
-  otpCodes,
-  refreshTokens,
-  users,
-} from "./schema";
+export * from "./schema/users";
+export * from "./schema/otp";
+export * from "./schema/refresh";
+export * from "./schema/balances";
+export * from "./schema/ledger";
+export * from "./schema/orders";
+export * from "./schema/trades";

@@ -5,6 +5,7 @@ import { uuid } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { index } from "drizzle-orm/pg-core";
+import { bigNumeric } from "../types/numric";
 
 export const walletLocks = pgTable(
   "wallet_locks",
@@ -14,7 +15,7 @@ export const walletLocks = pgTable(
       .notNull()
       .references(() => users.id),
     asset: varchar("asset", { length: 20 }).notNull(),
-    amount: numeric("amount", { precision: 36, scale: 18 }).notNull(),
+    amount: bigNumeric("amount").notNull(),
     reason: varchar("reason", { length: 50 }).notNull(), // "open_order"
     refId: uuid("ref_id").notNull(), // orderId
     createdAt: timestamp("created_at", { withTimezone: true })
