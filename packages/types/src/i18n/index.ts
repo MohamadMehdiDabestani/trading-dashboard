@@ -7,12 +7,14 @@ import {
   VALIDATION_ERROR_CODES,
   type ValidationErrorCode,
 } from "./validation/error";
+import {WALLET_ERROR_CODES , type WalletErrorCode} from './wallet/error'
 export const ALL_ERROR_CODES = [
   ...AUTH_ERROR_CODES,
   ...OTP_ERROR_CODES,
   ...TOKEN_ERROR_CODES,
   ...VALIDATION_ERROR_CODES,
   ...COMMON_ERROR_CODES,
+  ...WALLET_ERROR_CODES
   
 ] as const;
 export const ALL_SUCCESS_CODES = [...AUTH_SUCCESS_CODES];
@@ -25,10 +27,12 @@ export {
   VALIDATION_ERROR_CODES,
   AUTH_SUCCESS_CODES,
   COMMON_ERROR_CODES,
+  WALLET_ERROR_CODES,
   CommonErrorCode,
   AuthSuccessCodes,
   OtpErrorCode,
   TokenErrorCode,
   ValidationErrorCode,
   AuthErrorCode,
+  WalletErrorCode
 };

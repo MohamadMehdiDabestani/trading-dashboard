@@ -35,3 +35,11 @@ export interface SmsGateway {
     text: Record<string, string>,
   ): Promise<void>;
 }
+
+export interface PaginatedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPage: number;
+}
