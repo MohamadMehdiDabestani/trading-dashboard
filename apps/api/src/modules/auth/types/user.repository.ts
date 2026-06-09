@@ -18,5 +18,5 @@ export interface UserRepository {
     phone: string;
   }>;
 
-  simpleUpdate(userId : string , data : EditProfileDto) : Promise<undefined>
+  simpleUpdate(userId : string , data : EditProfileDto) : Promise<void>
 }

@@ -8,6 +8,7 @@ import smsPlugin from "./plugins/sms";
 import errorHandlerPlugin from "./plugins/errorHandler"
 import { authPlugin } from './modules/auth/plugin';
 import { fail } from './utils/apiResponse';
+import { walletPlugin } from './modules/wallet/plugin';
 
 const app = Fastify({
   logger: true,
@@ -37,7 +38,7 @@ app.get("/health", async () => {
 });
 await app.register(authPlugin);
 
-
+await app.register(walletPlugin)
 
 // ALL OF THESE CODES ARE UNDER TEST ...
 

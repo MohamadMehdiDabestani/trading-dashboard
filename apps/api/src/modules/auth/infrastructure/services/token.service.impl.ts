@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import { eq, and, gt } from "drizzle-orm";
-import { refreshTokens, type Db } from "@repo/db/src";
+import { refreshTokens, type Db } from "@repo/db";
 import { JwtPayload } from "@repo/types";
-import { ITokenService } from "../../application/interfaces/token.interface";
+import { ITokenService } from "../../types/token.interface";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;

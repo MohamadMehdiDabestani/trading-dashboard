@@ -1,7 +1,7 @@
-import { type Db, otpCodes } from "@repo/db/src";
+import { type Db, otpCodes } from "@repo/db";
 import { eq, and, gt, desc } from "drizzle-orm";
 import { AppError } from "@/errors/appError";
-import { IOtpService } from "../../application/interfaces/otp.interface";
+import { IOtpService } from "../../types/otp.interface";
 
 const OTP_TTL_MS = 3 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
