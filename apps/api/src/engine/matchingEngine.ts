@@ -7,7 +7,7 @@ import {
   MatchResult,
   OrderStatus,
   SCALE,
-} from "./types";
+} from "@repo/types";
 
 export class MatchingEngine {
   private books = new Map<string, OrderBook>();
@@ -22,10 +22,15 @@ export class MatchingEngine {
   }
 
   // ─── Public API ───────────────────────────────────────────────────────────
-
   submitOrder(order: EngineOrder): MatchResult {
+    if (order.quantity <= 0n) throw new Error("Invalid quantity");
+    if (order.type === "limit" && order.price <= 0n)
+      throw new Error("Invalid price");
+    if (order.filled !== 0n)
+      throw new Error("Order.filled must be zero on creation");
     const book = this.getBook(order.symbol);
-    const result: MatchResult = { trades: [], updates: [] };
+
+    const result: MatchResult = { trades: [], updates: [], deltas: [] };
 
     if (order.side === "buy") {
       this.matchBuy(order, book, result);
@@ -33,18 +38,32 @@ export class MatchingEngine {
       this.matchSell(order, book, result);
     }
 
-    // اگر taker کاملاً fill نشد و limit است، به book اضافه شود
     if (order.type === "limit" && order.filled < order.quantity) {
-      book.addOrder(order);
+      const delta = book.addOrder(order);
+      result.deltas.push(delta);
     }
 
     return result;
   }
 
-  cancelOrder(symbol: string, orderId: string): boolean {
-    const book = this.books.get(symbol);
-    if (!book) return false;
-    return book.removeOrder(orderId);
+  cancelOrder(symbol: string, orderId: string): MatchResult | null {
+    const book = this.getBook(symbol);
+    const order = book.getOrder(orderId);
+    if (!order) return null;
+
+    const delta = book.cancel(order);
+
+    return {
+      trades: [],
+      updates: [
+        {
+          orderId,
+          filled: order.filled,
+          status: "cancelled",
+        },
+      ],
+      deltas: delta ? [delta] : [],
+    };
   }
 
   getSnapshot(symbol: string, depth = 20) {
@@ -53,7 +72,11 @@ export class MatchingEngine {
 
   // ─── Match logic ──────────────────────────────────────────────────────────
 
-  private matchBuy(taker: EngineOrder, book: OrderBook, result: MatchResult): void {
+  private matchBuy(
+    taker: EngineOrder,
+    book: OrderBook,
+    result: MatchResult,
+  ): void {
     while (taker.filled < taker.quantity) {
       const maker = book.peekBestAsk();
       if (!maker) break;
@@ -63,21 +86,32 @@ export class MatchingEngine {
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,
-        maker.quantity - maker.filled
+        maker.quantity - maker.filled,
       );
 
       // maker is ask (seller), taker is buyer
-      this.recordTrade(taker, maker, tradeQty, maker.price, result);
+      this.recordTrade(maker, taker, tradeQty, maker.price, result);
 
       // اگر maker کاملاً fill شد، از book حذف شود
       if (maker.filled === maker.quantity) {
-        book.removeFrontAsk();
+        const delta = book.removeFrontAsk();
+        if (delta) result.deltas.push(delta);
+      } else {
+        result.deltas.push({
+          side: "ask",
+          price: maker.price,
+          quantity: maker.quantity - maker.filled,
+        });
       }
       // اگر partial، در book باقی میماند — هیچ reinsert لازم نیست
     }
   }
 
-  private matchSell(taker: EngineOrder, book: OrderBook, result: MatchResult): void {
+  private matchSell(
+    taker: EngineOrder,
+    book: OrderBook,
+    result: MatchResult,
+  ): void {
     while (taker.filled < taker.quantity) {
       const maker = book.peekBestBid();
       if (!maker) break;
@@ -87,14 +121,21 @@ export class MatchingEngine {
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,
-        maker.quantity - maker.filled
+        maker.quantity - maker.filled,
       );
 
       // maker is bid (buyer), taker is seller
       this.recordTrade(maker, taker, tradeQty, maker.price, result);
 
       if (maker.filled === maker.quantity) {
-        book.removeFrontBid();
+        const delta = book.removeFrontBid();
+        if (delta) result.deltas.push(delta);
+      } else {
+        result.deltas.push({
+          side: "bid",
+          price: maker.price,
+          quantity: maker.quantity - maker.filled,
+        });
       }
     }
   }
@@ -103,20 +144,24 @@ export class MatchingEngine {
   // همیشه buyer و seller صریحاً مشخص است — وابستگی به ترتیب پارامتر نداریم
 
   private recordTrade(
-    buyer: EngineOrder,
-    seller: EngineOrder,
+    maker: EngineOrder,
+    taker: EngineOrder,
     quantity: bigint,
     price: bigint,
-    result: MatchResult
+    result: MatchResult,
   ): void {
-    buyer.filled += quantity;
-    seller.filled += quantity;
+    maker.filled += quantity;
+    taker.filled += quantity;
+
+    // تعیین واقعی buyer و seller
+    const buyer = maker.side === "buy" ? maker : taker;
+    const seller = maker.side === "sell" ? maker : taker;
 
     const trade: EngineTrade = {
       id: randomUUID(),
-      symbol: buyer.symbol,
-      makerOrderId: seller.id,   // در این context seller = maker (ask side)
-      takerOrderId: buyer.id,
+      symbol: maker.symbol,
+      makerOrderId: maker.id,
+      takerOrderId: taker.id,
       buyOrderId: buyer.id,
       sellOrderId: seller.id,
       buyerId: buyer.userId,
@@ -128,10 +173,8 @@ export class MatchingEngine {
     };
 
     result.trades.push(trade);
-
-    // update برای هر دو طرف
-    result.updates.push(makeUpdate(buyer));
-    result.updates.push(makeUpdate(seller));
+    result.updates.push(makeUpdate(maker));
+    result.updates.push(makeUpdate(taker));
   }
 }
 

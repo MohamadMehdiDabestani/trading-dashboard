@@ -20,9 +20,11 @@
     "bcryptjs": "^3.0.3",
     "big.js": "^7.0.1",
     "drizzle-orm": "^0.45.2",
+    "eventemitter3": "^5.0.4",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.1.0",
     "sorted-btree": "^2.1.0",
+    "ws": "^8.21.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -30,6 +32,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/big.js": "^7.0.0",
     "@types/node": "^22.15.3",
+    "@types/ws": "^8.18.1",
     "dotenv": "^17.4.2",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"

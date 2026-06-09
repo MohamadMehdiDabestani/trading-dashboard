@@ -1,11 +1,19 @@
-export interface TradeEvent {
-  symbol: string;
-  price: number;
-  quantity: number;
-  timestamp: number;
-}
+import { OrderBookLevelDelta } from "../trading/order";
 
-export interface OrderbookLevel {
-  price: number;
-  quantity: number;
-}
+export type MarketTradeEvent = {
+  symbol: string;
+  price: string;
+  quantity: string;
+  buyOrderId: string;
+  sellOrderId: string;
+  timestamp: number;
+};
+
+export type OrderBookDeltaEvent = {
+  symbol: string;
+  deltas: OrderBookLevelDelta[];
+};
+
+export type MarketEvent =
+  | { type: "trade"; data: MarketTradeEvent }
+  | { type: "orderbook_delta"; data: OrderBookDeltaEvent };

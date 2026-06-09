@@ -1,147 +1,224 @@
 import BTree from "sorted-btree";
-import { EngineOrder, OrderBookSnapshot, PriceLevel, SCALE } from "./types";
-
+import {
+  EngineOrder,
+  OrderBookLevelDelta,
+  OrderBookSnapshot,
+  PriceLevel,
+  SCALE,
+} from "@repo/types";
+function formatScaled(value: bigint): string {
+  const intPart = value / SCALE;
+  const fracPart = value % SCALE;
+  // 8 decimal places کافیه برای نمایش
+  const fracStr = ((fracPart * 100_000_000n) / SCALE)
+    .toString()
+    .padStart(8, "0");
+  return `${intPart}.${fracStr}`;
+}
 export class OrderBook {
   private symbol: string;
 
-  // bids: key = -price (negated) → minKey() = best bid
-  private bids = new BTree<bigint, PriceLevel>();
+  private bids = new BTree<bigint, PriceLevel>(); // key = -price
+  private asks = new BTree<bigint, PriceLevel>(); // key = price
 
-  // asks: key = price → minKey() = best ask
-  private asks = new BTree<bigint, PriceLevel>();
-
-  // orderId → { side, price } for O(1) cancel lookup
-  private orderIndex = new Map<string, { side: "buy" | "sell"; price: bigint }>();
+  private orderIndex = new Map<
+    string,
+    { side: "buy" | "sell"; price: bigint }
+  >();
 
   constructor(symbol: string) {
     this.symbol = symbol;
   }
 
-  // ─── Insert ────────────────────────────────────────────────────────────────
+  // ایجاد یا گرفتن level
+  private getOrCreateLevel(order: EngineOrder): PriceLevel {
+    const key = order.side === "buy" ? -order.price : order.price;
 
-  addOrder(order: EngineOrder): void {
-    if (order.side === "buy") {
-      const key = -order.price;
-      let level = this.bids.get(key);
-      if (!level) {
-        level = { price: order.price, orders: [] };
-        this.bids.set(key, level);
-      }
-      level.orders.push(order);
-    } else {
-      const key = order.price;
-      let level = this.asks.get(key);
-      if (!level) {
-        level = { price: order.price, orders: [] };
-        this.asks.set(key, level);
-      }
-      level.orders.push(order);
+    const tree = order.side === "buy" ? this.bids : this.asks;
+    let level = tree.get(key);
+
+    if (!level) {
+      level = { price: order.price, orders: [], totalQuantity: 0n };
+      tree.set(key, level);
     }
-    this.orderIndex.set(order.id, { side: order.side, price: order.price });
+
+    return level;
   }
 
-  // ─── Peek (no removal) ────────────────────────────────────────────────────
+  private getLevel(order: EngineOrder): PriceLevel {
+    const key = order.side === "buy" ? -order.price : order.price;
+    const tree = order.side === "buy" ? this.bids : this.asks;
+    const level = tree.get(key);
+    if (!level) throw new Error("Level not found");
+    return level;
+  }
 
+  private makeDelta(
+    side: "bid" | "ask",
+    price: bigint,
+    level: PriceLevel,
+  ): OrderBookLevelDelta {
+    return { side, price, quantity: level.totalQuantity };
+  }
+
+  // اضافه کردن order جدید
+  addOrder(order: EngineOrder): OrderBookLevelDelta {
+    const level = this.getOrCreateLevel(order);
+
+    level.orders.push(order);
+    level.totalQuantity += order.quantity - order.filled;
+
+    this.orderIndex.set(order.id, { side: order.side, price: order.price });
+
+    return {
+      side: order.side === "buy" ? "bid" : "ask",
+      price: order.price,
+      quantity: level.totalQuantity,
+    };
+  }
+
+  // حذف کامل maker که کاملاً پر شده
+  removeFrontAsk(): OrderBookLevelDelta | null {
+    const key = this.asks.minKey();
+    if (key === undefined) return null;
+
+    const level = this.asks.get(key)!;
+    const removed = level.orders.shift();
+    if (!removed) return null;
+
+    this.orderIndex.delete(removed.id);
+
+    level.totalQuantity -= removed.quantity - removed.filled;
+
+    if (level.orders.length === 0) {
+      this.asks.delete(key);
+      return { side: "ask", price: level.price, quantity: 0n };
+    }
+
+    return {
+      side: "ask",
+      price: level.price,
+      quantity: level.totalQuantity,
+    };
+  }
+
+  removeFrontBid(): OrderBookLevelDelta | null {
+    const key = this.bids.minKey();
+    if (key === undefined) return null;
+
+    const level = this.bids.get(key)!;
+    const removed = level.orders.shift();
+    if (!removed) return null;
+
+    this.orderIndex.delete(removed.id);
+
+    level.totalQuantity -= removed.quantity - removed.filled;
+
+    if (level.orders.length === 0) {
+      this.bids.delete(key);
+      return { side: "bid", price: level.price, quantity: 0n };
+    }
+
+    return {
+      side: "bid",
+      price: level.price,
+      quantity: level.totalQuantity,
+    };
+  }
   peekBestAsk(): EngineOrder | null {
     const key = this.asks.minKey();
     if (key === undefined) return null;
-    const level = this.asks.get(key)!;
+
+    const level = this.asks.get(key);
+    if (!level) return null;
+
     return level.orders[0] ?? null;
   }
 
   peekBestBid(): EngineOrder | null {
     const key = this.bids.minKey();
     if (key === undefined) return null;
-    const level = this.bids.get(key)!;
+
+    const level = this.bids.get(key);
+    if (!level) return null;
+
     return level.orders[0] ?? null;
   }
 
-  // ─── Remove front of level (call ONLY after confirmed fully filled) ────────
+  // cancel
+  cancel(order: EngineOrder): OrderBookLevelDelta | null {
+    const level = this.getLevel(order);
 
-  removeFrontAsk(): void {
-    const key = this.asks.minKey();
-    if (key === undefined) return;
-    const level = this.asks.get(key)!;
-    const removed = level.orders.shift();
-    if (removed) this.orderIndex.delete(removed.id);
-    if (level.orders.length === 0) this.asks.delete(key);
-  }
+    const idx = level.orders.findIndex((o) => o.id === order.id);
+    if (idx === -1) return null;
 
-  removeFrontBid(): void {
-    const key = this.bids.minKey();
-    if (key === undefined) return;
-    const level = this.bids.get(key)!;
-    const removed = level.orders.shift();
-    if (removed) this.orderIndex.delete(removed.id);
-    if (level.orders.length === 0) this.bids.delete(key);
-  }
+    const removed = level.orders[idx];
+    if (!removed) return null;
+    const remaining = removed.quantity - removed.filled;
+    level.totalQuantity -= remaining;
 
-  // ─── Cancel by ID ─────────────────────────────────────────────────────────
+    level.orders.splice(idx, 1);
+    this.orderIndex.delete(order.id);
 
-  removeOrder(orderId: string): boolean {
-    const meta = this.orderIndex.get(orderId);
-    if (!meta) return false;
+    if (level.orders.length === 0) {
+      // حذف کامل level
+      const key = order.side === "buy" ? -order.price : order.price;
+      if (order.side === "buy") this.bids.delete(key);
+      else this.asks.delete(key);
 
-    if (meta.side === "buy") {
-      const key = -meta.price;
-      const level = this.bids.get(key);
-      if (!level) return false;
-      const idx = level.orders.findIndex((o) => o.id === orderId);
-      if (idx === -1) return false;
-      level.orders.splice(idx, 1);
-      if (level.orders.length === 0) this.bids.delete(key);
-    } else {
-      const key = meta.price;
-      const level = this.asks.get(key);
-      if (!level) return false;
-      const idx = level.orders.findIndex((o) => o.id === orderId);
-      if (idx === -1) return false;
-      level.orders.splice(idx, 1);
-      if (level.orders.length === 0) this.asks.delete(key);
+      return {
+        side: order.side === "buy" ? "bid" : "ask",
+        price: order.price,
+        quantity: 0n,
+      };
     }
 
-    this.orderIndex.delete(orderId);
-    return true;
+    return {
+      side: order.side === "buy" ? "bid" : "ask",
+      price: order.price,
+      quantity: level.totalQuantity,
+    };
   }
 
-  // ─── Snapshot ─────────────────────────────────────────────────────────────
+  getOrder(orderId: string): EngineOrder | null {
+    const meta = this.orderIndex.get(orderId);
+    if (!meta) return null;
+    const key = meta.side === "buy" ? -meta.price : meta.price;
+    const tree = meta.side === "buy" ? this.bids : this.asks;
+    const level = tree.get(key);
+    if (!level) return null;
+    return level.orders.find((o) => o.id === orderId) || null;
+  }
 
+  // snapshot بدون reduce
   getSnapshot(depth = 20): OrderBookSnapshot {
-    const bids: { price: string; quantity: string }[] = [];
-    const asks: { price: string; quantity: string }[] = [];
+    const bids = [];
+    const asks = [];
 
-    let count = 0;
-    this.bids.forEachPair((_key, level) => {
-      if (count >= depth) return false;
-      const qty = level.orders.reduce((s, o) => s + (o.quantity - o.filled), 0n);
-      // price / SCALE — no intermediate multiplication, no precision loss
-      bids.push({
-        price: formatScaled(level.price),
-        quantity: formatScaled(qty),
-      });
-      count++;
-    });
+    const bidIt = this.bids.entries();
+    for (let i = 0; i < depth; i++) {
+      const next = bidIt.next();
+      if (next.done) break;
+      const [, lvl] = next.value;
+      if (lvl.totalQuantity > 0n)
+        bids.push({
+          price: formatScaled(lvl.price),
+          quantity: formatScaled(lvl.totalQuantity),
+        });
+    }
 
-    count = 0;
-    this.asks.forEachPair((_key, level) => {
-      if (count >= depth) return false;
-      const qty = level.orders.reduce((s, o) => s + (o.quantity - o.filled), 0n);
-      asks.push({
-        price: formatScaled(level.price),
-        quantity: formatScaled(qty),
-      });
-      count++;
-    });
+    const askIt = this.asks.entries();
+    for (let i = 0; i < depth; i++) {
+      const next = askIt.next();
+      if (next.done) break;
+      const [, lvl] = next.value;
+      if (lvl.totalQuantity > 0n)
+        asks.push({
+          price: formatScaled(lvl.price),
+          quantity: formatScaled(lvl.totalQuantity),
+        });
+    }
 
     return { symbol: this.symbol, bids, asks, timestamp: Date.now() };
   }
-}
-
-// bigint scaled by 10^18 → decimal string با 8 رقم اعشار
-function formatScaled(value: bigint): string {
-  const intPart = value / SCALE;
-  const fracPart = value % SCALE;
-  // 8 decimal places کافیه برای نمایش
-  const fracStr = (fracPart * 100_000_000n / SCALE).toString().padStart(8, "0");
-  return `${intPart}.${fracStr}`;
 }
