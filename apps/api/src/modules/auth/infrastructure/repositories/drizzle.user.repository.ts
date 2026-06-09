@@ -1,5 +1,5 @@
-import { Db, users } from "@repo/db/src";
-import { UserRepository } from "../../application/interfaces/user.repository";
+import { users , type Db } from "@repo/db";
+import { UserRepository } from "../../types/user.repository";
 import { eq } from "drizzle-orm";
 import { EditProfileDto } from "@repo/types";
 
@@ -14,7 +14,7 @@ export class DrizzleUserRepository implements UserRepository {
         userName: data.userName,
       })
       .where(eq(users.id, userId));
-    return undefined;
+
   }
 
   async findByPhone(phone: string) {

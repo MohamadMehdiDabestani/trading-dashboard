@@ -1,7 +1,7 @@
 import { AppError } from "@/errors/appError";
-import { IOtpService } from "./interfaces/otp.interface";
-import { ITokenService } from "./interfaces/token.interface";
-import { UserRepository } from "./interfaces/user.repository";
+import { IOtpService } from "../types/otp.interface";
+import { ITokenService } from "../types/token.interface";
+import { UserRepository } from "../types/user.repository";
 import { EditProfileDto } from "@repo/types";
 
 export class AuthService {
