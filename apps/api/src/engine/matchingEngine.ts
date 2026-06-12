@@ -8,6 +8,7 @@ import {
   OrderStatus,
   SCALE,
 } from "@repo/types";
+import { fromScale } from "@/utils/scaleBigInt";
 
 export class MatchingEngine {
   private books = new Map<string, OrderBook>();
@@ -20,7 +21,127 @@ export class MatchingEngine {
     }
     return book;
   }
+  logBootstrapMatches(): void {
+    for (const [symbol, book] of this.books.entries()) {
+      const { bids, asks } = book.getLevelsForSimulation();
 
+      type SimOrder = {
+        id: string;
+        userId: string;
+        side: "buy" | "sell";
+        price: bigint;
+        remaining: bigint;
+        timestamp: number;
+      };
+
+      const simBids: { price: bigint; queue: SimOrder[] }[] = bids
+        .map((lvl) => ({
+          price: lvl.price,
+          queue: lvl.orders
+            .map((o) => ({
+              id: o.id,
+              userId: o.userId,
+              side: o.side,
+              price: o.price,
+              remaining: o.quantity - o.filled,
+              timestamp: o.timestamp,
+            }))
+            .filter((o) => o.remaining > 0n),
+        }))
+        .filter((lvl) => lvl.queue.length > 0);
+
+      const simAsks: { price: bigint; queue: SimOrder[] }[] = asks
+        .map((lvl) => ({
+          price: lvl.price,
+          queue: lvl.orders
+            .map((o) => ({
+              id: o.id,
+              userId: o.userId,
+              side: o.side,
+              price: o.price,
+              remaining: o.quantity - o.filled,
+              timestamp: o.timestamp,
+            }))
+            .filter((o) => o.remaining > 0n),
+        }))
+        .filter((lvl) => lvl.queue.length > 0);
+
+      let bi = 0; // بهترین bid level
+      let ai = 0; // بهترین ask level
+
+      console.log(`\n[BOOTSTRAP-SIM][${symbol}] checking crossable orders...`);
+
+      let found = false;
+
+      while (bi < simBids.length && ai < simAsks.length) {
+        const bidLvl = simBids[bi];
+        const askLvl = simAsks[ai];
+        if(!bidLvl || !askLvl) break;
+        // چون bids نزولی و asks صعودی هستن
+        if (bidLvl.price < askLvl.price) break;
+
+        let bq = bidLvl.queue;
+        let aq = askLvl.queue;
+
+        while (bq.length > 0 && aq.length > 0) {
+          const bid = bq[0];
+          const ask = aq[0];
+        if (!bid || !ask) break;
+
+          const qty =
+            bid.remaining < ask.remaining ? bid.remaining : ask.remaining;
+          const execPrice = ask.price; // مشابه maker ask در matchBuy
+
+          found = true;
+          console.log(
+            `[SIM-TRADE] symbol=${symbol} buyOrder=${bid.id} sellOrder=${ask.id} buyer=${bid.userId} seller=${ask.userId} price=${fromScale(execPrice)} qty=${fromScale(qty)}`,
+          );
+
+          bid.remaining -= qty;
+          ask.remaining -= qty;
+
+          if (bid.remaining === 0n) bq.shift();
+          if (ask.remaining === 0n) aq.shift();
+        }
+
+        if (bq.length === 0) bi++;
+        if (aq.length === 0) ai++;
+      }
+
+      if (!found) {
+        console.log(`[BOOTSTRAP-SIM][${symbol}] no matches found`);
+      }
+    }
+  }
+
+  bootstrapActiveOrders(orders: EngineOrder[]): void {
+    for (const order of orders) {
+      // فقط سفارش فعال باید وارد بوک شود
+      if (order.filled >= order.quantity) continue;
+
+      if (order.quantity <= 0n) continue;
+      if (order.type === "limit" && order.price <= 0n) continue;
+
+      const book = this.getBook(order.symbol);
+
+      book.addOrder(order);
+    }
+    this.logBootstrapMatches()
+  }
+
+  logActiveOrders(): void {
+    for (const [symbol, book] of this.books.entries()) {
+      const active = book.getActiveOrders();
+
+      console.log(`\n[${symbol}] active orders: ${active.length}`);
+      for (const o of active) {
+        const remaining = o.quantity - o.filled;
+        console.log(
+          `- id=${o.id} user=${o.userId} side=${o.side} type=${o.type} price=${fromScale(o.price)} qty=${o.quantity.toString()} filled=${o.filled.toString()} remaining=${remaining.toString()}`,
+        );
+      }
+    }
+  }
   // ─── Public API ───────────────────────────────────────────────────────────
   submitOrder(order: EngineOrder): MatchResult {
     if (order.quantity <= 0n) throw new Error("Invalid quantity");

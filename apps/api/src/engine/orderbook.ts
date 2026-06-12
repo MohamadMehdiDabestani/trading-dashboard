@@ -1,4 +1,7 @@
-import BTree from "sorted-btree";
+import BTreeComponent from "sorted-btree";
+// @ts-ignore
+const BTree = BTreeComponent.default || BTreeComponent;
+
 import {
   EngineOrder,
   OrderBookLevelDelta,
@@ -29,10 +32,39 @@ export class OrderBook {
   constructor(symbol: string) {
     this.symbol = symbol;
   }
+  getActiveOrders(): EngineOrder[] {
+    const out: EngineOrder[] = [];
 
+    for (const [, lvl] of this.bids.entries()) {
+      for (const o of lvl.orders) {
+        if (o.filled < o.quantity) out.push(o);
+      }
+    }
+
+    for (const [, lvl] of this.asks.entries()) {
+      for (const o of lvl.orders) {
+        if (o.filled < o.quantity) out.push(o);
+      }
+    }
+
+    return out;
+  }
+  getLevelsForSimulation() {
+    const bids: { price: bigint; orders: EngineOrder[] }[] = [];
+    const asks: { price: bigint; orders: EngineOrder[] }[] = [];
+
+    for (const [, lvl] of this.bids.entries()) {
+      bids.push({ price: lvl.price, orders: lvl.orders });
+    }
+    for (const [, lvl] of this.asks.entries()) {
+      asks.push({ price: lvl.price, orders: lvl.orders });
+    }
+
+    return { bids, asks };
+  }
   // ایجاد یا گرفتن level
   private getOrCreateLevel(order: EngineOrder): PriceLevel {
-    const key = order.side === "buy" ? -order.price : order.price;
+    const key = order.price; // both sides
 
     const tree = order.side === "buy" ? this.bids : this.asks;
     let level = tree.get(key);
@@ -46,7 +78,7 @@ export class OrderBook {
   }
 
   private getLevel(order: EngineOrder): PriceLevel {
-    const key = order.side === "buy" ? -order.price : order.price;
+    const key = order.price; // both sides
     const tree = order.side === "buy" ? this.bids : this.asks;
     const level = tree.get(key);
     if (!level) throw new Error("Level not found");
@@ -103,7 +135,7 @@ export class OrderBook {
   }
 
   removeFrontBid(): OrderBookLevelDelta | null {
-    const key = this.bids.minKey();
+    const key = this.bids.maxKey();
     if (key === undefined) return null;
 
     const level = this.bids.get(key)!;
@@ -111,7 +143,6 @@ export class OrderBook {
     if (!removed) return null;
 
     this.orderIndex.delete(removed.id);
-
     level.totalQuantity -= removed.quantity - removed.filled;
 
     if (level.orders.length === 0) {
@@ -125,6 +156,7 @@ export class OrderBook {
       quantity: level.totalQuantity,
     };
   }
+
   peekBestAsk(): EngineOrder | null {
     const key = this.asks.minKey();
     if (key === undefined) return null;
@@ -136,13 +168,13 @@ export class OrderBook {
   }
 
   peekBestBid(): EngineOrder | null {
-    const key = this.bids.minKey();
+    const key = this.bids.maxKey();
     if (key === undefined) return null;
 
     const level = this.bids.get(key);
     if (!level) return null;
 
-    return level.orders[0] ?? null;
+    return level.orders[0] ?? null; // oldest at that price
   }
 
   // cancel
@@ -161,8 +193,7 @@ export class OrderBook {
     this.orderIndex.delete(order.id);
 
     if (level.orders.length === 0) {
-      // حذف کامل level
-      const key = order.side === "buy" ? -order.price : order.price;
+      const key = order.price;
       if (order.side === "buy") this.bids.delete(key);
       else this.asks.delete(key);
 
@@ -183,11 +214,11 @@ export class OrderBook {
   getOrder(orderId: string): EngineOrder | null {
     const meta = this.orderIndex.get(orderId);
     if (!meta) return null;
-    const key = meta.side === "buy" ? -meta.price : meta.price;
+    const key = meta.price; // no negative
     const tree = meta.side === "buy" ? this.bids : this.asks;
     const level = tree.get(key);
     if (!level) return null;
-    return level.orders.find((o) => o.id === orderId) || null;
+    return level.orders.find((o: any) => o.id === orderId) || null;
   }
 
   // snapshot بدون reduce
