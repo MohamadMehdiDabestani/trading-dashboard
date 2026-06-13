@@ -16,6 +16,7 @@ export const walletLocks = pgTable(
       .references(() => users.id),
     asset: varchar("asset", { length: 20 }).notNull(),
     amount: bigNumeric("amount").notNull(),
+    remainingAmount: bigNumeric("remaining_amount").notNull(),
     reason: varchar("reason", { length: 50 }).notNull(), // "open_order"
     refId: uuid("ref_id").notNull(), // orderId
     createdAt: timestamp("created_at", { withTimezone: true })

@@ -1,17 +1,38 @@
-import { config } from 'dotenv';
+import { config } from "dotenv";
 config();
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import dbPlugin from "./plugins/db";
 import smsPlugin from "./plugins/sms";
-import errorHandlerPlugin from "./plugins/errorHandler"
-import { authPlugin } from './modules/auth/plugin';
-import { fail } from './utils/apiResponse';
-import { walletPlugin } from './modules/wallet/plugin';
+import errorHandlerPlugin from "./plugins/errorHandler";
+import { authPlugin } from "./modules/auth/plugin";
+import { fail } from "./utils/apiResponse";
+import { walletPlugin } from "./modules/wallet/plugin";
+import engine from "./modules/trade/plugin/enginePlugin";
+import eventBus from "./modules/trade/plugin/eventBus";
+import ws from "./modules/trade/plugin/ws";
 
+import { orders } from "@repo/db";
+import { and, asc, inArray } from "drizzle-orm";
+import { EngineOrder } from "@repo/types";
+import {
+  dbDecimalToScaledBigInt,
+} from "./utils/scaleBigInt";
+import { tradePlugin } from "./modules/trade/plugin";
 const app = Fastify({
-  logger: true,
+  logger: {
+    level: "info",
+    transport: {
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "HH:MM:ss",
+        ignore: "pid,hostname",
+        singleLine: true,
+      },
+    },
+  },
 });
 
 await app.register(errorHandlerPlugin);
@@ -32,43 +53,48 @@ app.decorate("authenticate", async function (req: any, reply: any) {
   }
 });
 
+app.register(engine);
+app.register(eventBus);
+app.register(ws);
+app.addHook("onReady", async () => {
+  app.log.info("Bootstrapping active orders into engine...");
+
+  const dbOrders = await app.db
+    .select()
+    .from(orders)
+    .where(and(inArray(orders.status, ["open", "partial"])))
+    .orderBy(asc(orders.createdAt));
+
+  const activeOrders: EngineOrder[] = dbOrders.map((o) => ({
+    id: o.id,
+    userId: o.userId,
+    symbol: o.symbol,
+    side: o.side, // "buy" | "sell"
+    type: o.type, // "limit"
+    price: dbDecimalToScaledBigInt(o.price ?? 0),
+    quantity: dbDecimalToScaledBigInt(o.quantity),
+    filled: dbDecimalToScaledBigInt(o.filledQuantity),
+    timestamp: o.createdAt.getTime(),
+  }));
+
+  app.engine.bootstrapActiveOrders(activeOrders);
+  app.engine.logActiveOrders();
+
+  app.log.info(`Bootstrapped ${activeOrders.length} active orders.`);
+});
 
 app.get("/health", async () => {
   return { status: "ok" };
 });
 await app.register(authPlugin);
 
-await app.register(walletPlugin)
+await app.register(walletPlugin);
 
-// ALL OF THESE CODES ARE UNDER TEST ...
-
-// وقتی order می‌رسه این sequence اجرا میشه:
-// async function handleNewOrder(input: NewOrderInput, db: Db) {
-//   // 1. Validate + lock balance (در DB)
-//   // await lockBalance(db, input.userId, input.asset, input.amount);
-
-//   // 2. ثبت order در DB با status = "open"
-//   // const [order] = await db.insert(orders).values({...}).returning();
-
-//   // 3. به engine بده
-//   const result = engine.submitOrder(toEngineOrder(order));
-
-//   // 4. همه trade ها و status update ها را در یک transaction ذخیره کن
-//   await db.transaction(async (tx) => {
-//     for (const trade of result.trades) {
-//       await tx.insert(trades).values(fromEngineTrade(trade));
-//       await settleBalances(tx, trade);
-//     }
-//     for (const update of result.filledOrders) {
-//       await tx.update(orders)
-//         .set({ filledQuantity: update.filledQty.toString(), status: update.status })
-//         .where(eq(orders.id, update.orderId));
-//     }
-//   });
-
-//   return result;
-// }
-
+app.register(tradePlugin);
+app.post("/admin/engine/log-active-orders", async (req, reply) => {
+  app.engine.logActiveOrders();
+  return { ok: true };
+});
 const start = async () => {
   try {
     await app.listen({ port: 4000, host: "0.0.0.0" });

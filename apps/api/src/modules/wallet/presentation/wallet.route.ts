@@ -1,9 +1,9 @@
-import { WalletDepositDto } from "./../../../../node_modules/@repo/types/src/dtoTypes/walletDTO.types";
 import { ok } from "@/utils/apiResponse";
 import {
   APIResult,
   PaginatedResult,
   WalletAssetReply,
+  WalletDepositDto,
   WalletGetReply,
 } from "@repo/types";
 import Big from "big.js";

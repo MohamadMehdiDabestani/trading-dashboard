@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { orders } from "./orders";
 import { users } from "./users";
+import { bigNumeric } from "../types/numric";
 
 export const trades = pgTable(
   "trades",
@@ -26,13 +27,10 @@ export const trades = pgTable(
     sellerId: uuid("seller_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
-    price: numeric("price", { precision: 36, scale: 18 }).notNull(),
-    quantity: numeric("quantity", { precision: 36, scale: 18 }).notNull(),
+    price: bigNumeric("price").notNull(),
+    quantity: bigNumeric("quantity").notNull(),
     // quoteQuantity = price * quantity (stored for convenience)
-    quoteQuantity: numeric("quote_quantity", {
-      precision: 36,
-      scale: 18,
-    }).notNull(),
+    quoteQuantity: bigNumeric("quote_quantity").notNull(),
     executedAt: timestamp("executed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -1,0 +1,1 @@
+ALTER TABLE "wallet_locks" ADD COLUMN "remaining_amount" numeric NOT NULL;

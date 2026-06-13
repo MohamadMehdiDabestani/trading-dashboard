@@ -9,6 +9,8 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
+import { bigNumeric } from "../types/numric";
+import { sql } from "drizzle-orm";
 
 export const orderSideEnum = pgEnum("order_side", ["buy", "sell"]);
 export const orderTypeEnum = pgEnum("order_type", ["limit", "market"]);
@@ -29,11 +31,11 @@ export const orders = pgTable(
     symbol: text("symbol").notNull(), // e.g. "BTCUSDT"
     side: orderSideEnum("side").notNull(),
     type: orderTypeEnum("type").notNull(),
-    price: numeric("price", { precision: 36, scale: 18 }), // null for market orders
-    quantity: numeric("quantity", { precision: 36, scale: 18 }).notNull(),
-    filledQuantity: numeric("filled_quantity", { precision: 36, scale: 18 })
+    price: bigNumeric("price", { precision: 36, scale: 18 }), // null for market orders
+    quantity: bigNumeric("quantity", { precision: 36, scale: 18 }).notNull(),
+    filledQuantity: bigNumeric("filled_quantity", { precision: 36, scale: 18 })
       .notNull()
-      .default("0"),
+      .default(sql`0`),
     status: orderStatusEnum("status").notNull().default("open"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
