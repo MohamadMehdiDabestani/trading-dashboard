@@ -6,3 +6,4 @@ export * from "./schema/balances";
 export * from "./schema/ledger";
 export * from "./schema/orders";
 export * from "./schema/trades";
+export * from './schema/walletLock'

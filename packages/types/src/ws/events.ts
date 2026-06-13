@@ -1,4 +1,3 @@
-import { OrderBookLevelDelta } from "../trading/order";
 
 export type MarketTradeEvent = {
   symbol: string;
@@ -8,7 +7,11 @@ export type MarketTradeEvent = {
   sellOrderId: string;
   timestamp: number;
 };
-
+type OrderBookLevelDelta = {
+  side: "bid" | "ask";
+  price: string;
+  quantity: string;
+}
 export type OrderBookDeltaEvent = {
   symbol: string;
   deltas: OrderBookLevelDelta[];

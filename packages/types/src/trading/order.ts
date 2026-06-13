@@ -70,3 +70,15 @@ export interface OrderBookSnapshot {
   timestamp: number;
 }
 
+
+export interface UserBalance {
+  available: bigint; // مقیاس شده با SCALE (10^18)
+  locked: bigint;    // مقیاس شده با SCALE (10^18)
+}
+
+export interface SpotSymbolInfo {
+  symbol: string;     // مانند "BTCUSDT"
+  baseAsset: string;  // مانند "BTC"
+  quoteAsset: string; // مانند "USDT"
+  minQty: bigint;     // حداقل مقدار مجاز خرید/فروش (scaled)
+}
