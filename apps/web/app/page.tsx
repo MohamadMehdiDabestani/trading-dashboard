@@ -1,6 +1,6 @@
 import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
 import styles from "./page.module.css";
+import { Button } from "@/components/ui/button";
 
 type Props = Omit<ImageProps, "src"> & {
   srcLight: string;
@@ -31,6 +31,7 @@ export default function Home() {
           height={38}
           priority
         />
+        <p className="">asd</p>
         <ol>
           <li>
             Get started by editing <code>apps/web/app/page.tsx</code>
@@ -63,9 +64,10 @@ export default function Home() {
             Read our docs
           </a>
         </div>
-        <Button appName="web" className={styles.secondary}>
+        <Button variant="outline">
           Open alert
         </Button>
+       
       </main>
       <footer className={styles.footer}>
         <a
