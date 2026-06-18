@@ -1,17 +1,27 @@
 import Big from "big.js";
-import { WalletRepository } from "../types/wallet.repository";
 import { WalletAssetReply, WalletGetReply } from "@repo/types";
 import { AppError } from "@/errors/appError";
+import { WalletRepository } from "../infrastructure/repositories/wallet.repository";
+import { DrizzleWalletUnitOfWork } from "../infrastructure/unitOfWork/drizzleUnitOfWork";
 
 export class WalletService {
-  constructor(private wallet: WalletRepository) {}
-  async getSingleAssest(
+  constructor(
+    private walletQuery: WalletRepository,
+    private walletUow: DrizzleWalletUnitOfWork,
+  ) {}
+
+  async getSingleAsset(
     userId: string,
     asset: string,
     page = 1,
     pageSize = 20,
   ): Promise<WalletAssetReply> {
-    const res = await this.wallet.getSingleAsset(userId, asset, page, pageSize);
+    const res = await this.walletQuery.getSingleAsset(
+      userId,
+      asset,
+      page,
+      pageSize,
+    );
 
     if (!res) {
       return {
@@ -31,14 +41,25 @@ export class WalletService {
     return res;
   }
 
-  async getBalance(userId: string) {
-    const res = await this.wallet.getBalance(userId);
-    return res;
+  async getBalance(userId: string): Promise<WalletGetReply[]> {
+    return this.walletQuery.getBalance(userId);
   }
 
-  async deposit(userId: string, asset: string, amount: Big) {
-    if (amount.lt(0)) throw new AppError("WALLET_INVALID_AMOUNT");
-    const res = await this.wallet.deposit(userId, asset, amount);
-    return res;
+  async deposit(userId: string, asset: string, amount: Big): Promise<void> {
+    await this.walletUow.run(async ({ balance, ledger }) => {
+      const { balanceBefore, balanceAfter } = await balance.creditAvailable({
+        userId,
+        asset,
+        amount,
+      });
+
+      await ledger.createDepositEntry({
+        userId,
+        asset,
+        amount,
+        balanceBefore,
+        balanceAfter,
+      });
+    });
   }
 }

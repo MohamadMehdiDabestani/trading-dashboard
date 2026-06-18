@@ -1,7 +1,6 @@
-import { trades } from "@repo/db";
+import { DbTransaction, trades } from "@repo/db";
 import { sql } from "drizzle-orm";
 import { toDbDecimal } from "@/utils/scaleBigInt";
-import { DbTransaction } from "../../types/unitOfWork.repository";
 
 export class TradeHistoryTxRepository {
   constructor(private readonly tx: DbTransaction) {}

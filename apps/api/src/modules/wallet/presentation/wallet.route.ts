@@ -1,7 +1,6 @@
 import { ok } from "@/utils/apiResponse";
 import {
   APIResult,
-  PaginatedResult,
   WalletAssetReply,
   WalletDepositDto,
   WalletGetReply,
@@ -18,6 +17,7 @@ export async function walletRoutes(fastify: FastifyInstance) {
     "/get",
     async (req, reply) => {
       const user = req.user;
+
       const res = await walletService.getBalance(user.sub);
 
       return reply.code(200).send(ok(res));
@@ -30,24 +30,27 @@ export async function walletRoutes(fastify: FastifyInstance) {
     Querystring: { page?: string; pageSize?: string };
   }>("/asset/:asset", async (req, reply) => {
     const { asset } = req.params;
+
     const page = Math.max(Number(req.query.page ?? 1), 1);
+
     const pageSize = Math.min(
       Math.max(Number(req.query.pageSize ?? 20), 1),
       100,
     );
 
-    const res = await walletService.getSingleAssest(
+    const res = await walletService.getSingleAsset(
       req.user.sub,
       asset,
       page,
       pageSize,
     );
+
     return reply.code(200).send(ok(res));
   });
 
   fastify.post<{
     Body: WalletDepositDto;
-    Reply: APIResult<any>;
+    Reply: APIResult<void>;
   }>(
     "/deposit",
     {
@@ -62,8 +65,9 @@ export async function walletRoutes(fastify: FastifyInstance) {
         throw new AppError("WALLET_INVALID_AMOUNT");
       }
 
-      const res = await walletService.deposit(req.user.sub, asset, bigAmount);
-      return reply.code(200).send(ok(res));
+      await walletService.deposit(req.user.sub, asset, bigAmount);
+
+      return reply.code(200).send(ok(undefined));
     },
   );
 }

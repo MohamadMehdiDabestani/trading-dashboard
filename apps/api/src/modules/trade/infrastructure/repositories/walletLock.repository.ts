@@ -1,8 +1,7 @@
-import { walletLocks } from "@repo/db";
+import { DbTransaction, walletLocks } from "@repo/db";
 import { eq, inArray, sql } from "drizzle-orm";
 import Big from "big.js";
 import { dbDecimalToScaledBigInt, toDbDecimal } from "@/utils/scaleBigInt";
-import { DbTransaction } from "../../types/unitOfWork.repository";
 
 export class WalletLockTxRepository {
   constructor(private readonly tx: DbTransaction) {}

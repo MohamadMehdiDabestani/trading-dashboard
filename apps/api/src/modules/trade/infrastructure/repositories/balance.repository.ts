@@ -1,9 +1,8 @@
-import { balances } from "@repo/db";
+import { balances, DbTransaction } from "@repo/db";
 import { and, eq, or, sql } from "drizzle-orm";
 import Big from "big.js";
 import { AppError } from "@/errors/appError";
 import { dbDecimalToScaledBigInt, toDbDecimal } from "@/utils/scaleBigInt";
-import { DbTransaction } from "../../types/unitOfWork.repository";
 
 export type BalanceDelta = {
   userId: string;

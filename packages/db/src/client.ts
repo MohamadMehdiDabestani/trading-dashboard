@@ -11,4 +11,4 @@ export function createDb(url: string) {
   return drizzle(client);
 }
 export type Db = ReturnType<typeof createDb>;
-
+export type DbTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
