@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { FastifyInstance } from "fastify";
 import { ok, fail } from "@/utils/apiResponse";
 import { parseToScaledBigInt } from "@/utils/scaleBigInt";
 import {
@@ -14,6 +14,7 @@ import {
   CreateOrderReply,
   GetRecentTradesReply,
 } from "@repo/types";
+import { AppError } from "@/errors/appError";
 
 export async function tradeRoutes(fastify: FastifyInstance) {
   const tradeService = fastify.tradeService;
@@ -30,10 +31,13 @@ export async function tradeRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const userId = request.user.sub;
+
         const { symbol, baseAsset, quoteAsset, side, type, quantity, price } =
           request.body as any;
-        const BigIntQty = parseToScaledBigInt(quantity);
-        const BigIntPrice = type === "limit" ? parseToScaledBigInt(price) : 0n;
+
+        const bigIntQty = parseToScaledBigInt(quantity);
+
+        const bigIntPrice = type === "limit" ? parseToScaledBigInt(price) : 0n;
 
         const { orderId, matchResult } = await tradeService.createOrder(
           userId,
@@ -42,23 +46,28 @@ export async function tradeRoutes(fastify: FastifyInstance) {
           quoteAsset,
           side,
           type,
-          BigIntPrice,
-          BigIntQty,
+          bigIntPrice,
+          bigIntQty,
         );
+
+        const status =
+          matchResult.updates.find((u) => u.orderId === orderId)?.status ||
+          "open";
 
         return reply.code(201).send(
           ok({
             orderId,
-            status:
-              matchResult.updates.find((u) => u.orderId === orderId)?.status ||
-              "open",
+            status,
           }),
         );
       } catch (error: any) {
         fastify.log.error(error);
-        if (error.message === "INSUFFICIENT_BALANCE") {
-          return reply.code(400).send(fail("OTP_INVALID"));
+
+        if (error instanceof AppError) {
+          const mapped = mapAppErrorToHttp(error);
+          return reply.code(mapped.statusCode).send(fail(mapped.code));
         }
+
         return reply.code(500).send(fail("INTERNAL_SERVER_ERROR"));
       }
     },
@@ -74,41 +83,69 @@ export async function tradeRoutes(fastify: FastifyInstance) {
       schema: cancelOrderSchema,
     },
     async (request, reply) => {
-      const userId = request.user.sub;
-      const { symbol, orderId } = request.body;
+      try {
+        const userId = request.user.sub;
+        const { symbol, orderId } = request.body;
 
-      await tradeService.cancelOrder(userId, symbol, orderId);
-      return reply.send(ok("ORDER_CANCELLED_SUCCESSFULLY"));
+        await tradeService.cancelOrder(userId, symbol, orderId);
+
+        return reply.send(
+          ok("", { message: { key: "ORDER_CANCELLED_SUCCESSFULLY" } }),
+        );
+      } catch (error: any) {
+        request.log.error(error);
+
+        if (error instanceof AppError) {
+          const mapped = mapAppErrorToHttp(error);
+          return reply.code(mapped.statusCode).send(fail(mapped.code));
+        }
+
+        return reply.code(500).send(fail("INTERNAL_SERVER_ERROR"));
+      }
     },
   );
 
   fastify.get<{
-    Querystring: { page?: string; pageSize?: string };
-    Params: { symbol: string };
+    Querystring: {
+      page?: string;
+      pageSize?: string;
+    };
+    Params: {
+      symbol: string;
+    };
     Reply: APIResult<GetRecentTradesReply>;
-  }>("/:symbol", {
-    // schema: getRecentTradeSchema,
-
-    handler: async (req, reply) => {
+  }>(
+    "/:symbol",
+    {
+      onRequest: [fastify.authenticate],
+      schema: getRecentTradeSchema,
+    },
+    async (req, reply) => {
       try {
-        const page = Math.max(Number(req.query.page ?? 1), 1);
-        const pageSize = Math.min(
-          Math.max(Number(req.query.pageSize ?? 20), 1),
-          100,
-        );
-        const user = req.user;
+        const page = Number(req.query.page ?? 1);
+        const pageSize = Number(req.query.pageSize ?? 20);
+
+        const userId = req.user.sub;
         const { symbol } = req.params;
+
         const data = await tradeService.getRecentOrders(
           symbol,
-          user.sub,
+          userId,
           page,
           pageSize,
         );
+
         return reply.status(200).send(ok(data));
-      } catch (error) {
+      } catch (error: any) {
         req.log.error(error);
-        return reply.status(500).send(fail("AUTH_FAIL"));
+
+        if (error instanceof AppError) {
+          const mapped = mapAppErrorToHttp(error);
+          return reply.code(mapped.statusCode).send(fail(mapped.code));
+        }
+
+        return reply.status(500).send(fail("INTERNAL_SERVER_ERROR"));
       }
     },
-  });
+  );
 }
