@@ -1,7 +1,6 @@
-import { ledgerEntries } from "@repo/db";
+import { DbTransaction, ledgerEntries } from "@repo/db";
 import { sql } from "drizzle-orm";
 import { toDbDecimal } from "@/utils/scaleBigInt";
-import { DbTransaction } from "../../types/unitOfWork.repository";
 
 export type LedgerDraft = {
   userId: string;

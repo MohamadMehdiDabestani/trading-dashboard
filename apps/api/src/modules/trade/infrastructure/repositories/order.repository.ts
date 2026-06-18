@@ -1,9 +1,8 @@
-import { orders } from "@repo/db";
+import { DbTransaction, orders } from "@repo/db";
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { GetRecentTradesReply, OrderType, Side } from "@repo/types";
 import { toDbDecimal } from "@/utils/scaleBigInt";
 import { applyPagination } from "@/utils/pagination";
-import { DbTransaction } from "../../types/unitOfWork.repository";
 
 export class OrderTxRepository {
   constructor(private readonly tx: DbTransaction) {}

@@ -1,11 +1,10 @@
-import { type Db } from "@repo/db";
 import { OrderTxRepository } from "../infrastructure/repositories/order.repository";
 import { BalanceTxRepository } from "../infrastructure/repositories/balance.repository";
 import { WalletLockTxRepository } from "../infrastructure/repositories/walletLock.repository";
 import { TradeHistoryTxRepository } from "../infrastructure/repositories/tradeHistory.repository";
 import { LedgerTxRepository } from "../infrastructure/repositories/ledger.repository";
+import { DbTransaction } from "@repo/db";
 
-export type DbTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 export interface TradeUnitOfWorkContext {
   tx: DbTransaction;

@@ -5,4 +5,8 @@ export const ERROR_TOKEN_HTTP_META: Record<
   { status: number; messageKey: WalletErrorCode }
 > = {
   WALLET_INVALID_AMOUNT: { status: 422, messageKey: "WALLET_INVALID_AMOUNT" },
+  DEPOSIT_FAILED: {
+    status: 500,
+    messageKey: "DEPOSIT_FAILED",
+  },
 };
