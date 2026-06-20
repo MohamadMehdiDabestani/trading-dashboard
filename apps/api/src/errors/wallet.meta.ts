@@ -1,6 +1,6 @@
 import { WalletErrorCode } from "@repo/types";
 
-export const ERROR_TOKEN_HTTP_META: Record<
+export const ERROR_WALLET_HTTP_META: Record<
   WalletErrorCode,
   { status: number; messageKey: WalletErrorCode }
 > = {
