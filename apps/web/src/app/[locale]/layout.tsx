@@ -1,7 +1,30 @@
 import type { Metadata } from "next";
 import "./globals.css";
+
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+
+import localFont from "next/font/local";
+
+const vazir = localFont({
+  display: "swap",
+  src: [
+    { path: "../fonts/Vazir-Light.woff2", weight: "300" },
+    { path: "../fonts/Vazir.woff2", weight: "400" },
+    { path: "../fonts/Vazir-Medium.woff2", weight: "500" },
+    { path: "../fonts/Vazir-Bold.woff2", weight: "700" },
+  ],
+});
+
+const inter = localFont({
+  display: "swap",
+  src: [
+    { path: "../fonts/Inter-Light.woff2", weight: "300" },
+    { path: "../fonts/Inter-Regular.woff2", weight: "400" },
+    { path: "../fonts/Inter-Medium.woff2", weight: "500" },
+    { path: "../fonts/Inter-Bold.woff2", weight: "700" },
+  ],
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -10,14 +33,17 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   const locale = await getLocale();
-  const messages = await getMessages();3
+  const messages = await getMessages();
+
+  const font = locale === "fa" ? vazir.className : inter.className;
+
   return (
-    <html lang="en">
-      <body>
+    <html lang={locale} dir={locale === "fa" ? "rtl" : "ltr"}>
+      <body className={font}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
