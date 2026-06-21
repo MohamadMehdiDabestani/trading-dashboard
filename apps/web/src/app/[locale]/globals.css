@@ -80,6 +80,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --success: oklch(0.55 0.15 145);
+  --warning: oklch(0.65 0.15 70);
+  --info: oklch(0.55 0.15 230);
 }
 
 .dark {
@@ -114,6 +117,9 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --success: oklch(0.65 0.15 145);
+  --warning: oklch(0.75 0.15 70);
+  --info: oklch(0.65 0.15 230);
 }
 
 @layer base {
@@ -128,5 +134,54 @@
   }
   html[dir="rtl"] {
     text-align: right;
+  }
+}
+
+@layer components {
+  .cn-toast {
+    @apply border rounded-lg shadow-md;
+    background: var(--popover);
+    color: var(--popover-foreground);
+    border-color: var(--border);
+  }
+
+  .cn-toast[data-type="success"] {
+    background: color-mix(in oklab, var(--success) 18%, var(--popover));
+    color: var(--foreground);
+    border-color: var(--success);
+  }
+
+  .cn-toast[data-type="error"] {
+    background: color-mix(in oklab, var(--destructive) 18%, var(--popover));
+    color: var(--foreground);
+    border-color: var(--destructive);
+  }
+
+  .cn-toast[data-type="warning"] {
+    background: color-mix(in oklab, var(--warning) 20%, var(--popover));
+    color: var(--foreground);
+    border-color: var(--warning);
+  }
+
+  .cn-toast[data-type="info"] {
+    background: color-mix(in oklab, var(--info) 18%, var(--popover));
+    color: var(--foreground);
+    border-color: var(--info);
+  }
+
+  /* title/description */
+  .cn-toast-title {
+    @apply font-medium;
+  }
+
+  .cn-toast-description {
+    @apply text-sm opacity-90;
+  }
+
+  /* buttons */
+  .cn-toast-action,
+  .cn-toast-cancel,
+  .cn-toast-close {
+    @apply border-border bg-background/70 text-foreground;
   }
 }

@@ -5,7 +5,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
 import localFont from "next/font/local";
-
+import { QueryProvider } from "@/provider/reactQueryProvider";
+import { Toaster } from "@/components/ui/sonner";
 const vazir = localFont({
   display: "swap",
   src: [
@@ -41,12 +42,14 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
   const font = locale === "fa" ? vazir.className : inter.className;
-
   return (
     <html lang={locale} dir={getDirection(locale)}>
       <body className={font}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>
