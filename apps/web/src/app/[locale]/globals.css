@@ -126,4 +126,7 @@
   html {
     @apply font-sans;
   }
+  html[dir="rtl"] {
+    text-align: right;
+  }
 }
