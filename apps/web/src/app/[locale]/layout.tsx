@@ -8,6 +8,7 @@ import localFont from "next/font/local";
 import { QueryProvider } from "@/provider/reactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalErrorHandler } from "@/provider/globalErrorHandlerProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 const vazir = localFont({
   display: "swap",
   src: [
@@ -48,7 +49,7 @@ export default async function RootLayout({
       <body className={font}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
-            {children}
+            <TooltipProvider>{children}</TooltipProvider>
             <Toaster className={font} />
             <GlobalErrorHandler />
           </QueryProvider>
