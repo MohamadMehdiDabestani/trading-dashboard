@@ -11,6 +11,6 @@ export const otpSchema = z.object({
   code: z
     .string()
     .trim()
-    .length(6, "VALIDATION_MIN_LENGTH")
-    .regex(/^\d+$/, "VALIDATION_PATTERN"),
+    .length(6, { error: "VALIDATION_MIN_LENGTH" })
+    .regex(/^\d+$/, { error: "VALIDATION_PATTERN" }),
 });
