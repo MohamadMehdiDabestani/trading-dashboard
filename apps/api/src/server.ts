@@ -20,6 +20,8 @@ import {
   dbDecimalToScaledBigInt,
 } from "./utils/scaleBigInt";
 import { tradePlugin } from "./modules/trade/plugin";
+import cors from "@fastify/cors";
+
 const app = Fastify({
   logger: {
     level: "info",
@@ -34,7 +36,10 @@ const app = Fastify({
     },
   },
 });
-
+await app.register(cors, {
+  origin: "http://localhost:3000",
+  credentials: true,
+});
 await app.register(errorHandlerPlugin);
 await app.register(dbPlugin);
 
@@ -97,7 +102,7 @@ app.post("/admin/engine/log-active-orders", async (req, reply) => {
 });
 const start = async () => {
   try {
-    await app.listen({ port: 4000, host: "0.0.0.0" });
+    await app.listen({ port: 5000, host: "0.0.0.0" });
   } catch (err) {
     app.log.error(err);
     process.exit(1);
