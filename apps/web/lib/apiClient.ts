@@ -1,4 +1,3 @@
-// lib/apiClient.ts
 import { APIResult, RefreshReply } from "@repo/types";
 import { ApiError } from "./apiError";
 import { getAccessToken, setAccessToken } from "./accessToken";

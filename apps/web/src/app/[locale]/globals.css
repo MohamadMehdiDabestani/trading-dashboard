@@ -184,4 +184,9 @@
   .cn-toast-close {
     @apply border-border bg-background/70 text-foreground;
   }
+
+  [data-sonner-toaster],
+  [data-sonner-toast] {
+    font-family: inherit !important;
+  }
 }

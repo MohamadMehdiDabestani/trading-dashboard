@@ -1,4 +1,3 @@
-// lib/apiError.ts
 import { AllErrorCode, ValidationErrorCode } from "@repo/types";
 
 export type FieldErrors = Record<string, { key: ValidationErrorCode; params?: Record<string, string | number> }>;
