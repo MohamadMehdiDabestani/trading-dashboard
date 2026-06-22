@@ -1,5 +1,5 @@
 "use client";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import { useEffect, useRef, useState } from "react";
 
 const OTP_LENGTH = 6;

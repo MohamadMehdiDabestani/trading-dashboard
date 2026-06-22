@@ -1,3 +1,35 @@
 {
-  "d" : {"a" : "fa"}
+  "common": {
+    "fields": {
+      "phone": "شماره موبایل",
+      "code": "کد تایید",
+      "email": "ایمیل"
+    },
+    "validation": {
+      "VALIDATION_REQUIRED": "{field} الزامی است",
+      "VALIDATION_INVALID": "{field} نامعتبر است",
+      "VALIDATION_MIN_LENGTH": "تعداد کاراکتر های {field} ناکافی است",
+      "VALIDATION_MAX_LENGTH": "تعداد کاراکتر های {field} زیاد است",
+      "VALIDATION_PATTERN": "فرمت {field} صحیح نیست"
+    }
+  },
+  "auth": {
+    "otp": {
+      "title": "ورود با رمز یکبار مصرف",
+      "send_button": "ارسال کد",
+      "verify_button": "ورود",
+      "resend_button": "ارسال مجدد",
+      "success_sent": "کد به شماره شما ارسال شد",
+      "success_resent": "کد مجدداً ارسال شد"
+    }
+  },
+  "errors": {
+    "VALIDATION_ERROR": "خطای اعتبارسنجی",
+    "SESSION_EXPIRED": "نشست منقضی شده است",
+    "NETWORK_ERROR": "خطای شبکه",
+    "OTP_RATE_LIMIT": "کمی صبر کنید مجدد تلاش کنید",
+    "OTP_INVALID": "کد نامعتبر است",
+    "OTP_MAX_ATTEMPTS" : "تلاش های غیر مجاز",
+    "OTP_WRONG" : "کد نامعتبر است"
+  }
 }
