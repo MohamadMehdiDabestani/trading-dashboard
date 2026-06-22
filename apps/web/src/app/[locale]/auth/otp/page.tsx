@@ -60,7 +60,7 @@ export default function AuthPage() {
         await sendOtpMutation.mutateAsync(value);
         setShowOtp(true);
         setTimer(60);
-        toast.success("کد به شماره ی شما ارسال شد");
+        toast.success(tAuth("successSent"));
       } catch (error) {
         applyApiFieldErrors(error, phoneForm);
       }
@@ -89,6 +89,9 @@ export default function AuthPage() {
         applyApiFieldErrors(error, otpForm);
       }
     },
+    onSubmitInvalid: () => {
+      setOtpSubmitted(true);
+    },
   });
 
   useEffect(() => {
@@ -104,7 +107,7 @@ export default function AuthPage() {
           <Card>
             <CardHeader className="relative">
               <CardTitle>
-                {showOtp ? "تایید کد" : "ورود از طریق رمز یکبار مصرف"}
+                {showOtp ? tAuth("verifyTitle") : tAuth("title")}
               </CardTitle>
               {showOtp && (
                 <Button
@@ -125,8 +128,8 @@ export default function AuthPage() {
               )}
               <CardDescription>
                 {showOtp
-                  ? "کد ۶ رقمی ارسال شده را وارد کنید"
-                  : "شماره موبایل خود را وارد کنید"}
+                  ? tAuth("verifyDescritpion")
+                  : tAuth("descritpion")}
               </CardDescription>
             </CardHeader>
 
@@ -149,7 +152,7 @@ export default function AuthPage() {
                         return (
                           <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>
-                              شماره موبایل
+                              {tCommon("fields.phone")}
                             </FieldLabel>
 
                             <Input
@@ -208,7 +211,13 @@ export default function AuthPage() {
                                 }}
                               />
                               {isInvalid && (
-                                <FieldError errors={field.state.meta.errors} />
+                                <FieldError
+                                  errors={getFormErrorMessage(
+                                    field.state.meta.errors,
+                                    tCommon,
+                                    "otp",
+                                  )}
+                                />
                               )}
                             </Field>
                           </div>
@@ -228,11 +237,11 @@ export default function AuthPage() {
                     onClick={() => phoneForm.handleSubmit()}
                     disabled={sendOtpMutation.isPending}
                   >
-                    ارسال رمز
+                    {tAuth("sendButton")}
                   </Button>
                   <Link href="/auth" className="block w-full">
                     <Button variant="outline" className="w-full">
-                      ورود کلاسیک
+                      {tAuth("classicLogin")}
                     </Button>
                   </Link>
                 </Fragment>
@@ -243,7 +252,7 @@ export default function AuthPage() {
                     onClick={() => otpForm.handleSubmit()}
                     disabled={verifyOtpMutation.isPending}
                   >
-                    تایید
+                    {tAuth("verifyButton")}
                   </Button>
                   <Button
                     variant="outline"
@@ -251,7 +260,7 @@ export default function AuthPage() {
                     disabled={timer > 0 || sendOtpMutation.isPending}
                     onClick={() => phoneForm.handleSubmit()}
                   >
-                    {timer > 0 ? `ارسال مجدد (${timer})` : "ارسال مجدد"}
+                    {timer > 0 ? `${tAuth("resendButton")} (${timer})` : tAuth("resendButton")}
                   </Button>
                 </Fragment>
               )}

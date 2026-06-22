@@ -3,7 +3,8 @@
     "fields": {
       "phone": "شماره موبایل",
       "code": "کد تایید",
-      "email": "ایمیل"
+      "email": "ایمیل",
+      "otp": "رمز یکبار مصرف"
     },
     "validation": {
       "VALIDATION_REQUIRED": "{field} الزامی است",
@@ -11,16 +12,25 @@
       "VALIDATION_MIN_LENGTH": "تعداد کاراکتر های {field} ناکافی است",
       "VALIDATION_MAX_LENGTH": "تعداد کاراکتر های {field} زیاد است",
       "VALIDATION_PATTERN": "فرمت {field} صحیح نیست"
+    },
+    "buttons": {
+      "submit": "ارسال",
+      "confirm": "تایید",
+      "cancel": "لغو"
     }
   },
   "auth": {
     "otp": {
       "title": "ورود با رمز یکبار مصرف",
-      "send_button": "ارسال کد",
-      "verify_button": "ورود",
-      "resend_button": "ارسال مجدد",
-      "success_sent": "کد به شماره شما ارسال شد",
-      "success_resent": "کد مجدداً ارسال شد"
+      "descritpion": "شماره موبایل خود را وارد کنید",
+      "verifyTitle": "تایید کد",
+      "verifyDescritpion": "کد ۶ رقمی ارسال شده را وارد کنید",
+      "sendButton": "ارسال کد",
+      "verifyButton": "ورود",
+      "resendButton": "ارسال مجدد",
+      "successSent": "کد به شماره شما ارسال شد",
+      "successResent": "کد مجدداً ارسال شد",
+      "classicLogin": "ورود کلاسیک"
     }
   },
   "errors": {
@@ -29,7 +39,7 @@
     "NETWORK_ERROR": "خطای شبکه",
     "OTP_RATE_LIMIT": "کمی صبر کنید مجدد تلاش کنید",
     "OTP_INVALID": "کد نامعتبر است",
-    "OTP_MAX_ATTEMPTS" : "تلاش های غیر مجاز",
-    "OTP_WRONG" : "کد نامعتبر است"
+    "OTP_MAX_ATTEMPTS": "تلاش های غیر مجاز",
+    "OTP_WRONG": "کد نامعتبر است"
   }
 }
