@@ -43,6 +43,20 @@
       "when": 1781240959044,
       "tag": "0005_nosy_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782196636878,
+      "tag": "0006_many_clea",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782212346118,
+      "tag": "0007_premium_spacker_dave",
+      "breakpoints": true
     }
   ]
 }
