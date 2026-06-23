@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 config();
-import Fastify from "fastify";
+import Fastify, { fastify } from "fastify";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import dbPlugin from "./plugins/db";
@@ -16,9 +16,7 @@ import ws from "./modules/trade/plugin/ws";
 import { orders } from "@repo/db";
 import { and, asc, inArray } from "drizzle-orm";
 import { EngineOrder } from "@repo/types";
-import {
-  dbDecimalToScaledBigInt,
-} from "./utils/scaleBigInt";
+import { dbDecimalToScaledBigInt } from "./utils/scaleBigInt";
 import { tradePlugin } from "./modules/trade/plugin";
 import cors from "@fastify/cors";
 
@@ -43,10 +41,16 @@ await app.register(cors, {
 await app.register(errorHandlerPlugin);
 await app.register(dbPlugin);
 
-await app.register(cookie);
+await app.register(cookie, {
+  secret: process.env.COOKIE_SECRET!,
+});
 
 await app.register(jwt, {
   secret: process.env.JWT_SECRET!,
+  cookie: {
+    cookieName: "access_token",
+    signed: true,
+  },
 });
 await app.register(smsPlugin);
 
@@ -88,7 +92,7 @@ app.addHook("onReady", async () => {
   app.log.info(`Bootstrapped ${activeOrders.length} active orders.`);
 });
 
-app.get("/health", async () => {
+app.get("/health", { preHandler: app.authenticate }, async () => {
   return { status: "ok" };
 });
 await app.register(authPlugin);

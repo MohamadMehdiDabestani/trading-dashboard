@@ -5,14 +5,10 @@ export interface JwtPayload {
   exp?: number;
 }
 
-export interface RefreshReply {
-  accessToken: string;
-}
 
 export type OtpSentReply = undefined;
 
 export interface OtpVerifyReply {
-  accessToken: string;
   isNew: boolean;
 }
 
