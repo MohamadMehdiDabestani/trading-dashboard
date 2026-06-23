@@ -7,3 +7,6 @@ export * from "./schema/ledger";
 export * from "./schema/orders";
 export * from "./schema/trades";
 export * from "./schema/walletLock";
+export * from './schema/permission'
+export * from './schema/rolePermission'
+export * from './schema/userPermission'
