@@ -79,11 +79,10 @@ export default function AuthPage() {
     onSubmit: async ({ value }) => {
       setOtpSubmitted(true);
       try {
-        const res = await verifyOtpMutation.mutateAsync({
+        await verifyOtpMutation.mutateAsync({
           phone: phoneForm.getFieldValue("phone"),
           code: value.code,
         });
-        if (res.success) setAccessToken(res.data.accessToken);
         router.push("/dashboard");
       } catch (error) {
         applyApiFieldErrors(error, otpForm);
@@ -240,7 +239,7 @@ export default function AuthPage() {
                     {tAuth("sendButton")}
                   </Button>
                   <Link href="/auth" className="block w-full">
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" color="secondary">
                       {tAuth("classicLogin")}
                     </Button>
                   </Link>

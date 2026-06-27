@@ -15,8 +15,15 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useLocale } from "next-intl";
+import { Footer } from "@/features/components/footer";
 
-export default function Layout({ children , breadcrumb}: { children: ReactNode , breadcrumb: ReactNode; }) {
+export default function Layout({
+  children,
+  breadcrumb,
+}: {
+  children: ReactNode;
+  breadcrumb: ReactNode;
+}) {
   const locale = useLocale();
   return (
     <SidebarProvider>
@@ -32,10 +39,8 @@ export default function Layout({ children , breadcrumb}: { children: ReactNode ,
             {breadcrumb}
           </div>
         </header>
-        <div className="p-4 pt-0">
-
-        {children}
-        </div>
+        <div className="p-4 pt-0">{children}</div>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   );

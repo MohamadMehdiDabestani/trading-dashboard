@@ -50,7 +50,7 @@ export default function AuthPage() {
                   <CardFooter className="flex-col gap-y-3">
                     <Button className="w-full">ورود</Button>
                     <Link href="/auth/otp" className="block w-full">
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full" color="secondary">
                         ورود آسان
                       </Button>
                     </Link>
@@ -89,7 +89,7 @@ export default function AuthPage() {
                   <CardFooter className="flex-col gap-y-3">
                     <Button className="w-full">ثبت نام</Button>
                     <Link href="/auth/otp" className="block w-full">
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full"  color="secondary">
                         ثبت نام آسان
                       </Button>
                     </Link>
