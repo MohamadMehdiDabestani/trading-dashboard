@@ -9,13 +9,14 @@ import { QueryProvider } from "@/provider/reactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalErrorHandler } from "@/provider/globalErrorHandlerProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/provider/themeProvider";
 const vazir = localFont({
   display: "swap",
   src: [
-    { path: "../fonts/Vazir-Light.woff2", weight: "300" },
-    { path: "../fonts/Vazir.woff2", weight: "400" },
-    { path: "../fonts/Vazir-Medium.woff2", weight: "500" },
-    { path: "../fonts/Vazir-Bold.woff2", weight: "700" },
+    { path: "../fonts/Vazir-Light-FD-WOL.woff2", weight: "300" },
+    { path: "../fonts/Vazir-FD-WOL.woff2", weight: "400" },
+    { path: "../fonts/Vazir-Medium-FD-WOL.woff2", weight: "500" },
+    { path: "../fonts/Vazir-Bold-FD-WOL.woff2", weight: "700" },
   ],
 });
 
@@ -45,15 +46,21 @@ export default async function RootLayout({
   const messages = await getMessages();
   const font = locale === "fa" ? vazir.className : inter.className;
   return (
-    <html lang={locale} dir={getDirection(locale)}>
+    <html lang={locale} dir={getDirection(locale)} suppressHydrationWarning>
       <body className={font}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <QueryProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-            <Toaster className={font} />
-            <GlobalErrorHandler />
-          </QueryProvider>
-        </NextIntlClientProvider>
+        <ThemeProvider
+          attribute="class"
+          enableSystem={true}
+          defaultTheme="dark"
+        >
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <QueryProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+              <Toaster className={font} />
+              <GlobalErrorHandler />
+            </QueryProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

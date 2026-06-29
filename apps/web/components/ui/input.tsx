@@ -15,6 +15,8 @@ const inputVariants = cva(
           "border-x-0 border-t-0 border-b border-input rounded-none px-0 focus-visible:border-ring focus-visible:ring-0 shadow-none",
         error:
           "border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive",
+        ghost:
+          "border-transparent bg-transparent shadow-none focus-visible:border-transparent focus-visible:ring-0 hover:bg-muted/40",
       },
       inputSize: {
         sm: "h-8 ps-2 pe-2 py-1 text-xs file:h-6 file:text-xs",

@@ -7,12 +7,13 @@ export default {
     "./hooks/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
   ],
+  darkMode: ["class"],
   theme: {
     extend: {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-
+        dashboard: "var(--bg-dashboard)",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

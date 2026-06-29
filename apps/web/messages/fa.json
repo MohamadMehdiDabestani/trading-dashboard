@@ -1,4 +1,8 @@
 {
+  "breadcrumbs": {
+    "dashboard": "داشبورد",
+    "wallet": "کیف پول"
+  },
   "common": {
     "fields": {
       "phone": "شماره موبایل",
