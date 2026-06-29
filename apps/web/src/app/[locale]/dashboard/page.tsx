@@ -262,7 +262,7 @@ export default function Page() {
                 className="w-full mt-2 border-dashed  border-blue-200"
                 color="primary"
               >
-                View All Markets
+                همه ی نماد ها
               </Button>
             </CardContent>
           </Card>
