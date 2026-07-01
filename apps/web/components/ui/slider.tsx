@@ -1,9 +1,31 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Slider as SliderPrimitive } from "radix-ui"
+import * as React from "react";
+import { Slider as SliderPrimitive } from "radix-ui";
+import { cn } from "@/lib/cn";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"; // مسیر کامپوننت Tooltip خودتان
 
-import { cn } from "@/lib/cn"
+type SliderVariant = "primary" | "success" | "error" | "info";
+
+const variantStyles: Record<SliderVariant, { range: string; thumb: string }> = {
+  primary: { range: "bg-primary", thumb: "border-primary ring-ring/50" },
+  success: {
+    range: "bg-[var(--success)]",
+    thumb: "border-[var(--success)] ring-[var(--success)]/50",
+  },
+  error: {
+    range: "bg-destructive",
+    thumb: "border-destructive ring-destructive/50",
+  },
+  info: {
+    range: "bg-[var(--info)]",
+    thumb: "border-[var(--info)] ring-[var(--info)]/50",
+  },
+};
 
 function Slider({
   className,
@@ -11,28 +33,43 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  variant = "primary",
+  showTooltip = true,
+  onValueChange,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max]
-  )
+}: React.ComponentProps<typeof SliderPrimitive.Root> & {
+  variant?: SliderVariant;
+  showTooltip?: boolean;
+}) {
+  const [draggingIndex, setDraggingIndex] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (value !== undefined) {
+      setLiveValues(Array.isArray(value) ? value : [value]);
+    }
+  }, [value]);
+
+  const [liveValues, setLiveValues] = React.useState<number[]>(
+    value ?? defaultValue ?? [min],
+  );
+
+  const handleValueChange = (vals: number[]) => {
+    setLiveValues(vals);
+    onValueChange?.(vals);
+  };
+
+  const { range, thumb } = variantStyles[variant];
 
   return (
     <SliderPrimitive.Root
       data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
+      value={liveValues}
       min={min}
       max={max}
+      onValueChange={handleValueChange}
       className={cn(
         "relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col",
-        className
+        className,
       )}
       {...props}
     >
@@ -42,18 +79,43 @@ function Slider({
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
-          className="absolute bg-primary select-none data-horizontal:h-full data-vertical:w-full"
+          className={cn(
+            "absolute select-none data-horizontal:h-full data-vertical:w-full",
+            range,
+          )}
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
-        <SliderPrimitive.Thumb
-          data-slot="slider-thumb"
-          key={index}
-          className="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] select-none hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
-        />
-      ))}
+
+      {liveValues.map((val, index) => {
+        return showTooltip ? (
+          <Tooltip key={index} open={draggingIndex === index}>
+            <TooltipTrigger asChild>
+              <SliderPrimitive.Thumb
+                onPointerDown={() => setDraggingIndex(index)}
+                onPointerUp={() => setDraggingIndex(null)}
+                onPointerCancel={() => setDraggingIndex(null)}
+                className={cn(
+                  "block size-4 shrink-0 rounded-full border bg-white shadow-sm transition-[color,box-shadow] select-none hover:ring-4 focus-visible:ring-4 focus-visible:outline-none",
+                  thumb,
+                )}
+              />
+            </TooltipTrigger>
+
+            <TooltipContent side="top" sideOffset={8}>
+              {val}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <SliderPrimitive.Thumb
+            className={cn(
+              "block size-4 shrink-0 rounded-full border bg-white shadow-sm transition-[color,box-shadow] select-none hover:ring-4 focus-visible:ring-4 focus-visible:outline-none",
+              thumb,
+            )}
+          />
+        );
+      })}
     </SliderPrimitive.Root>
-  )
+  );
 }
 
-export { Slider }
+export { Slider };
