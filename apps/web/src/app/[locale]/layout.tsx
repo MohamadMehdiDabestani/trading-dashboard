@@ -3,7 +3,7 @@ import "./globals.css";
 
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-
+import { DirectionProvider } from "@/components/ui/direction";
 import localFont from "next/font/local";
 import { QueryProvider } from "@/provider/reactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
@@ -55,9 +55,11 @@ export default async function RootLayout({
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
             <QueryProvider>
-              <TooltipProvider>{children}</TooltipProvider>
-              <Toaster className={font} />
-              <GlobalErrorHandler />
+              <DirectionProvider dir={getDirection(locale)}>
+                <TooltipProvider>{children}</TooltipProvider>
+                <Toaster className={font} />
+                <GlobalErrorHandler />
+              </DirectionProvider>
             </QueryProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

@@ -58,7 +58,7 @@ const data = {
     },
     {
       title: "معامله",
-      url: "#",
+      url: "/dashboard/trade/ada",
       icon: <BotIcon />,
       items: [
         {
@@ -77,7 +77,7 @@ const data = {
     },
     {
       title: "کیف پول",
-      url: "#",
+      url: "/dashboard/wallet",
       icon: <BookOpenIcon />,
       items: [
         {
@@ -100,7 +100,7 @@ const data = {
     },
     {
       title: "حساب",
-      url: "#",
+      url: "/dashboard/assets",
       icon: <Settings2Icon />,
       items: [
         {
