@@ -4,7 +4,6 @@ import {
   APIResult,
   OtpSentReply,
   OtpVerifyReply,
-  RefreshReply,
   LogoutReply,
   EditProfileDto,
   OtpSendDto,

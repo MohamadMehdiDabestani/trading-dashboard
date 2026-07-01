@@ -1,4 +1,4 @@
-import { APIResult, RefreshReply } from "@repo/types";
+import { APIResult } from "@repo/types";
 import { ApiError } from "./apiError";
 import { getAccessToken, setAccessToken } from "./accessToken";
 
@@ -13,7 +13,7 @@ async function refreshToken() {
     })
       .then(async (res) => {
         if (!res.ok) throw new Error("Refresh failed");
-        const data = await res.json().then(d => d.data as RefreshReply)
+        const data = await res.json().then(d => d.data)
         const accessToken = data.accessToken
         setAccessToken(accessToken)
       })
