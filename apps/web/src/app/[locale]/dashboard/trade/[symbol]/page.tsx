@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { columns, Position } from "@/features/order/utils/columns";
 import { DataTable } from "@/components/data-table";
+import { Chart } from "@/components/chart";
 const data: Position[] = [
   {
     id: "1",
@@ -99,7 +100,9 @@ export default function TradingForm() {
                           <GripVertical className="h-4 w-4" />
                         </Button>
                       </CardHeader>
-                      <CardContent className="h-full">چارت</CardContent>
+                      <CardContent className="flex-1 min-h-[320px] md:min-h-0 relative p-0 ">
+                        <Chart />
+                      </CardContent>
                     </Card>
                   );
 
