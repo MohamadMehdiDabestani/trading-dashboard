@@ -14,6 +14,8 @@ import { cn } from "@/lib/cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { columns, Position } from "@/features/order/utils/columns";
 import { DataTable } from "@/components/data-table";
+import TradingViewWidget from "@/components/tradingViewWidget";
+import { useTheme } from "next-themes";
 const data: Position[] = [
   {
     id: "1",
@@ -38,7 +40,7 @@ const data: Position[] = [
 ];
 export default function TradingForm() {
   const [order, setOrder] = useState(["form", "chart", "orderbook"]);
-
+  const theme = useTheme()
   return (
     <div className="flex flex-col gap-4">
       <DraggableLayout
@@ -99,7 +101,9 @@ export default function TradingForm() {
                           <GripVertical className="h-4 w-4" />
                         </Button>
                       </CardHeader>
-                      <CardContent className="h-full">چارت</CardContent>
+                      <CardContent className="h-full">
+                        <TradingViewWidget pair="BTCUSDT" theme={theme.theme} />
+                      </CardContent>
                     </Card>
                   );
 
