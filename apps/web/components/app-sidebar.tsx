@@ -100,7 +100,7 @@ const data = {
     },
     {
       title: "حساب",
-      url: "/dashboard/assets",
+      url: "/dashboard/account",
       icon: <Settings2Icon />,
       items: [
         {
