@@ -15,7 +15,7 @@ export type Position = {
   status: "up" | "down";
 };
 
-// ۲. تعریف ستون‌ها
+
 export const columns: ColumnDef<Position>[] = [
   {
     accessorKey: "pair",
