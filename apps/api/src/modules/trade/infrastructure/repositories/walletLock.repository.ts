@@ -14,7 +14,7 @@ export class WalletLockTxRepository {
   }) {
     await this.tx.insert(walletLocks).values({
       userId: input.userId,
-      asset: input.asset,
+      asset: input.asset.toUpperCase(),
       amount: input.amountDecimal,
       remainingAmount: input.amountDecimal,
       reason: "open_order",

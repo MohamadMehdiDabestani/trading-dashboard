@@ -64,8 +64,7 @@ export async function tradeRoutes(fastify: FastifyInstance) {
         fastify.log.error(error);
 
         if (error instanceof AppError) {
-          const mapped = mapAppErrorToHttp(error);
-          return reply.code(mapped.statusCode).send(fail(mapped.code));
+          return reply.code(error.statusCode).send(fail(error.code));
         }
 
         return reply.code(500).send(fail("INTERNAL_SERVER_ERROR"));
@@ -96,8 +95,7 @@ export async function tradeRoutes(fastify: FastifyInstance) {
         request.log.error(error);
 
         if (error instanceof AppError) {
-          const mapped = mapAppErrorToHttp(error);
-          return reply.code(mapped.statusCode).send(fail(mapped.code));
+          return reply.code(error.statusCode).send(fail(error.code));
         }
 
         return reply.code(500).send(fail("INTERNAL_SERVER_ERROR"));
@@ -140,8 +138,7 @@ export async function tradeRoutes(fastify: FastifyInstance) {
         req.log.error(error);
 
         if (error instanceof AppError) {
-          const mapped = mapAppErrorToHttp(error);
-          return reply.code(mapped.statusCode).send(fail(mapped.code));
+          return reply.code(error.statusCode).send(fail(error.code));
         }
 
         return reply.status(500).send(fail("INTERNAL_SERVER_ERROR"));

@@ -90,6 +90,10 @@ app.addHook("onReady", async () => {
   app.engine.logActiveOrders();
 
   app.log.info(`Bootstrapped ${activeOrders.length} active orders.`);
+  if (app.marketMaker) {
+    app.marketMaker.start();
+    app.log.info("Market maker started.");
+  }
 });
 
 app.get("/health", { preHandler: app.authenticate }, async () => {
@@ -99,7 +103,7 @@ await app.register(authPlugin);
 
 await app.register(walletPlugin);
 
-app.register(tradePlugin);
+app.register(tradePlugin);  
 app.post("/admin/engine/log-active-orders", async (req, reply) => {
   app.engine.logActiveOrders();
   return { ok: true };
