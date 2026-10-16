@@ -1,92 +1,143 @@
-// ws plugin
 import fp from "fastify-plugin";
 import websocket from "@fastify/websocket";
 import { WebSocket } from "ws";
 
+// فقط این نمادها قابل subscribe هستند (از env یا کانفیگ هم می‌توانی بخوانی)
+const ALLOWED_SYMBOLS = new Set(["BTCUSDT", "ETHUSDT" , "ADAUSDT" , "BNBUSDT" , "XRPUSDT" , "SOLUSDT"]);
+const HEARTBEAT_MS = 30_000;
+const MAX_BUFFERED_BYTES = 1_000_000;
+
+interface Room {
+  clients: Set<WebSocket>;
+  unsubscribe: () => void;
+}
+
+const stringify = (v: unknown) =>
+  JSON.stringify(v, (_k, val) =>
+    typeof val === "bigint" ? val.toString() : val,
+  );
+
 export default fp(async (fastify) => {
   await fastify.register(websocket);
 
-  // ذخیره اتاق‌ها و تابع Unsubscribe مربوط به هر اتاق برای جلوگیری از نشت حافظه
-  const rooms = new Map<string, Set<WebSocket>>();
-  const busSubscriptions = new Map<string, () => void>(); // نگهدارنده تابع لغو اشتراک ایونت‌باس
-  fastify.get("/ws", { websocket: true }, (socket, req) => {
-    // const socket = socket; // در این بخش socket دیگر هرگز undefined نخواهد بود
+  const rooms = new Map<string, Room>(); // key = symbol
+  const socketRooms = new WeakMap<WebSocket, Set<string>>(); // هر سوکت در کدام roomها است
+  const alive = new WeakMap<WebSocket, boolean>();
 
-    console.log("🔌 [WS_GATEWAY] New client connected");
+  function joinRoom(socket: WebSocket, symbol: string) {
+    let room = rooms.get(symbol);
 
-    socket.on("message", (message: Buffer) => {
-      try {
-        const data = JSON.parse(message.toString());
+    if (!room) {
+      const clients = new Set<WebSocket>();
 
-        if (data.type === "subscribe") {
-          const symbol = data.symbol.toUpperCase();
-          const room = `market:${symbol}`;
+      const handler = (event: unknown) => {
+        if (clients.size === 0) return;
 
-          console.log("🔹 [WS_GATEWAY] Client subscribing to room:", room);
-
-          // ایجاد اتاق در صورت عدم وجود
-          if (!rooms.has(room)) {
-            rooms.set(room, new Set());
-
-            // اشتراک در ایونت‌باس (فقط یک‌بار برای هر نماد)
-            // فرض بر اینکه متد subscribe یک تابع برای unsubscribe برمی‌گرداند
-            const unsubscribe = fastify.eventBus.subscribe(symbol, (event) => {
-              console.log(
-                "📡 [WS_GATEWAY] Event received from Bus:",
-                event,
-                symbol,
-              );
-
-              const clients = rooms.get(room);
-              if (!clients || clients.size === 0) return;
-              // console.log(clients)
-              const payload = JSON.stringify(event, (_key, value) =>
-                typeof value === "bigint" ? value.toString() : value,
-              );
-              console.log(payload);
-              for (const client of clients) {
-                if (client.readyState === WebSocket.OPEN) {
-                  client.send(payload);
-                }
-              }
-            });
-
-            // ذخیره تابع لغو اشتراک
-            // busSubscriptions.set(room, unsubscribe);
+        const payload = stringify(event);
+        for (const client of clients) {
+          if (
+            client.readyState === WebSocket.OPEN &&
+            client.bufferedAmount < MAX_BUFFERED_BYTES
+          ) {
+            client.send(payload);
           }
+        }
+      };
 
-          // اضافه کردن سوکت کلاینت به اتاق
-          rooms.get(room)!.add(socket);
+      fastify.eventBus.subscribe(symbol, handler);
+
+      const unsubscribe = () => {
+        // اسم واقعی متد eventBus را بگذار:
+        // off / unsubscribe / removeListener
+        fastify.eventBus.unsubscribe(symbol, handler);
+      };
+
+      room = { clients, unsubscribe };
+      rooms.set(symbol, room);
+    }
+
+    room.clients.add(socket);
+    socketRooms.get(socket)!.add(symbol);
+
+    socket.send(
+      stringify({
+        type: "snapshot",
+        ...fastify.engine.getSnapshot(symbol, 20),
+      }),
+    );
+  }
+
+  function leaveRoom(socket: WebSocket, symbol: string) {
+    const room = rooms.get(symbol);
+    if (!room) return;
+
+    room.clients.delete(socket);
+    socketRooms.get(socket)?.delete(symbol);
+
+    if (room.clients.size === 0) {
+      room.unsubscribe(); // لغو واقعی subscription روی bus
+      rooms.delete(symbol);
+      fastify.log.debug(`[WS] room ${symbol} empty, cleaned up`);
+    }
+  }
+
+  fastify.get("/ws", { websocket: true }, (socket) => {
+    socketRooms.set(socket, new Set());
+    alive.set(socket, true);
+
+    socket.on("pong", () => alive.set(socket, true));
+
+    socket.on("message", (raw: Buffer) => {
+      try {
+        const data = JSON.parse(raw.toString());
+        const symbol =
+          typeof data?.symbol === "string" ? data.symbol.toUpperCase() : "";
+
+        if (data?.type === "subscribe") {
+          if (!ALLOWED_SYMBOLS.has(symbol)) {
+            socket.send(
+              stringify({ type: "error", message: "UNKNOWN_SYMBOL" }),
+            );
+            return;
+          }
+          if (socketRooms.get(socket)!.has(symbol)) return; // قبلاً subscribe شده
+          joinRoom(socket, symbol);
+        } else if (data?.type === "unsubscribe") {
+          leaveRoom(socket, symbol);
         }
       } catch (err) {
-        console.error("❌ [WS_GATEWAY] Error parsing message:", err);
+        fastify.log.warn({ err }, "[WS] bad message");
       }
     });
 
-    // مدیریت دیسکانکت شدن کلاینت و پاکسازی حافظه
-    socket.on("close", () => {
-      console.log("🔌 [WS_GATEWAY] Client disconnected");
+    const cleanup = () => {
+      const symbols = socketRooms.get(socket);
+      if (!symbols) return;
+      for (const symbol of [...symbols]) leaveRoom(socket, symbol);
+    };
 
-      for (const [room, clients] of rooms.entries()) {
-        if (clients.has(socket)) {
-          clients.delete(socket);
-
-          // اگر اتاق کاملاً خالی شد، اشتراک ایونت‌باس را لغو کن تا سرور کرش نکند یا کند نشود
-          if (clients.size === 0) {
-            rooms.delete(room);
-            const unsubscribe = busSubscriptions.get(room);
-            if (unsubscribe) {
-              unsubscribe(); // لغو اشتراک واقعی از ایونت‌باس
-              busSubscriptions.delete(room);
-            }
-            console.log(
-              `🧹 [WS_GATEWAY] Room ${room} is empty. Cleaned up resources.`,
-            );
-          }
-        }
-      }
+    socket.on("close", cleanup);
+    socket.on("error", (err) => {
+      fastify.log.warn({ err }, "[WS] socket error");
+      cleanup();
     });
   });
 
-  fastify.decorate("rooms", rooms);
+  // heartbeat: کلاینت‌های مرده را پاک کن
+  const heartbeat = setInterval(() => {
+    for (const client of fastify.websocketServer.clients) {
+      if (alive.get(client) === false) {
+        client.terminate(); // close emit می‌شود و cleanup اجرا می‌شود
+        continue;
+      }
+      alive.set(client, false);
+      client.ping();
+    }
+  }, HEARTBEAT_MS);
+
+  fastify.addHook("onClose", async () => {
+    clearInterval(heartbeat);
+    for (const room of rooms.values()) room.unsubscribe();
+    rooms.clear();
+  });
 });

@@ -76,7 +76,7 @@ export class MatchingEngine {
       while (bi < simBids.length && ai < simAsks.length) {
         const bidLvl = simBids[bi];
         const askLvl = simAsks[ai];
-        if(!bidLvl || !askLvl) break;
+        if (!bidLvl || !askLvl) break;
         // چون bids نزولی و asks صعودی هستن
         if (bidLvl.price < askLvl.price) break;
 
@@ -86,7 +86,7 @@ export class MatchingEngine {
         while (bq.length > 0 && aq.length > 0) {
           const bid = bq[0];
           const ask = aq[0];
-        if (!bid || !ask) break;
+          if (!bid || !ask) break;
 
           const qty =
             bid.remaining < ask.remaining ? bid.remaining : ask.remaining;
@@ -126,7 +126,7 @@ export class MatchingEngine {
 
       book.addOrder(order);
     }
-    this.logBootstrapMatches()
+    this.logBootstrapMatches();
   }
 
   logActiveOrders(): void {
@@ -190,7 +190,11 @@ export class MatchingEngine {
   getSnapshot(symbol: string, depth = 20) {
     return this.getBook(symbol).getSnapshot(depth);
   }
-
+  getActiveOrdersByUser(symbol: string, userId: string): EngineOrder[] {
+    return this.getBook(symbol)
+      .getActiveOrders()
+      .filter((o) => o.userId === userId);
+  }
   // ─── Match logic ──────────────────────────────────────────────────────────
 
   private matchBuy(

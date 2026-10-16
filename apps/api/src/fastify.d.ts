@@ -7,6 +7,7 @@ import { JwtPayload } from "@repo/types";
 import { MatchingEngine } from "./engine";
 import { MarketEventBus } from "./utils/eventBus";
 import { TradeService } from "./modules/trade/application/trade.service";
+import type { MarketMaker } from "@/modules/trade/marketMaker/marketMaker";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -15,7 +16,8 @@ declare module "fastify" {
     walletService: WalletService;
     engine: MatchingEngine;
     eventBus: MarketEventBus;
-    tradeService : TradeService
+    tradeService : TradeService;
+    marketMaker: MarketMaker | null;
   }
 }
 declare module "@fastify/jwt" {
