@@ -1,3 +1,5 @@
+import { ValueOrderStatus } from "@repo/types";
+
 export const createOrderSchema = {
   description: "Submit a new spot order",
   body: {
@@ -23,10 +25,10 @@ export const createOrderSchema = {
 
 export const cancelOrderSchema = {
   description: "Cancel an open order",
-  
+
   body: {
     type: "object",
-    required: ["symbol" , "orderId"],
+    required: ["symbol", "orderId"],
     properties: {
       symbol: { type: "string" },
       orderId: { type: "string", format: "uuid" }, // چک کردن صحت UUID
@@ -37,10 +39,21 @@ export const cancelOrderSchema = {
 export const getRecentTradeSchema = {
   querystring: {
     type: "object",
-    required: ["symbol"],
     properties: {
-      symbol: { type: "string" },
-      limit: { type: "number", default: 50 },
+      symbol: { type: "string", minLength: 1, maxLength: 20 },
+      status: { type: "string", enum: ValueOrderStatus },
+      page: { type: "integer", minimum: 1, default: 1 },
+      pageSize: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+    },
+    additionalProperties: false,
+  },
+} as const;
+
+export const getOpenPositionsSchema = {
+  querystring: {
+    type: "object",
+    properties: {
+      search: { type: "string", minLength: 0, maxLength: 50 },
     },
   },
 } as const;

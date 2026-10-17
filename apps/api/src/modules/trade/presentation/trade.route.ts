@@ -13,6 +13,7 @@ import {
   CreateOrderDTO,
   CreateOrderReply,
   GetRecentTradesReply,
+  OrderStatus,
 } from "@repo/types";
 import { AppError } from "@/errors/appError";
 
@@ -107,31 +108,27 @@ export async function tradeRoutes(fastify: FastifyInstance) {
     Querystring: {
       page?: string;
       pageSize?: string;
-    };
-    Params: {
+      status?: OrderStatus;
       symbol: string;
     };
     Reply: APIResult<GetRecentTradesReply>;
   }>(
-    "/:symbol",
+    "/",
     {
       onRequest: [fastify.authenticate],
       schema: getRecentTradeSchema,
     },
     async (req, reply) => {
       try {
-        const page = Number(req.query.page ?? 1);
-        const pageSize = Number(req.query.pageSize ?? 20);
-
         const userId = req.user.sub;
-        const { symbol } = req.params;
-
-        const data = await tradeService.getRecentOrders(
-          symbol,
+        const { symbol, status, page = 1, pageSize = 20 } = req.query;
+        const data = await tradeService.getRecentOrders({
+          symbol : symbol.toUpperCase(),
           userId,
-          page,
-          pageSize,
-        );
+          status,
+          page: Number(page),
+          pageSize: Number(pageSize),
+        });
 
         return reply.status(200).send(ok(data));
       } catch (error: any) {

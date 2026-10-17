@@ -1,7 +1,8 @@
 export type Side = "buy" | "sell";
 export type OrderType = "limit" | "market";
-export type OrderStatus = "open" | "partial" | "filled" | "cancelled";
-
+export const ValueOrderStatus = ["open", "partial", "filled", "cancelled"] as const;
+// export type OrderStatus = "open" | "partial" | "filled" | "cancelled";
+export type OrderStatus = (typeof ValueOrderStatus)[number];
 export const SCALE = 10n ** 18n;
 
 export interface EngineOrder {

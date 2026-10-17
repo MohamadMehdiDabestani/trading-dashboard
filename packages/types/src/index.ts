@@ -7,6 +7,5 @@ export * from "./ws/events";
 export * from "./common";
 export * from "./i18n";
 export * from "./dtoTypes";
-export * from "./trading/order";
 export * from "./ws/events";
 export * from './dtoTypes'
