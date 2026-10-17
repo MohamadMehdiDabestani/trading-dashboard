@@ -1,156 +1,129 @@
 import {
   AbilityBuilder,
   createMongoAbility,
-  MongoAbility,
+  ForbiddenError,
+  subject,
+  type MongoAbility,
+  type RawRuleOf,
 } from "@casl/ability";
 
-import type { Permission } from "./permissions";
-import { Permission as P } from "./permissions";
 import { Role } from "./roles";
-import { Role as Roles } from "./roles";
+import type { SubjectMap, SubjectType, TaggedSubject } from "./subjects";
+
 export type AppAction =
-  | "manage"
   | "read"
   | "create"
   | "update"
+  | "cancel" 
   | "approve"
-  | "reject"
-  | "disable"
-  | "adjust_balance"
-  | "export"
-  | "revoke"
-  | "change_role"
-  | "manage_permissions";
+  | "revoke";
 
-export type AppSubject =
-  | "all"
-  | "Accounting"
-  | "Transaction"
-  | "Wallet"
-  | "Report"
-  | "Order"
-  | "Market"
-  | "User"
-  | "Session"
-  | "AuditLog";
-
-export type AppAbility = MongoAbility<[AppAction, AppSubject]>;
+export type AppAbility = MongoAbility<[AppAction, SubjectType | TaggedSubject]>;
+export type AppRawRule = RawRuleOf<AppAbility>;
 
 export type AbilityUser = {
   id: string;
   role: Role;
-  permissions: Permission[];
 };
 
-export function defineAbilityFor(user: AbilityUser): AppAbility {
+/** وضعیت‌هایی از سفارش که هنوز قابل لغو هستن */
+const CANCELLABLE_ORDER_STATUSES = ["open", "partial"] as const;
+
+/**
+ * user === null / undefined یعنی کاربر لاگین نکرده (guest).
+ * همه‌ی دسترسی‌ها «deny by default» هستن؛ هرچی اینجا can نشده ممنوعه.
+ */
+export function defineAbilityFor(user?: AbilityUser | null): AppAbility {
   const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
-  if (user.role === Roles.Admin) {
-    can("manage", "all");
-    return build();
-  }
+  const role = user?.role ?? Role.Guest;
 
-  const permissions = new Set(user.permissions);
+  switch (role) {
+    case Role.Guest: {
+      can("read", "Market");
 
-  if (permissions.has(P.AccountingRead)) {
-    can("read", "Accounting");
-  }
+      can("read", "QrLogin");
+      break;
+    }
 
-  if (permissions.has(P.AccountingManage)) {
-    can("manage", "Accounting");
-  }
+    case Role.User:
+    case Role.Admin: {
+      if (!user) break; // just for type-narrowing
+      const own = { userId: user.id };
 
-  if (permissions.has(P.TransactionRead)) {
-    can("read", "Transaction");
-  }
+      can("read", "Market");
 
-  if (permissions.has(P.TransactionUpdate)) {
-    can("update", "Transaction");
-  }
+      // Spot trading
+      can("create", "Order"); // userId همیشه از session سرور ست می‌شه
+      can("read", "Order", own);
+      can("cancel", "Order", {
+        ...own,
+        status: { $in: [...CANCELLABLE_ORDER_STATUSES] },
+      });
+      // عمداً update نداریم: سفارش اسپات ویرایش نمی‌شه، cancel + create
 
-  if (permissions.has(P.TransactionApprove)) {
-    can("approve", "Transaction");
-  }
+      // Manage trades
+      can("read", "Trade", own);
 
-  if (permissions.has(P.TransactionReject)) {
-    can("reject", "Transaction");
-  }
+      // Wallet: فقط مشاهده. موجودی فقط از مسیر معامله/واریز توسط سرور تغییر می‌کنه
+      can("read", "Wallet", own);
 
-  if (permissions.has(P.WalletRead)) {
-    can("read", "Wallet");
-  }
+      // Demo deposit
+      can("create", "Deposit");
+      can("read", "Deposit", own);
 
-  if (permissions.has(P.WalletUpdate)) {
-    can("update", "Wallet");
-  }
+      // Profile
+      can("read", "User", { id: user.id });
+      can("update", "User", { id: user.id });
 
-  if (permissions.has(P.WalletAdjustBalance)) {
-    can("adjust_balance", "Wallet");
-  }
+      // Sessions / devices
+      can("read", "Session", own);
+      can("revoke", "Session", own);
 
-  if (permissions.has(P.ReportRead)) {
-    can("read", "Report");
-  }
-
-  if (permissions.has(P.ReportExport)) {
-    can("export", "Report");
-  }
-
-  if (permissions.has(P.OrderRead)) {
-    can("read", "Order");
-  }
-
-  if (permissions.has(P.OrderUpdate)) {
-    can("update", "Order");
-  }
-
-  if (permissions.has(P.OrderApprove)) {
-    can("approve", "Order");
-  }
-
-  if (permissions.has(P.OrderReject)) {
-    can("reject", "Order");
-  }
-
-  if (permissions.has(P.MarketRead)) {
-    can("read", "Market");
-  }
-
-  if (permissions.has(P.MarketCreate)) {
-    can("create", "Market");
-  }
-
-  if (permissions.has(P.MarketUpdate)) {
-    can("update", "Market");
-  }
-
-  if (permissions.has(P.MarketDisable)) {
-    can("disable", "Market");
-  }
-
-  if (permissions.has(P.UserRead)) {
-    can("read", "User");
-  }
-
-  if (permissions.has(P.UserUpdate)) {
-    can("update", "User");
-  }
-
-  if (permissions.has(P.UserChangeRole)) {
-    can("change_role", "User");
-  }
-
-  if (permissions.has(P.UserManagePermissions)) {
-    can("manage_permissions", "User");
+      // Login with QR: کاربر لاگین‌شده QR یک دستگاه دیگه رو تأیید می‌کنه
+      can("approve", "QrLogin", { status: "pending" });
+      can("read", "QrLogin");
+      break;
+    }
   }
 
   return build();
 }
 
-export function canAccess(
-  user: AbilityUser,
-  action: AppAction,
-  subject: AppSubject,
-): boolean {
-  return defineAbilityFor(user).can(action, subject);
+/* ----------------------------- Helpers ----------------------------- */
+
+/**
+ * تگ‌کردن یک آبجکت با نوع subject تا CASL شرط‌ها (conditions) رو روش چک کنه.
+ *   ability.can("cancel", asSubject("Order", order))
+ */
+export function asSubject<T extends SubjectType>(
+  type: T,
+  object: SubjectMap[T],
+) {
+  return subject(type, object);
 }
+
+/** برای بک‌اند: اگه دسترسی نداشت ForbiddenError پرت می‌کنه */
+export function assertCan<T extends SubjectType>(
+  ability: AppAbility,
+  action: AppAction,
+  type: T,
+  object?: SubjectMap[T],
+): void {
+  const target = (object ? asSubject(type, object) : type) as
+    | SubjectType
+    | TaggedSubject;
+  ForbiddenError.from(ability).throwUnlessCan(action, target);
+}
+
+/** برای فرانت: rule ها رو از بک‌اند (مثلاً در /me) می‌گیره و ability می‌سازه */
+export function createAbilityFromRules(rules: AppRawRule[]): AppAbility {
+  return createMongoAbility<AppAbility>(rules);
+}
+
+/** برای بک‌اند: rule ها رو برای ارسال به فرانت serialize می‌کنه */
+export function serializeRules(ability: AppAbility): AppRawRule[] {
+  return ability.rules;
+}
+
+export { ForbiddenError };

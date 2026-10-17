@@ -6,8 +6,9 @@ import jwt from "@fastify/jwt";
 import dbPlugin from "./plugins/db";
 import smsPlugin from "./plugins/sms";
 import errorHandlerPlugin from "./plugins/errorHandler";
+import abilityPlugin from "./plugins/ability";
 import { authPlugin } from "./modules/auth/plugin";
-import { fail } from "./utils/apiResponse";
+import { fail, ok } from "./utils/apiResponse";
 import { walletPlugin } from "./modules/wallet/plugin";
 import engine from "./modules/trade/plugin/enginePlugin";
 import eventBus from "./modules/trade/plugin/eventBus";
@@ -19,6 +20,7 @@ import { EngineOrder } from "@repo/types";
 import { dbDecimalToScaledBigInt } from "./utils/scaleBigInt";
 import { tradePlugin } from "./modules/trade/plugin";
 import cors from "@fastify/cors";
+import { serializeRules } from "@repo/casl";
 
 const app = Fastify({
   logger: {
@@ -52,13 +54,12 @@ await app.register(jwt, {
     signed: true,
   },
 });
+await app.register(abilityPlugin);
 await app.register(smsPlugin);
 
 app.decorate("authenticate", async function (req: any, reply: any) {
-  try {
-    await req.jwtVerify();
-  } catch {
-    reply.code(401).send(fail("UNAUTHORIZED"));
+  if (!req.user) {
+    return reply.code(401).send(fail("UNAUTHORIZED"));
   }
 });
 
@@ -103,10 +104,18 @@ await app.register(authPlugin);
 
 await app.register(walletPlugin);
 
-app.register(tradePlugin);  
+app.register(tradePlugin);
 app.post("/admin/engine/log-active-orders", async (req, reply) => {
   app.engine.logActiveOrders();
   return { ok: true };
+});
+app.get("/me", async (req, reply) => {
+  return reply.send(
+    ok({
+      userId: req.user?.sub ?? null,
+      rules: serializeRules(req.ability),
+    }),
+  );
 });
 const start = async () => {
   try {
