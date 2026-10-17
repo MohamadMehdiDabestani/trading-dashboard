@@ -1,7 +1,13 @@
 import { DbTransaction, orders } from "@repo/db";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
-import { GetRecentTradesReply, OrderType, Side } from "@repo/types";
-import { toDbDecimal } from "@/utils/scaleBigInt";
+import { and, count, desc, eq, inArray, SQL, sql } from "drizzle-orm";
+import {
+  OrderStatus,
+  OrderType,
+  Side,
+} from "@repo/types";
+import {
+  toDbDecimal,
+} from "@/utils/scaleBigInt";
 import { applyPagination } from "@/utils/pagination";
 
 export class OrderTxRepository {
@@ -78,7 +84,9 @@ export class OrderTxRepository {
     );
 
     const statusCase = sql.join(
-      updates.map((u) => sql`WHEN ${orders.id} = ${u.orderId} THEN ${u.status}`),
+      updates.map(
+        (u) => sql`WHEN ${orders.id} = ${u.orderId} THEN ${u.status}`,
+      ),
       sql` `,
     );
 
@@ -107,42 +115,53 @@ export class OrderTxRepository {
   }
 }
 
-
 export class OrderReadRepository {
   constructor(private readonly db: any) {}
 
-  async getRecentOrders(
-    symbol: string,
-    userId: string,
-    page: number,
-    pageSize: number,
-  ): Promise<GetRecentTradesReply> {
-    const historyQuery = this.db
+  async getRecentOrders(params: {
+    userId: string;
+    symbol?: string;
+    status?: OrderStatus;
+    page: number;
+    pageSize: number;
+  }) {
+    const { userId, symbol, status, page, pageSize } = params;
+
+    const filters: SQL[] = [eq(orders.userId, userId)];
+
+    if (symbol) filters.push(eq(orders.symbol, symbol.toUpperCase()));
+
+    if (status) {
+      filters.push(eq(orders.status, status));
+    }
+
+    const where = and(...filters);
+
+    const query = this.db
       .select({
         id: orders.id,
         type: orders.type,
+        side: orders.side,
         symbol: orders.symbol,
-        price: orders.price,
-        quantity: orders.quantity,
-        filledQuantity: orders.filledQuantity,
+        status: orders.status,
+        price: sql<string>`trim_scale(${orders.price})::text`,
+        quantity: sql<string>`trim_scale(${orders.quantity})::text`,
+        filledQuantity: sql<string>`trim_scale(${orders.filledQuantity})::text`,
         createdAt: orders.createdAt,
       })
       .from(orders)
-      .where(and(eq(orders.symbol, symbol), eq(orders.userId, userId)))
+      .where(where)
       .orderBy(desc(orders.createdAt));
 
-    const [list, totalRows] = await Promise.all([
-      applyPagination(historyQuery.$dynamic(), page, pageSize),
-      this.db
-        .select({ value: count() })
-        .from(orders)
-        .where(and(eq(orders.symbol, symbol), eq(orders.userId, userId))),
+    const [items, totalRows] = await Promise.all([
+      applyPagination(query.$dynamic(), page, pageSize),
+      this.db.select({ value: count() }).from(orders).where(where),
     ]);
 
     const total = Number(totalRows[0]?.value ?? 0);
 
     return {
-      items: list,
+      items,
       page,
       pageSize,
       total,

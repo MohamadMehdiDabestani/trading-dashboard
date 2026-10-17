@@ -4,6 +4,7 @@ import {
   EngineOrder,
   GetRecentTradesReply,
   MatchResult,
+  OrderStatus,
   OrderType,
   SCALE,
   Side,
@@ -48,8 +49,7 @@ export class TradeService {
 
       const lockAsset = side === "buy" ? quoteAsset : baseAsset;
 
-      const lockAmount =
-        side === "buy" ? (price * quantity) / SCALE : quantity;
+      const lockAmount = side === "buy" ? (price * quantity) / SCALE : quantity;
 
       if (lockAmount <= 0n) {
         throw new AppError("INVALID_LOCK_AMOUNT");
@@ -116,11 +116,7 @@ export class TradeService {
        * اگر نمی‌خواهی request منتظر این بماند، می‌توانی await را برداری،
        * ولی برای consistency بهتر است فعلاً await شود.
        */
-      await this.matchPersistence.persist(
-        matchResult,
-        baseAsset,
-        quoteAsset,
-      );
+      await this.matchPersistence.persist(matchResult, baseAsset, quoteAsset);
 
       return {
         orderId,
@@ -225,22 +221,25 @@ export class TradeService {
     }
   }
 
-  async getRecentOrders(
-    symbol: string,
-    userId: string,
-    page: number,
-    pageSize: number,
-  ): Promise<GetRecentTradesReply> {
+  async getRecentOrders(params: {
+    symbol: string;
+    userId: string;
+    status?: OrderStatus;
+    page: number;
+    pageSize: number;
+  }): Promise<GetRecentTradesReply> {
     try {
+      const { symbol, userId, status, page, pageSize } = params;
       const safePage = Math.max(page, 1);
       const safePageSize = Math.min(Math.max(pageSize, 1), 100);
 
-      return this.orderReadRepository.getRecentOrders(
+      return this.orderReadRepository.getRecentOrders({
         symbol,
         userId,
-        safePage,
-        safePageSize,
-      );
+        status,
+        page: safePage,
+        pageSize: safePageSize,
+      });
     } catch (error) {
       if (error instanceof AppError) throw error;
 

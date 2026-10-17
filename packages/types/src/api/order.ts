@@ -1,13 +1,14 @@
-import Big from "big.js";
 import { PaginatedResult } from "../common";
+import { OrderStatus } from "../trading/order";
 
 export interface GetRecentTradesReply extends PaginatedResult<{
   id: string;
   type: string;
   symbol: string;
-  price: Big | null;
-  quantity: Big;
-  filledQuantity: Big;
+  status : OrderStatus,
+  price: string;
+  quantity: string;
+  filledQuantity: string;
   createdAt: Date;
 }> {}
 
