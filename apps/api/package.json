@@ -16,6 +16,7 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/jwt": "^10.1.0",
     "@fastify/websocket": "^11.2.0",
+    "@repo/casl": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/types": "workspace:*",
     "bcryptjs": "^3.0.3",

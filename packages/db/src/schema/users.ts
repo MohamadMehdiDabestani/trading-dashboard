@@ -3,9 +3,7 @@ import { pgEnum } from "drizzle-orm/pg-core";
 import { pgTable, uuid, text, timestamp, boolean } from "drizzle-orm/pg-core";
 export const roleEnum = pgEnum("role", [
   "Admin",
-  "Accounting",
-  "OrderManager",
-  "MarketManager",
+
   "User",
 ]);
 export const permissionEffectEnum = pgEnum("permission_effect", [

@@ -8,7 +8,7 @@ import { MatchingEngine } from "./engine";
 import { MarketEventBus } from "./utils/eventBus";
 import { TradeService } from "./modules/trade/application/trade.service";
 import type { MarketMaker } from "@/modules/trade/marketMaker/marketMaker";
-
+import { AppAbility } from "@repo/casl";
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -16,8 +16,11 @@ declare module "fastify" {
     walletService: WalletService;
     engine: MatchingEngine;
     eventBus: MarketEventBus;
-    tradeService : TradeService;
+    tradeService: TradeService;
     marketMaker: MarketMaker | null;
+  }
+  interface FastifyRequest {
+    ability: AppAbility;
   }
 }
 declare module "@fastify/jwt" {
