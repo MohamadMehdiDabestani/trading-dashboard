@@ -14,3 +14,10 @@ export const otpSchema = z.object({
     .length(6, { error: "VALIDATION_MIN_LENGTH" })
     .regex(/^\d+$/, { error: "VALIDATION_PATTERN" }),
 });
+
+
+export const deviceLinkCodeSchema = z.object({
+  code: z
+    .string()
+    .regex(/^\d{4}$/, { error: "VALIDATION_PATTERN" }),
+});

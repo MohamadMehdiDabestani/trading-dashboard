@@ -32,7 +32,7 @@ import { setAccessToken } from "@/lib/accessToken";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-const OtpInput = dynamic(() => import("@/features/auth/components/otpInput"), {
+const OtpInput = dynamic(() => import("@/components/ui/otp"), {
   ssr: false,
 });
 export default function AuthPage() {
@@ -126,9 +126,7 @@ export default function AuthPage() {
                 </Button>
               )}
               <CardDescription>
-                {showOtp
-                  ? tAuth("verifyDescritpion")
-                  : tAuth("descritpion")}
+                {showOtp ? tAuth("verifyDescritpion") : tAuth("descritpion")}
               </CardDescription>
             </CardHeader>
 
@@ -200,14 +198,19 @@ export default function AuthPage() {
                           otpSubmitted &&
                           field.state.meta.isTouched &&
                           !field.state.meta.isValid;
+
                         return (
                           <div className="min-h-12 flex flex-col items-center justify-center gap-2">
                             <Field data-invalid={isInvalid}>
                               <OtpInput
-                                onComplete={(code) => {
-                                  field.handleChange(code);
-                                  otpForm.handleSubmit();
-                                }}
+                                length={6}
+                                value={field.state.value}
+                                onChange={(code) => field.handleChange(code)}
+                                onComplete={() => otpForm.handleSubmit()}
+                                onBlur={field.handleBlur}
+                                disabled={verifyOtpMutation.isPending}
+                                error={isInvalid}
+                                aria-label={tCommon("fields.otp")}
                               />
                               {isInvalid && (
                                 <FieldError
@@ -239,7 +242,11 @@ export default function AuthPage() {
                     {tAuth("sendButton")}
                   </Button>
                   <Link href="/auth" className="block w-full">
-                    <Button variant="outline" className="w-full" color="secondary">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      color="secondary"
+                    >
                       {tAuth("classicLogin")}
                     </Button>
                   </Link>
@@ -259,7 +266,9 @@ export default function AuthPage() {
                     disabled={timer > 0 || sendOtpMutation.isPending}
                     onClick={() => phoneForm.handleSubmit()}
                   >
-                    {timer > 0 ? `${tAuth("resendButton")} (${timer})` : tAuth("resendButton")}
+                    {timer > 0
+                      ? `${tAuth("resendButton")} (${timer})`
+                      : tAuth("resendButton")}
                   </Button>
                 </Fragment>
               )}

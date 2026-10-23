@@ -9,10 +9,12 @@ import { MarketEventBus } from "./utils/eventBus";
 import { TradeService } from "./modules/trade/application/trade.service";
 import type { MarketMaker } from "@/modules/trade/marketMaker/marketMaker";
 import { AppAbility } from "@repo/casl";
+import { DeviceLinkServiceImpl } from "./modules/auth/infrastructure/services/device.service.impl";
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
     authService: AuthService;
+    deviceLinkService: DeviceLinkServiceImpl;
     walletService: WalletService;
     engine: MatchingEngine;
     eventBus: MarketEventBus;

@@ -1,0 +1,10 @@
+export const DEVICE_LINK_SUCCESS_CODES = [
+  "DEVICE_LINK_DENIED",
+  "DEVICE_LINK_APPROVED",
+  "DEVICE_LINK_OPENED",
+  "REFRESH_SUCCESS",
+  "LOGOUT_SUCCESS",
+  "PROFILE_UPDATED"
+] as const;
+
+export type DeviceLinkSuccessCodes = (typeof DEVICE_LINK_SUCCESS_CODES)[number];

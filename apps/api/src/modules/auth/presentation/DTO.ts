@@ -31,3 +31,30 @@ export const editProfileSchema = {
     additionalProperties: false,
   },
 } as const;
+
+const idParams = {
+  type: "object",
+  required: ["id"],
+  properties: { id: { type: "string", format: "uuid" } },
+} as const;
+
+export const deviceLinkOpenSchema = {
+  body: {
+    type: "object",
+    required: ["token"],
+    properties: { token: { type: "string", minLength: 43, maxLength: 43 } },
+    additionalProperties: false,
+  },
+} as const;
+
+export const deviceLinkIdSchema = { params: idParams } as const;
+
+export const deviceLinkApproveSchema = {
+  params: idParams,
+  body: {
+    type: "object",
+    required: ["code"],
+    properties: { code: { type: "string", pattern: "^[0-9]{4}$" } },
+    additionalProperties: false,
+  },
+} as const;
