@@ -10,17 +10,11 @@ import {
   OtpVerifyDto,
 } from "@repo/types";
 import { editProfileSchema, otpSendSchema, otpVerifySchema } from "./DTO";
-
-const REFRESH_COOKIE = "refresh_token";
-const ACCESS_COOKIE = "access_token";
-
-const cookieOpts = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict" as const,
-  path: "/auth/refresh",
-  maxAge: 7 * 24 * 60 * 60,
-};
+import {
+  REFRESH_COOKIE,
+  clearAuthCookies,
+  setAuthCookies,
+} from "../plugin/cookies";
 
 export async function authRoutes(fastify: FastifyInstance) {
   const authService = fastify.authService;
@@ -46,14 +40,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       req.body.code,
     );
 
-    reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
-    reply.setCookie(ACCESS_COOKIE, accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
-      path: "/",
-      signed: true,
-    });
+    setAuthCookies(reply, accessToken, refreshToken);
 
     return reply
       .code(200)
@@ -66,27 +53,19 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const { accessToken, refreshToken } = await authService.refresh(raw);
 
-    reply.setCookie(REFRESH_COOKIE, refreshToken, cookieOpts);
-    reply.setCookie(ACCESS_COOKIE, accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax" as const,
-      path: "/",
-      signed: true,
-    });
+    setAuthCookies(reply, accessToken, refreshToken);
 
     return reply
       .code(200)
       .send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
   });
-  fastify.patch<{ Body: EditProfileDto , Reply : APIResult<null> }>(
+
+  fastify.patch<{ Body: EditProfileDto; Reply: APIResult<null> }>(
     "/profile",
     { preHandler: [fastify.authenticate], schema: editProfileSchema },
     async (req, reply) => {
-      await authService.editProfile(
-        req.user.sub,
-        req.body,
-      );
+      await authService.editProfile(req.user.sub, req.body);
+
       return reply
         .code(200)
         .send(ok(null, { message: { key: "PROFILE_UPDATED" } }));
@@ -97,12 +76,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     "/logout",
     { preHandler: [fastify.authenticate] },
     async (req, reply) => {
-      const user = req.user ;
+      await authService.logout(req.user.sub);
 
-      await authService.logout(user.sub);
-
-      reply.clearCookie(REFRESH_COOKIE, { path: "/auth/refresh" });
-      reply.clearCookie(ACCESS_COOKIE, { path: "/" });
+      clearAuthCookies(reply);
 
       return reply
         .code(200)

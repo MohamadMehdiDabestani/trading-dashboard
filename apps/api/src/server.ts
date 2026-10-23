@@ -100,6 +100,7 @@ app.addHook("onReady", async () => {
 app.get("/health", { preHandler: app.authenticate }, async () => {
   return { status: "ok" };
 });
+await app.register(import("@fastify/rate-limit"), { global: false })
 await app.register(authPlugin);
 
 await app.register(walletPlugin);

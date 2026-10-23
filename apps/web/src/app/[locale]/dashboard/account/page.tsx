@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import { KYCStepper } from "@/features/account/kycStepper";
-import { ConnectedAccounts } from "@/features/account/connectedAccounts";
-import { SecuritySettings } from "@/features/account/scuritySettings";
-import { ProfileCard } from "@/features/account/profileCard";
-import { AccountLimitsCard } from "@/features/account/accountLimits";
+import { KYCStepper } from "@/features/account/components/kycStepper";
+import { ConnectedAccounts } from "@/features/account/components/connectedAccounts";
+import { SecuritySettings } from "@/features/account/components/scuritySettings";
+import { ProfileCard } from "@/features/account/components/profileCard";
+import { AccountLimitsCard } from "@/features/account/components/accountLimits";
 
 export default function DozBanehDashboard() {
   return (

@@ -10,6 +10,8 @@ import {
 import { WALLET_ERROR_CODES, type WalletErrorCode } from "./wallet/error";
 import { TRADE_ERROR_CODES, type TradeErrorCode } from "./trade/error";
 import { TRADE_SUUCEESS_CODES, type TradeSuccessCodes } from "./trade/ok";
+import { DEVICE_LINK_ERROR_CODES ,type DeviceLinkErrorCode} from './deviceLink/error'
+import { DEVICE_LINK_SUCCESS_CODES ,type DeviceLinkSuccessCodes} from './deviceLink/ok'
 export const ALL_ERROR_CODES = [
   ...AUTH_ERROR_CODES,
   ...OTP_ERROR_CODES,
@@ -18,10 +20,12 @@ export const ALL_ERROR_CODES = [
   ...COMMON_ERROR_CODES,
   ...WALLET_ERROR_CODES,
   ...TRADE_ERROR_CODES,
+  ...DEVICE_LINK_ERROR_CODES
 ] as const;
 export const ALL_SUCCESS_CODES = [
   ...AUTH_SUCCESS_CODES,
   ...TRADE_SUUCEESS_CODES,
+  ...DEVICE_LINK_SUCCESS_CODES
 ];
 export type AllErrorCode = (typeof ALL_ERROR_CODES)[number];
 export type AllSuccessCodes = (typeof ALL_SUCCESS_CODES)[number];
@@ -42,4 +46,6 @@ export {
   ValidationErrorCode,
   AuthErrorCode,
   WalletErrorCode,
+  DeviceLinkErrorCode,
+  DeviceLinkSuccessCodes
 };

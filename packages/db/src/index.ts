@@ -10,3 +10,4 @@ export * from "./schema/walletLock";
 export * from './schema/permission'
 export * from './schema/rolePermission'
 export * from './schema/userPermission'
+export * from './schema/deviceLoginRequest'
