@@ -2,7 +2,8 @@ import { AppError } from "@/errors/appError";
 import { IOtpService } from "../types/otp.interface";
 import { ITokenService } from "../types/token.interface";
 import { UserRepository } from "../types/user.repository";
-import { EditProfileDto } from "@repo/types";
+import { EditProfileDto, MeReply } from "@repo/types";
+import { defineAbilityFor, serializeRules } from "@repo/casl";
 
 export class AuthService {
   constructor(
@@ -30,6 +31,7 @@ export class AuthService {
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
       phone: user.phone,
+      role : user.role
     });
 
     const refreshToken = await this.tokens.createRefreshToken(user.id);
@@ -53,6 +55,7 @@ export class AuthService {
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
       phone: user.phone,
+      role : user.role
     });
 
     return {
@@ -60,6 +63,27 @@ export class AuthService {
       refreshToken: result.refreshToken,
     };
   }
+    async getMe(userId: string): Promise<MeReply> {
+    const user = await this.users.findById(userId);
+    if (!user || !user.isActive) throw new AppError("USER_NOTFOUND");
+
+    const ability = defineAbilityFor({ id: user.id, role: user.role });
+
+    return {
+      userId: user.id,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role,
+        username: user.userName,
+        email: user.email,
+        isActive: user.isActive,
+        createdAt: user.createdAt.toISOString(),
+      },
+      rules: serializeRules(ability),
+    };
+  }
+
   async editProfile(userId: string, data: EditProfileDto): Promise<void> {
     try {
       const user = await this.users.findById(userId);

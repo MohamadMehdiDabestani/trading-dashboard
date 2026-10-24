@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 config();
-import Fastify, { fastify } from "fastify";
+import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import dbPlugin from "./plugins/db";
@@ -8,21 +8,22 @@ import smsPlugin from "./plugins/sms";
 import errorHandlerPlugin from "./plugins/errorHandler";
 import abilityPlugin from "./plugins/ability";
 import { authPlugin } from "./modules/auth/plugin";
-import { fail, ok } from "./utils/apiResponse";
+import { fail} from "./utils/apiResponse";
 import { walletPlugin } from "./modules/wallet/plugin";
 import engine from "./modules/trade/plugin/enginePlugin";
 import eventBus from "./modules/trade/plugin/eventBus";
 import ws from "./modules/trade/plugin/ws";
-
 import { orders } from "@repo/db";
 import { and, asc, inArray } from "drizzle-orm";
 import { EngineOrder } from "@repo/types";
 import { dbDecimalToScaledBigInt } from "./utils/scaleBigInt";
 import { tradePlugin } from "./modules/trade/plugin";
 import cors from "@fastify/cors";
-import { serializeRules } from "@repo/casl";
+import { AppError } from "./errors/appError";
 
 const app = Fastify({
+  trustProxy: true,
+  ajv: { customOptions: { allErrors: true } },
   logger: {
     level: "info",
     transport: {
@@ -39,6 +40,7 @@ const app = Fastify({
 await app.register(cors, {
   origin: "http://localhost:3000",
   credentials: true,
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
 });
 await app.register(errorHandlerPlugin);
 await app.register(dbPlugin);
@@ -97,10 +99,13 @@ app.addHook("onReady", async () => {
   }
 });
 
-app.get("/health", { preHandler: app.authenticate }, async () => {
+app.get("/health", async () => {
   return { status: "ok" };
 });
-await app.register(import("@fastify/rate-limit"), { global: false })
+await app.register(import("@fastify/rate-limit"), {
+  global: false,
+  errorResponseBuilder: () => new AppError("RATE_LIMIT"),
+});
 await app.register(authPlugin);
 
 await app.register(walletPlugin);
@@ -109,14 +114,6 @@ app.register(tradePlugin);
 app.post("/admin/engine/log-active-orders", async (req, reply) => {
   app.engine.logActiveOrders();
   return { ok: true };
-});
-app.get("/me", async (req, reply) => {
-  return reply.send(
-    ok({
-      userId: req.user?.sub ?? null,
-      rules: serializeRules(req.ability),
-    }),
-  );
 });
 const start = async () => {
   try {

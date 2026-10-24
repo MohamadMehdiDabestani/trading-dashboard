@@ -41,7 +41,7 @@ export class DrizzleUserRepository implements UserRepository {
     const [user] = await this.db
       .insert(users)
       .values({ phone })
-      .returning({ id: users.id, phone: users.phone });
+      .returning({ id: users.id, phone: users.phone , role : users.role });
 
     if (!user) throw new Error("Failed to create user");
 

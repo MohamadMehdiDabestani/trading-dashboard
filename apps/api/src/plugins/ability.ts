@@ -1,4 +1,4 @@
-import { AppAbility, defineAbilityFor, Role } from "@repo/casl";
+import { AbilityUser, AppAbility, defineAbilityFor } from "@repo/casl";
 import fp from "fastify-plugin";
 
 export default fp(
@@ -6,16 +6,12 @@ export default fp(
     app.decorateRequest("ability", null as unknown as AppAbility);
 
     app.addHook("onRequest", async (req) => {
-      let userId: string | null = null;
+      let user: AbilityUser | null = null;
       try {
         await req.jwtVerify();
-        userId = req.user.sub;
-      } catch {
-        // guest
-      }
-      req.ability = defineAbilityFor(
-        userId ? { id: userId, role: Role.User } : null,
-      );
+        user = { id: req.user.sub, role : req.user.role};
+      } catch {}
+      req.ability = defineAbilityFor(user);
     });
   },
   {

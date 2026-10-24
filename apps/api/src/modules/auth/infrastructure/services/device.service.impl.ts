@@ -220,6 +220,7 @@ export class DeviceLinkServiceImpl {
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
       phone: user.phone,
+      role : user.role
     });
     const refreshToken = await this.tokens.createRefreshToken(user.id);
 

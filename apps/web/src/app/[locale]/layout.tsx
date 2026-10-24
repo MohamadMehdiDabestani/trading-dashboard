@@ -7,7 +7,6 @@ import { DirectionProvider } from "@/components/ui/direction";
 import localFont from "next/font/local";
 import { QueryProvider } from "@/provider/reactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
-import { GlobalErrorHandler } from "@/provider/globalErrorHandlerProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/provider/themeProvider";
 const vazir = localFont({
@@ -58,7 +57,6 @@ export default async function RootLayout({
               <DirectionProvider dir={getDirection(locale)}>
                 <TooltipProvider>{children}</TooltipProvider>
                 <Toaster className={font} />
-                <GlobalErrorHandler />
               </DirectionProvider>
             </QueryProvider>
           </NextIntlClientProvider>

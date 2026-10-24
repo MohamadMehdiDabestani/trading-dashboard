@@ -14,8 +14,8 @@ export const otpVerifySchema = {
     type: "object",
     required: ["phone", "code"],
     properties: {
-      phone: { type: "string", minLength: 10 },
-      code: { type: "string", minLength: 4, maxLength: 6 },
+      phone: { type: "string", minLength: 10 , pattern: "^09\\d{9}$"},
+      code: { type: "string",pattern: "^\\d{6}$", minLength: 4, maxLength: 6 },
     },
     additionalProperties: false,
   },

@@ -1,66 +1,68 @@
-import { APIResult } from "@repo/types";
+import type { APIResult } from "@repo/types";
 import { ApiError } from "./apiError";
-import { getAccessToken, setAccessToken } from "./accessToken";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 
 let refreshPromise: Promise<void> | null = null;
 
+async function doRefresh(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+  });
+  // 401 = refresh token باطل → logout اجباری
+  if (res.status === 401) throw new ApiError("SESSION_EXPIRED");
+  // 429/5xx = موقتی → کاربر را logout نکن
+  if (!res.ok) throw new ApiError("INTERNAL_SERVER_ERROR");
+}
 
-async function refreshToken() {
-  if (!refreshPromise) {
-    refreshPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Refresh failed");
-        const data = await res.json().then(d => d.data)
-        const accessToken = data.accessToken
-        setAccessToken(accessToken)
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
+function refreshOnce(): Promise<void> {
+  refreshPromise ??= doRefresh().finally(() => {
+    refreshPromise = null;
+  });
   return refreshPromise;
 }
 
+function buildUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_URL}/${path.replace(/^\/+/, "")}`;
+}
+
 export async function apiFetch<T>(
-  input: RequestInfo | URL,
+  path: string,
   init: RequestInit = {},
-  retry = true,
-): Promise<APIResult<T>> {
+  opts: { retryOn401?: boolean } = {},
+): Promise<T> {
+  const { retryOn401 = true } = opts;
+
   const headers = new Headers(init.headers);
-  if (!headers.has("Content-Type"))
+  if (init.body != null && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
+  }
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
-  const accessToken = getAccessToken();
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${input}`, {
+  const response = await fetch(buildUrl(path), {
     ...init,
     headers,
     credentials: "include",
   });
 
-  if (response.status === 401) {
-    if (!retry) throw new ApiError("UNAUTHORIZED" as any);
-    try {
-      await refreshToken();
-    } catch {
-      throw new ApiError("SESSION_EXPIRED" as any);
-    }
-    return apiFetch(input, init, false);
+  if (response.status === 401 && retryOn401) {
+    await refreshOnce(); // خطای غیر از SESSION_EXPIRED propagate می‌شود
+    return apiFetch<T>(path, init, { retryOn401: false });
   }
 
-  const result: APIResult<T> = await response.json();
+  if (response.status === 204) return undefined as T;
 
-  if (!result.success) {
-    throw new ApiError(
-      result.error.code,
-      result.error.fields,
-      result.error.params,
-    );
+  let body: APIResult<T>;
+  try {
+    body = await response.json();
+  } catch {
+    throw new ApiError("INTERNAL_SERVER_ERROR");
   }
 
-  return result;
+  if (!body.success) {
+    throw new ApiError(body.error.code, body.error.fields, body.error.params);
+  }
+  return body.data;
 }

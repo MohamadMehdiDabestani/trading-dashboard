@@ -15,13 +15,16 @@ import {
   clearAuthCookies,
   setAuthCookies,
 } from "../plugin/cookies";
+const rl = (max: number, timeWindow = "1 minute") => ({
+  config: { rateLimit: { max, timeWindow } },
+});
 
 export async function authRoutes(fastify: FastifyInstance) {
   const authService = fastify.authService;
 
   fastify.post<{ Body: OtpSendDto; Reply: APIResult<OtpSentReply> }>(
     "/otp/send",
-    { schema: otpSendSchema },
+    { schema: otpSendSchema, ...rl(3) },
     async (req, reply) => {
       await authService.sendOtp(req.body.phone);
 
@@ -30,35 +33,41 @@ export async function authRoutes(fastify: FastifyInstance) {
         .send(ok(undefined, { message: { key: "OTP_SENT" } }));
     },
   );
-
+  
   fastify.post<{
     Body: OtpVerifyDto;
     Reply: APIResult<OtpVerifyReply>;
-  }>("/otp/verify", { schema: otpVerifySchema }, async (req, reply) => {
-    const { accessToken, refreshToken, isNew } = await authService.loginWithOtp(
-      req.body.phone,
-      req.body.code,
-    );
+  }>(
+    "/otp/verify",
+    { schema: otpVerifySchema, ...rl(10) },
+    async (req, reply) => {
+      const { accessToken, refreshToken, isNew } =
+        await authService.loginWithOtp(req.body.phone, req.body.code);
 
-    setAuthCookies(reply, accessToken, refreshToken);
+      setAuthCookies(reply, accessToken, refreshToken);
 
-    return reply
-      .code(200)
-      .send(ok({ isNew }, { message: { key: "LOGIN_SUCCESS" } }));
-  });
+      return reply
+        .code(200)
+        .send(ok({ isNew }, { message: { key: "LOGIN_SUCCESS" } }));
+    },
+  );
 
-  fastify.post<{ Reply: APIResult<null> }>("/refresh", async (req, reply) => {
-    const raw = req.cookies?.[REFRESH_COOKIE];
-    if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
+  fastify.post<{ Reply: APIResult<null> }>(
+    "/refresh",
+    { ...rl(3) },
+    async (req, reply) => {
+      const raw = req.cookies?.[REFRESH_COOKIE];
+      if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
 
-    const { accessToken, refreshToken } = await authService.refresh(raw);
+      const { accessToken, refreshToken } = await authService.refresh(raw);
 
-    setAuthCookies(reply, accessToken, refreshToken);
+      setAuthCookies(reply, accessToken, refreshToken);
 
-    return reply
-      .code(200)
-      .send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
-  });
+      return reply
+        .code(200)
+        .send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
+    },
+  );
 
   fastify.patch<{ Body: EditProfileDto; Reply: APIResult<null> }>(
     "/profile",

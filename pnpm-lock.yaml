@@ -535,6 +535,9 @@ importers:
 
   packages/types:
     devDependencies:
+      '@casl/ability':
+        specifier: ^7.0.2
+        version: 7.0.2
       '@repo/types':
         specifier: workspace:^
         version: 'link:'
@@ -724,6 +727,9 @@ packages:
 
   '@casl/ability@7.0.0':
     resolution: {integrity: sha512-QhwRflkTucpdS2uw1XScrzLWbgLYJGvPoq2Xm5OjeRci3dwtPixxnjUKJ04Ss1ivNS9tZQ8y4sjWeelWsrwo4g==}
+
+  '@casl/ability@7.0.2':
+    resolution: {integrity: sha512-NOYbLTaw080a1Na4CpBtyGpL+i9NZhtGGt/tPrrNpLEv8EawFusHZCgc58ewyPBiZ0NER0iudB0et+IP8xJbLg==}
 
   '@dnd-kit/accessibility@3.1.1':
     resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
@@ -5559,6 +5565,10 @@ snapshots:
       '@babel/helper-validator-identifier': 7.29.7
 
   '@casl/ability@7.0.0':
+    dependencies:
+      '@ucast/mongo2js': 2.0.0
+
+  '@casl/ability@7.0.2':
     dependencies:
       '@ucast/mongo2js': 2.0.0
 

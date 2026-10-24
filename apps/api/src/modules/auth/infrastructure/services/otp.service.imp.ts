@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { type Db, otpCodes } from "@repo/db";
 import { eq, and, gt, desc } from "drizzle-orm";
 import { AppError } from "@/errors/appError";
@@ -7,7 +8,7 @@ const OTP_TTL_MS = 3 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
 function generateCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 export interface SmsGateway {

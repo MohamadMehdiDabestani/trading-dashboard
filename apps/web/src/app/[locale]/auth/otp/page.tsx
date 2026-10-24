@@ -1,8 +1,9 @@
 "use client";
-
-import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
-import { useForm } from "@tanstack/react-form";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import { useLocale, useTranslations } from "next-intl";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,91 +14,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { useSendOtp, useVerifyOtp } from "@/features/auth/hooks/useAuthApi";
-import { applyApiFieldErrors, getFormErrorMessage } from "@/lib/apiFieldError";
-import { phoneSchema, otpSchema } from "@/features/auth/schema/form";
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
-import { OtpVerifyReply } from "@repo/types";
-import { setAccessToken } from "@/lib/accessToken";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useOtpLoginFlow } from "@/features/auth/hooks/useOtpLoginFlow";
+import { getFormErrorMessage } from "@/lib/apiFieldError";
 
-const OtpInput = dynamic(() => import("@/components/ui/otp"), {
-  ssr: false,
-});
-export default function AuthPage() {
-  const [timer, setTimer] = useState(0);
-  const [showOtp, setShowOtp] = useState(false);
-  const [phoneSubmitted, setPhoneSubmitted] = useState(false);
-  const [otpSubmitted, setOtpSubmitted] = useState(false);
+const OtpInput = dynamic(() => import("@/components/ui/otp"), { ssr: false });
 
+export default function OtpLoginPage() {
   const locale = useLocale();
   const tAuth = useTranslations("auth.otp");
   const tCommon = useTranslations("common");
-  const sendOtpMutation = useSendOtp();
-  const verifyOtpMutation = useVerifyOtp();
-  const router = useRouter();
+  const f = useOtpLoginFlow();
 
-  const phoneForm = useForm({
-    defaultValues: { phone: "" },
-    validators: {
-      onSubmit: phoneSchema,
-      onChange: phoneSubmitted ? phoneSchema : undefined,
-    },
-    onSubmit: async ({ value }) => {
-      setPhoneSubmitted(true);
-      try {
-        await sendOtpMutation.mutateAsync(value);
-        setShowOtp(true);
-        setTimer(60);
-        toast.success(tAuth("successSent"));
-      } catch (error) {
-        applyApiFieldErrors(error, phoneForm);
-      }
-    },
-    onSubmitInvalid: () => {
-      setPhoneSubmitted(true);
-    },
-  });
+  const isPhoneInvalid = (field: any) =>
+    f.phoneSubmitted && !field.state.meta.isValid;
 
-  const otpForm = useForm({
-    defaultValues: { code: "" },
-    validators: {
-      onSubmit: otpSchema,
-      onChange: otpSubmitted ? otpSchema : undefined,
-    },
-    onSubmit: async ({ value }) => {
-      setOtpSubmitted(true);
-      try {
-        await verifyOtpMutation.mutateAsync({
-          phone: phoneForm.getFieldValue("phone"),
-          code: value.code,
-        });
-        router.push("/dashboard");
-      } catch (error) {
-        applyApiFieldErrors(error, otpForm);
-      }
-    },
-    onSubmitInvalid: () => {
-      setOtpSubmitted(true);
-    },
-  });
-
-  useEffect(() => {
-    if (timer === 0) return;
-    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
-    return () => clearInterval(interval);
-  }, [timer]);
+  const isOtpInvalid = (field: any) =>
+    f.otpSubmitted && !field.state.meta.isValid;
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row">
@@ -106,16 +44,13 @@ export default function AuthPage() {
           <Card>
             <CardHeader className="relative">
               <CardTitle>
-                {showOtp ? tAuth("verifyTitle") : tAuth("title")}
+                {f.step === "otp" ? tAuth("verifyTitle") : tAuth("title")}
               </CardTitle>
-              {showOtp && (
+              {f.step === "otp" && (
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => {
-                    setShowOtp(false);
-                    setOtpSubmitted(false);
-                  }}
+                  onClick={f.backToPhone}
                   className="absolute inset-e-4 p-1 rounded-md hover:bg-muted transition"
                 >
                   {locale === "fa" ? (
@@ -126,47 +61,46 @@ export default function AuthPage() {
                 </Button>
               )}
               <CardDescription>
-                {showOtp ? tAuth("verifyDescritpion") : tAuth("descritpion")}
+                {f.step === "otp"
+                  ? tAuth("verifyDescritpion")
+                  : tAuth("descritpion")}
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {!showOtp && (
+              {f.step === "phone" && (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    phoneForm.handleSubmit();
+                    f.phoneForm.handleSubmit();
                   }}
                 >
                   <FieldGroup>
-                    <phoneForm.Field
+                    <f.phoneForm.Field
                       name="phone"
+                      validators={f.phoneFieldValidators}
                       children={(field) => {
-                        const isInvalid =
-                          phoneSubmitted &&
-                          field.state.meta.isTouched &&
-                          !field.state.meta.isValid;
+                        const invalid = isPhoneInvalid(field);
                         return (
-                          <Field data-invalid={isInvalid}>
+                          <Field data-invalid={invalid}>
                             <FieldLabel htmlFor={field.name}>
                               {tCommon("fields.phone")}
                             </FieldLabel>
-
                             <Input
-                              id="phone"
-                              type="text"
+                              id={field.name}
+                              type="tel"
                               inputMode="numeric"
+                              autoComplete="tel"
                               placeholder="09..."
                               value={field.state.value}
                               onChange={(e) =>
                                 field.handleChange(e.target.value)
                               }
                               onBlur={field.handleBlur}
-                              variant={isInvalid ? "error" : "default"}
-                              aria-invalid={isInvalid}
-                              className="focus-visible:outline-none"
+                              variant={invalid ? "error" : "default"}
+                              aria-invalid={invalid}
                             />
-                            {isInvalid && (
+                            {invalid && (
                               <FieldError
                                 errors={getFormErrorMessage(
                                   field.state.meta.errors,
@@ -183,36 +117,33 @@ export default function AuthPage() {
                 </form>
               )}
 
-              {showOtp && (
+              {f.step === "otp" && (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    otpForm.handleSubmit();
+                    f.otpForm.handleSubmit();
                   }}
                 >
                   <FieldGroup>
-                    <otpForm.Field
+                    <f.otpForm.Field
                       name="code"
+                      validators={f.otpFieldValidators}
                       children={(field) => {
-                        const isInvalid =
-                          otpSubmitted &&
-                          field.state.meta.isTouched &&
-                          !field.state.meta.isValid;
-
+                        const invalid = isOtpInvalid(field);
                         return (
                           <div className="min-h-12 flex flex-col items-center justify-center gap-2">
-                            <Field data-invalid={isInvalid}>
+                            <Field data-invalid={invalid}>
                               <OtpInput
                                 length={6}
                                 value={field.state.value}
                                 onChange={(code) => field.handleChange(code)}
-                                onComplete={() => otpForm.handleSubmit()}
+                                onComplete={() => f.otpForm.handleSubmit()}
                                 onBlur={field.handleBlur}
-                                disabled={verifyOtpMutation.isPending}
-                                error={isInvalid}
+                                disabled={f.isVerifying}
+                                error={invalid}
                                 aria-label={tCommon("fields.otp")}
                               />
-                              {isInvalid && (
+                              {invalid && (
                                 <FieldError
                                   errors={getFormErrorMessage(
                                     field.state.meta.errors,
@@ -232,12 +163,12 @@ export default function AuthPage() {
             </CardContent>
 
             <CardFooter className="flex-col gap-y-3">
-              {!showOtp ? (
-                <Fragment>
+              {f.step === "phone" ? (
+                <>
                   <Button
                     className="w-full"
-                    onClick={() => phoneForm.handleSubmit()}
-                    disabled={sendOtpMutation.isPending}
+                    onClick={() => f.phoneForm.handleSubmit()}
+                    disabled={f.isSending}
                   >
                     {tAuth("sendButton")}
                   </Button>
@@ -250,27 +181,27 @@ export default function AuthPage() {
                       {tAuth("classicLogin")}
                     </Button>
                   </Link>
-                </Fragment>
+                </>
               ) : (
-                <Fragment>
+                <>
                   <Button
                     className="w-full"
-                    onClick={() => otpForm.handleSubmit()}
-                    disabled={verifyOtpMutation.isPending}
+                    onClick={() => f.otpForm.handleSubmit()}
+                    disabled={f.isVerifying}
                   >
                     {tAuth("verifyButton")}
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full"
-                    disabled={timer > 0 || sendOtpMutation.isPending}
-                    onClick={() => phoneForm.handleSubmit()}
+                    disabled={!f.canResend}
+                    onClick={f.resend}
                   >
-                    {timer > 0
-                      ? `${tAuth("resendButton")} (${timer})`
+                    {f.timer > 0
+                      ? `${tAuth("resendButton")} (${f.timer})`
                       : tAuth("resendButton")}
                   </Button>
-                </Fragment>
+                </>
               )}
             </CardFooter>
           </Card>
@@ -280,7 +211,7 @@ export default function AuthPage() {
       <div className="hidden md:flex flex-1 relative bg-muted items-center justify-center overflow-hidden">
         <Image
           src="/images/auth.png"
-          alt="Authentication Background"
+          alt=""
           fill
           priority
           sizes="50vw"
