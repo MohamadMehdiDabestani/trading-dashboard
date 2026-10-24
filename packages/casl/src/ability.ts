@@ -7,8 +7,7 @@ import {
   type RawRuleOf,
 } from "@casl/ability";
 
-import { Role } from "./roles";
-import type { SubjectMap, SubjectType, TaggedSubject } from "./subjects";
+import {SubjectMap, SubjectType, TaggedSubject, Role } from "@repo/types";
 
 export type AppAction =
   | "read"

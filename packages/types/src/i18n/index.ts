@@ -1,3 +1,4 @@
+// types/i18n
 import { AUTH_ERROR_CODES, type AuthErrorCode } from "./auth/error";
 import { AUTH_SUCCESS_CODES, type AuthSuccessCodes } from "./auth/ok";
 import { OTP_ERROR_CODES, type OtpErrorCode } from "./otp/error";
@@ -26,7 +27,7 @@ export const ALL_SUCCESS_CODES = [
   ...AUTH_SUCCESS_CODES,
   ...TRADE_SUUCEESS_CODES,
   ...DEVICE_LINK_SUCCESS_CODES
-];
+] as const;
 export type AllErrorCode = (typeof ALL_ERROR_CODES)[number];
 export type AllSuccessCodes = (typeof ALL_SUCCESS_CODES)[number];
 export {
