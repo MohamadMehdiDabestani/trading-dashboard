@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import fp from "fastify-plugin";
 import { DrizzleUserRepository } from "../infrastructure/repositories/drizzle.user.repository";
 import { OtpServiceImpl } from "../infrastructure/services/otp.service.imp";
 import { TokenServiceImpl } from "../infrastructure/services/token.service.impl";
@@ -6,8 +6,9 @@ import { AuthService } from "../application/auth.service";
 import { authRoutes } from "../presentation/auth.route";
 import { DeviceLinkServiceImpl } from "../infrastructure/services/device.service.impl";
 import { deviceLinkRoutes } from "../presentation/deviceLink.route";
+import { meRoutes } from "../presentation/me.route";
 
-export async function authPlugin(fastify: FastifyInstance) {
+export const authPlugin = fp(async (fastify) => {
   const userRepo = new DrizzleUserRepository(fastify.db);
 
   const otpService = new OtpServiceImpl(fastify.db, fastify.sms);
@@ -25,6 +26,7 @@ export async function authPlugin(fastify: FastifyInstance) {
   fastify.decorate("authService", authService);
 
   await fastify.register(authRoutes, { prefix: "/auth" });
+  await fastify.register(meRoutes);
   await fastify.register(deviceLinkRoutes, {
     prefix: "/auth/device-link",
     onOpened: (e) => {
@@ -36,4 +38,7 @@ export async function authPlugin(fastify: FastifyInstance) {
     10 * 60_000,
   );
   fastify.addHook("onClose", async () => clearInterval(purge));
-}
+});
+// export async function authPlugin(fastify: FastifyInstance) {
+//
+// }

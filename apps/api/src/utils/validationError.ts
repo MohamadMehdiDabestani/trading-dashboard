@@ -1,31 +1,31 @@
-import {ValidationErrorCode} from '@repo/types'
-type AjvError = { instancePath: string; message?: string; params?: Record<string, unknown> };
-
-const MSG_MAP: Record<string, ValidationErrorCode> = {
-  "must NOT have fewer than":    "VALIDATION_MIN_LENGTH",
-  "must NOT have more than":     "VALIDATION_MAX_LENGTH",
-  "must match pattern":          "VALIDATION_PATTERN",
-  "must have required property": "VALIDATION_REQUIRED",
-  "must be equal to constant":   "VALIDATION_INVALID_VALUE",
+import {FieldError, ValidationErrorCode} from '@repo/types'
+type AjvError = { keyword: string; instancePath: string; params: Record<string, any> };
+const KEYWORD_MAP: Record<string, ValidationErrorCode> = {
+  required: "VALIDATION_REQUIRED",
+  minLength: "VALIDATION_MIN_LENGTH",
+  maxLength: "VALIDATION_MAX_LENGTH",
+  pattern: "VALIDATION_PATTERN",
+  format: "VALIDATION_PATTERN",
 };
 
-function mapMessage(msg = ""): ValidationErrorCode {
-  for (const [fragment, key] of Object.entries(MSG_MAP)) {
-    if (msg.includes(fragment)) return key;
-  }
-  return "VALIDATION_INVALID_VALUE";
-}
 
-export function parseValidationErrors(errors: AjvError[]): Record<string, { key: ValidationErrorCode }> {
-  const fields: Record<string, { key: ValidationErrorCode }> = {};
+export function parseValidationErrors(errors: AjvError[]) {
+  const fields: Record<string, FieldError> = {};
   for (const err of errors) {
-    let field = err.instancePath.replace(/^\//, "");
-    if (!field && err.params?.missingProperty) {
-      field = err.params.missingProperty as string;
-    }
-    if (field && !fields[field]) {
-      fields[field] = { key: mapMessage(err.message) };
-    }
+    const base = err.instancePath.replace(/^\//, "").replace(/\//g, ".");
+    const field =
+      err.keyword === "required"
+        ? [base, err.params.missingProperty].filter(Boolean).join(".")
+        : base;
+    if (!field || fields[field]) continue;
+
+    fields[field] = {
+      key: KEYWORD_MAP[err.keyword] ?? "VALIDATION_INVALID_VALUE",
+      params:
+        err.keyword === "minLength" ? { min: err.params.limit } :
+        err.keyword === "maxLength" ? { max: err.params.limit } :
+        undefined,
+    };
   }
   return fields;
 }

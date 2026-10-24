@@ -43,36 +43,26 @@ export class TokenServiceImpl implements ITokenService {
   }
 
   async rotateRefreshToken(raw: string) {
-    const hash = hashToken(raw);
-    const now = new Date();
+  const hash = hashToken(raw);
 
-    const [stored] = await this.db
-      .select()
-      .from(refreshTokens)
-      .where(
-        and(
-          eq(refreshTokens.tokenHash, hash),
-          gt(refreshTokens.expiresAt, now)
-        )
-      )
-      .limit(1);
-
-    if (!stored || stored.revokedAt) {
-      return null;
-    }
-
-    await this.db
+  return this.db.transaction(async (tx) => {
+    const [stored] = await tx
       .delete(refreshTokens)
-      .where(eq(refreshTokens.id, stored.id));
+      .where(and(eq(refreshTokens.tokenHash, hash), gt(refreshTokens.expiresAt, new Date())))
+      .returning();
 
-    const newRaw = await this.createRefreshToken(stored.userId);
+    if (!stored) return null;
 
-    return {
+    const newRaw = crypto.randomBytes(40).toString("hex");
+    await tx.insert(refreshTokens).values({
       userId: stored.userId,
-      refreshToken: newRaw
-    };
-  }
+      tokenHash: hashToken(newRaw),
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+    });
 
+    return { userId: stored.userId, refreshToken: newRaw };
+  });
+}
   async revokeAllForUser(userId: string): Promise<void> {
     await this.db
       .delete(refreshTokens)
