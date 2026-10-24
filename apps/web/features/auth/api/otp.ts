@@ -1,8 +1,8 @@
 import { apiFetch } from "@/lib/apiClient";
-import { APIResult, OtpSendDto, OtpVerifyDto, OtpVerifyReply } from "@repo/types";
+import {  OtpSendDto, OtpSentReply, OtpVerifyDto, OtpVerifyReply } from "@repo/types";
 
 export async function sendOtp(data: OtpSendDto) {
-  return await apiFetch<OtpSendDto>(`auth/otp/send`, {
+  return await apiFetch<OtpSentReply>(`auth/otp/send`, {
     method: "POST",
     body: JSON.stringify(data),
   });
