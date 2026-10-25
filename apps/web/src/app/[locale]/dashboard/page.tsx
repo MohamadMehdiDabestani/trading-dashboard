@@ -1,3 +1,4 @@
+'use client'
 import {
   Trophy,
   TrendingUp,
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { columns, Position } from "@/features/order/utils/columns";
 import { DataTable } from "@/components/data-table";
 import { Input } from "@/components/ui/input";
+import { useMe } from "@/hooks/useMe";
 // این دیتا معمولاً از API یا دیتابیس می‌آید
 const data: Position[] = [
   {
@@ -37,6 +39,9 @@ const data: Position[] = [
   },
 ];
 export default function Page() {
+  const me = useMe();
+
+
   return (
     <Fragment>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">

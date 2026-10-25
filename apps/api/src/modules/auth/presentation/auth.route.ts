@@ -33,7 +33,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         .send(ok(undefined, { message: { key: "OTP_SENT" } }));
     },
   );
-  
+
   fastify.post<{
     Body: OtpVerifyDto;
     Reply: APIResult<OtpVerifyReply>;
@@ -54,18 +54,18 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   fastify.post<{ Reply: APIResult<null> }>(
     "/refresh",
-    { ...rl(3) },
+    { ...rl(30) },
     async (req, reply) => {
       const raw = req.cookies?.[REFRESH_COOKIE];
       if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
-
-      const { accessToken, refreshToken } = await authService.refresh(raw);
-
-      setAuthCookies(reply, accessToken, refreshToken);
-
-      return reply
-        .code(200)
-        .send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
+      try {
+        const { accessToken, refreshToken } = await authService.refresh(raw);
+        setAuthCookies(reply, accessToken, refreshToken);
+        return reply.send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
+      } catch (e) {
+        clearAuthCookies(reply);
+        throw e;
+      }
     },
   );
 

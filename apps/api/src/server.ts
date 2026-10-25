@@ -53,7 +53,7 @@ await app.register(jwt, {
   secret: process.env.JWT_SECRET!,
   cookie: {
     cookieName: "access_token",
-    signed: true,
+    signed: false,
   },
 });
 await app.register(abilityPlugin);
