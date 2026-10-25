@@ -34,29 +34,23 @@ export type PollStatus =
   | "expired"
   | "consumed";
 
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await apiFetch<T>(path, init);
-  if (!res.success) throw new Error(res.error.code ?? "UNEXPECTED_RESPONSE");
-  return res.data as T;
-}
-
 export const deviceLinkApi = {
 
-  create: () => call<CreatedLink>(BASE, { method: "POST", body: EMPTY_BODY }),
-  get: (id: string) => call<OwnerView>(`${BASE}/${id}`),
+  create: () => apiFetch<CreatedLink>(BASE, { method: "POST", body: EMPTY_BODY }),
+  get: (id: string) => apiFetch<OwnerView>(`${BASE}/${id}`),
   approve: (id: string, code: string) =>
-    call<null>(`${BASE}/${id}/approve`, {
+    apiFetch<null>(`${BASE}/${id}/approve`, {
       method: "POST",
       body: JSON.stringify({ code }),
     }),
   deny: (id: string) =>
-    call<null>(`${BASE}/${id}/deny`, { method: "POST", body: EMPTY_BODY }),
+    apiFetch<null>(`${BASE}/${id}/deny`, { method: "POST", body: EMPTY_BODY }),
 
   // second device
   open: (token: string) =>
-    call<{ requestId: string; verificationCode: string }>(`${BASE}/open`, {
+    apiFetch<{ requestId: string; verificationCode: string }>(`${BASE}/open`, {
       method: "POST",
       body: JSON.stringify({ token }),
     }),
-  status: (id: string) => call<{ status: PollStatus }>(`${BASE}/${id}/status`),
+  status: (id: string) => apiFetch<{ status: PollStatus }>(`${BASE}/${id}/status`),
 };

@@ -15,21 +15,21 @@ export function setAuthCookies(
   reply.setCookie(REFRESH_COOKIE, refreshToken, {
     httpOnly: true,
     secure,
-    sameSite: "strict",
-    path: "/auth/refresh",
+    sameSite: "lax",
+    path: "/",
     maxAge: 7 * 24 * 60 * 60,
   });
   reply.setCookie(ACCESS_COOKIE, accessToken, {
     httpOnly: true,
     secure,
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
-    signed: true,
+    maxAge: 15 * 60
   });
 }
 
 export function clearAuthCookies(reply: FastifyReply) {
-  reply.clearCookie(REFRESH_COOKIE, { path: "/auth/refresh" });
+  reply.clearCookie(REFRESH_COOKIE, { path: "/" });
   reply.clearCookie(ACCESS_COOKIE, { path: "/" });
 }
 

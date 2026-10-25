@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { authApi } from "../api/auth.api";
-import { authKeys } from "../api/auth.keys";
+import { authApi } from "../features/auth/api/auth.api";
+import { authKeys } from "../features/auth/api/auth.keys";
 
 export function useMe() {
   return useQuery({
