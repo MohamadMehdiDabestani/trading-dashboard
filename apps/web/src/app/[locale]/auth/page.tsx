@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,57 +12,47 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  LoginInput,
-  loginSchema,
-  RegisterInput,
-  registerSchema,
-} from "@/features/auth/schema/schema";
 import {
   mobileSchema,
   passwordSchema,
+  loginPasswordSchema,
   nameSchema,
-} from "@/lib/primitivesValidations";
-import { zodForm, zodField } from "@/lib/tanstackValidation";
-import { getFormErrorMessage } from "@/lib/apiFieldError";
-import { useTranslations } from "next-intl";
-import { useAfterSubmitValidators } from "@/hooks/useAfterSubmitValidatior";
+} from "@/lib/validation/primitivesValidations";
+import { normalizeMobile } from "@/lib/normalizeDigits";
+import { useAppForm } from "@/components/form";
+import {
+  fieldValidators,
+  validationLogic,
+} from "@/lib/validation/fieldValidator";
 
-const isLoginValid = (v: LoginInput) => loginSchema.safeParse(v).success;
-
-const isRegisterValid = (v: RegisterInput) =>
-  registerSchema.safeParse(v).success;
+const loginPhone = fieldValidators(mobileSchema);
+const loginPassword = fieldValidators(loginPasswordSchema);
+const registerName = fieldValidators(nameSchema);
+const registerPhone = fieldValidators(mobileSchema);
+const registerPassword = fieldValidators(passwordSchema);
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const tCommon = useTranslations();
-  const loginForm = useForm({
+  const t = useTranslations();
+
+  const loginForm = useAppForm({
     defaultValues: { phone: "", password: "" },
-    validators: { onSubmit: zodForm(loginSchema) },
+    validationLogic,
     onSubmit: async ({ value }) => {
       // TODO: loginApi.mutate(value)
     },
   });
-  const registerForm = useForm({
+
+  const registerForm = useAppForm({
     defaultValues: { fullName: "", phone: "", password: "" },
-    validators: { onSubmit: zodForm(registerSchema) },
+    validationLogic,
     onSubmit: async ({ value }) => {
       // TODO: registerApi.mutate(value)
     },
   });
-  const phoneValidator = useAfterSubmitValidators(loginForm , mobileSchema);
-  const passwordValidator = useAfterSubmitValidators(loginForm , passwordSchema);
-  const fullNameValidator = useAfterSubmitValidators(registerForm , nameSchema);
-  const registerPhoneValidator = useAfterSubmitValidators(registerForm , mobileSchema);
-  const registerPasswordValidator = useAfterSubmitValidators(registerForm , passwordSchema);
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-background">
@@ -84,6 +74,7 @@ export default function AuthPage() {
                 </CardHeader>
 
                 <form
+                  noValidate
                   onSubmit={(e) => {
                     e.preventDefault();
                     loginForm.handleSubmit();
@@ -91,106 +82,43 @@ export default function AuthPage() {
                 >
                   <CardContent className="space-y-4">
                     <FieldGroup>
-                      <loginForm.Field
-                        name="phone"
-                        validators={phoneValidator}
-                        children={(field) => {
-                          const invalid =
-                            field.state.meta.isTouched &&
-                            !field.state.meta.isValid;
-                          return (
-                            <Field data-invalid={invalid}>
-                              <FieldLabel htmlFor={field.name}>
-                                شماره همراه
-                              </FieldLabel>
-                              <Input
-                                id={field.name}
-                                type="tel"
-                                inputMode="numeric"
-                                autoComplete="tel"
-                                placeholder="09..."
-                                value={field.state.value}
-                                onChange={(e) =>
-                                  field.handleChange(e.target.value)
-                                }
-                                onBlur={field.handleBlur}
-                                aria-invalid={invalid}
-                              />
-                              {invalid && (
-                                <FieldError
-                                  errors={getFormErrorMessage(
-                                    field.state.meta.errors,
-                                    tCommon,
-                                    "phone",
-                                  )}
-                                />
-                              )}
-                            </Field>
-                          );
-                        }}
-                      />
+                      <loginForm.AppField name="phone" validators={loginPhone}>
+                        {(field) => (
+                          <field.TextField
+                            label="شماره همراه"
+                            type="tel"
+                            inputMode="numeric"
+                            autoComplete="tel"
+                            placeholder="09..."
+                            dir="ltr"
+                            normalize={normalizeMobile}
+                          />
+                        )}
+                      </loginForm.AppField>
 
-                      <loginForm.Field
+                      <loginForm.AppField
                         name="password"
-                        validators={passwordValidator}
-                        children={(field) => {
-                          const invalid =
-                            field.state.meta.isTouched &&
-                            !field.state.meta.isValid;
-                          return (
-                            <Field data-invalid={invalid}>
-                              <FieldLabel htmlFor={field.name}>
-                                رمز عبور
-                              </FieldLabel>
-                              <Input
-                                id={field.name}
-                                type="password"
-                                autoComplete="current-password"
-                                value={field.state.value}
-                                onChange={(e) =>
-                                  field.handleChange(e.target.value)
-                                }
-                                onBlur={field.handleBlur}
-                                aria-invalid={invalid}
-                              />
-                              {invalid && (
-                                <FieldError
-                                  errors={getFormErrorMessage(
-                                    field.state.meta.errors,
-                                    tCommon,
-                                    "password",
-                                  )}
-                                />
-                              )}
-                            </Field>
-                          );
-                        }}
-                      />
+                        validators={loginPassword}
+                      >
+                        {(field) => (
+                          <field.TextField
+                            label="رمز عبور"
+                            type="password"
+                            autoComplete="current-password"
+                            dir="ltr"
+                          />
+                        )}
+                      </loginForm.AppField>
                     </FieldGroup>
                   </CardContent>
 
                   <CardFooter className="flex-col gap-y-3 mt-2">
-                    <loginForm.Subscribe
-                      selector={(s) => s.values}
-                      children={(values) => {
-                        const valid = isLoginValid(values);
-                        return (
-                          <div
-                            onMouseDown={(e) => {
-                              if (!valid) e.preventDefault();
-                            }}
-                            className="w-full"
-                          >
-                            <Button
-                              className="w-full"
-                              type="submit"
-                            >
-                              {tCommon("common.buttons.submit")}
-                            </Button>
-                          </div>
-                        );
-                      }}
-                    />
+                    <loginForm.AppForm>
+                      <loginForm.SubmitButton
+                        className="w-full"
+                        label={t("common.buttons.submit")}
+                      />
+                    </loginForm.AppForm>
                     <Link href="/auth/otp" className="block w-full">
                       <Button
                         type="button"
@@ -216,6 +144,7 @@ export default function AuthPage() {
                 </CardHeader>
 
                 <form
+                  noValidate
                   onSubmit={(e) => {
                     e.preventDefault();
                     registerForm.handleSubmit();
@@ -223,144 +152,59 @@ export default function AuthPage() {
                 >
                   <CardContent className="space-y-4">
                     <FieldGroup>
-                      <registerForm.Field
+                      <registerForm.AppField
                         name="fullName"
-                        validators={fullNameValidator}
-                        children={(field) => {
-                          const invalid =
-                            field.state.meta.isTouched &&
-                            !field.state.meta.isValid;
-                          return (
-                            <Field data-invalid={invalid}>
-                              <FieldLabel htmlFor={field.name}>
-                                نام و نام خانوادگی
-                              </FieldLabel>
-                              <Input
-                                id={field.name}
-                                placeholder="علی احمدی"
-                                autoComplete="name"
-                                value={field.state.value}
-                                onChange={(e) =>
-                                  field.handleChange(e.target.value)
-                                }
-                                onBlur={field.handleBlur}
-                                aria-invalid={invalid}
-                              />
-                              {invalid && (
-                                <FieldError
-                                  errors={getFormErrorMessage(
-                                    field.state.meta.errors,
-                                    tCommon,
-                                    "fullName",
-                                  )}
-                                />
-                              )}
-                            </Field>
-                          );
-                        }}
-                      />
+                        validators={registerName}
+                      >
+                        {(field) => (
+                          <field.TextField
+                            label="نام و نام خانوادگی"
+                            placeholder="علی احمدی"
+                            autoComplete="name"
+                          />
+                        )}
+                      </registerForm.AppField>
 
-                      <registerForm.Field
+                      <registerForm.AppField
                         name="phone"
-                        validators={registerPhoneValidator}
-                        children={(field) => {
-                          const invalid =
-                            field.state.meta.isTouched &&
-                            !field.state.meta.isValid;
-                          return (
-                            <Field data-invalid={invalid}>
-                              <FieldLabel htmlFor={field.name}>
-                                شماره تماس
-                              </FieldLabel>
-                              <Input
-                                id={field.name}
-                                type="tel"
-                                inputMode="numeric"
-                                autoComplete="tel"
-                                placeholder="09..."
-                                value={field.state.value}
-                                onChange={(e) =>
-                                  field.handleChange(e.target.value)
-                                }
-                                onBlur={field.handleBlur}
-                                aria-invalid={invalid}
-                              />
-                              {invalid && (
-                                <FieldError
-                                  errors={getFormErrorMessage(
-                                    field.state.meta.errors,
-                                    tCommon,
-                                    "phone",
-                                  )}
-                                />
-                              )}
-                            </Field>
-                          );
-                        }}
-                      />
+                        validators={registerPhone}
+                      >
+                        {(field) => (
+                          <field.TextField
+                            label="شماره تماس"
+                            type="tel"
+                            inputMode="numeric"
+                            autoComplete="tel"
+                            placeholder="09..."
+                            dir="ltr"
+                            normalize={normalizeMobile}
+                          />
+                        )}
+                      </registerForm.AppField>
 
-                      <registerForm.Field
+                      <registerForm.AppField
                         name="password"
-                        validators={registerPasswordValidator}
-                        children={(field) => {
-                          const invalid =
-                            field.state.meta.isTouched &&
-                            !field.state.meta.isValid;
-                          return (
-                            <Field data-invalid={invalid}>
-                              <FieldLabel htmlFor={field.name}>
-                                رمز عبور
-                              </FieldLabel>
-                              <Input
-                                id={field.name}
-                                type="password"
-                                autoComplete="new-password"
-                                value={field.state.value}
-                                onChange={(e) =>
-                                  field.handleChange(e.target.value)
-                                }
-                                onBlur={field.handleBlur}
-                                aria-invalid={invalid}
-                              />
-                              {invalid && (
-                                <FieldError
-                                  errors={getFormErrorMessage(
-                                    field.state.meta.errors,
-                                    tCommon,
-                                    "password",
-                                  )}
-                                />
-                              )}
-                            </Field>
-                          );
-                        }}
-                      />
+                        validators={registerPassword}
+                      >
+                        {(field) => (
+                          <field.TextField
+                            label="رمز عبور"
+                            type="password"
+                            autoComplete="new-password"
+                            dir="ltr"
+                          />
+                        )}
+                      </registerForm.AppField>
                     </FieldGroup>
                   </CardContent>
 
                   <CardFooter className="flex-col gap-y-3 mt-2">
-                    <registerForm.Subscribe
-                      selector={(s) => s.values}
-                      children={(values) => {
-                        const valid = isRegisterValid(values);
-                        return (
-                          <div
-                            onMouseDown={(e) => {
-                              if (!valid) e.preventDefault();
-                            }}
-                            className="w-full"
-                          >
-                            <Button
-                              className="w-full"
-                              type="submit"
-                            >
-                              ثبت نام
-                            </Button>
-                          </div>
-                        );
-                      }}
-                    />
-
+                    <registerForm.AppForm>
+                      <registerForm.SubmitButton
+                        className="w-full"
+                        label="ثبت نام"
+                      />
+                    </registerForm.AppForm>
                     <Link href="/auth/otp" className="block w-full">
                       <Button
                         type="button"

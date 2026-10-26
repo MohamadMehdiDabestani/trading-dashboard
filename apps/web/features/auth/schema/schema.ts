@@ -5,7 +5,7 @@ import {
   nameSchema,
   otpSchema,
   fourDigitCode,
-} from "@/lib/primitivesValidations";
+} from "@/lib/validation/primitivesValidations";
 
 export const loginSchema = z.object({
   phone: mobileSchema,

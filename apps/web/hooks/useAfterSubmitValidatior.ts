@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSelector } from  "@tanstack/react-store";
 import type { AnyFormApi } from "@tanstack/react-form";
 import type { ZodType } from "zod";
-import { zodField } from "@/lib/tanstackValidation";
+import { zodField } from "@/lib/validation/tanstackValidation";
 
 export function useAfterSubmitValidators<T>(
   form: AnyFormApi,

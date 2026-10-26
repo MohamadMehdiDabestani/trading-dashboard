@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "@tanstack/react-form";
-
 import { useSendOtp, useVerifyOtp } from "./useAuthMutations";
-import { applyApiFieldErrors } from "@/lib/apiFieldError";
+import { useAppForm } from "@/components/form";
+import { applyApiFieldErrors } from "@/lib/validation/applyFieldErrors";
+import { validationLogic } from "@/lib/validation/fieldValidator";
 
 const RESEND_COOLDOWN_SEC = 60;
 
@@ -15,7 +15,8 @@ export function useOtpLoginFlow() {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [timer, setTimer] = useState(0);
 
-  const phoneForm = useForm({
+  const phoneForm = useAppForm({
+    validationLogic,
     defaultValues: { phone: "" },
     onSubmit: async ({ value }) => {
       try {
@@ -28,7 +29,8 @@ export function useOtpLoginFlow() {
     },
   });
 
-  const otpForm = useForm({
+  const otpForm = useAppForm({
+    validationLogic,
     defaultValues: { code: "" },
     onSubmit: async ({ value }) => {
       if (verifyOtp.isPending) return;
@@ -37,7 +39,6 @@ export function useOtpLoginFlow() {
           phone: phoneForm.state.values.phone,
           code: value.code,
         });
-        // navigation در useVerifyOtp.onSuccess
       } catch (err) {
         const applied = applyApiFieldErrors(err, otpForm);
         if (!applied) otpForm.setFieldValue("code", "");
@@ -59,19 +60,14 @@ export function useOtpLoginFlow() {
     );
   };
 
-  const backToPhone = () => {
-    setStep("phone");
-  };
-
   return {
     step,
-    backToPhone,
+    backToPhone: () => setStep("phone"),
     phoneForm,
     otpForm,
     timer,
     resend,
     isSending: sendOtp.isPending,
-    isVerifying: verifyOtp.isPending,
     canResend: timer === 0 && !sendOtp.isPending,
   };
 }

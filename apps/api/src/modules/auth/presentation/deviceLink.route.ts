@@ -54,7 +54,7 @@ export async function deviceLinkRoutes(
       const { id, token, expiresAt } = await svc.create(req.user.sub, meta(req));
 
       // token lives in the URL fragment-free path; it is single use + 2 min TTL
-      const url = `${WEB_URL}/device-link/${token}`;
+      const url = `${WEB_URL}/deviceLink/${token}`;
       const qrSvg = await QRCode.toString(url, {
         type: "svg",
         margin: 1,
