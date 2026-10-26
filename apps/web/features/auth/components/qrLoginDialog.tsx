@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import {
   CheckCircle2,
@@ -29,7 +25,9 @@ import {
 import { Field, FieldError } from "@/components/ui/field";
 import { ApiError } from "@/lib/apiError";
 import { deviceLinkApi } from "@/features/account/api/qrLogin";
-import { deviceLinkCodeSchema } from "../schema/form";
+import {  zodField, zodForm } from "@/lib/tanstackValidation";
+import { deviceLinkCodeSchema } from "../schema/schema";
+import { fourDigitCode } from "@/lib/primitivesValidations";
 
 const OtpInput = dynamic(() => import("@/components/ui/otp"), {
   ssr: false,
@@ -83,7 +81,7 @@ export function QrLoginDialog() {
 
   const create = useMutation({ mutationFn: deviceLinkApi.create });
   const link = create.data ?? null;
- 
+
   const owner = useQuery({
     queryKey: ["device-link", link?.id],
     queryFn: () => deviceLinkApi.get(link!.id),
@@ -99,12 +97,12 @@ export function QrLoginDialog() {
 
   const codeForm = useForm({
     defaultValues: { code: "" },
-    validators: { onSubmit: deviceLinkCodeSchema },
+    validators: { onSubmit: zodForm(deviceLinkCodeSchema) },
     onSubmit: async ({ value }) => {
       try {
         await approve.mutateAsync(value.code);
       } catch {
-        // خطا در onError مدیریت میشود
+        /* in onError */
       }
     },
   });
@@ -242,10 +240,10 @@ export function QrLoginDialog() {
 
                 <codeForm.Field
                   name="code"
+                  validators={{ onChange: zodField(fourDigitCode) }}
                   children={(field) => {
                     const isInvalid =
-                      field.state.meta.isTouched &&
-                      !field.state.meta.isValid;
+                      field.state.meta.isTouched && !field.state.meta.isValid;
                     const isComplete = field.state.value.length === 4;
 
                     return (
@@ -264,16 +262,9 @@ export function QrLoginDialog() {
                             error={isInvalid || approve.isError}
                             aria-label="کد تایید دستگاه جدید"
                           />
-                          {isInvalid && (
-                            <FieldError
-                              errors={field.state.meta.errors.map((e) =>
-                                typeof e === "string"
-                                  ? e
-                                  : ((e as { message?: string })?.message ??
-                                    ""),
-                              )}
-                            />
-                          )}
+                          {/* <FieldError
+                            errors={fieldMessages(field.state.meta.errors)}
+                          /> */}
                           {approve.isError && !isInvalid && (
                             <p className="text-xs text-destructive">
                               کد اشتباه بود. دوباره تلاش کنید.
@@ -322,9 +313,7 @@ export function QrLoginDialog() {
             </>
           )}
 
-          {(phase === "denied" ||
-            phase === "expired" ||
-            phase === "error") && (
+          {(phase === "denied" || phase === "expired" || phase === "error") && (
             <>
               <XCircle className="size-12 text-destructive" />
               <p className="font-medium">

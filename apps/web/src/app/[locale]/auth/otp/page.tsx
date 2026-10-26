@@ -22,20 +22,37 @@ import {
 } from "@/components/ui/field";
 import { useOtpLoginFlow } from "@/features/auth/hooks/useOtpLoginFlow";
 import { getFormErrorMessage } from "@/lib/apiFieldError";
+import { zodField } from "@/lib/tanstackValidation";
+import { otpStepSchema, phoneStepSchema } from "@/features/auth/schema/schema";
+import {
+  FourDigitCode,
+  mobileSchema,
+  MobileValue,
+  otpSchema,
+} from "@/lib/primitivesValidations";
+import { useAfterSubmitValidators } from "@/hooks/useAfterSubmitValidatior";
 
 const OtpInput = dynamic(() => import("@/components/ui/otp"), { ssr: false });
 
+const isValidOtpRequest = (v: MobileValue) => mobileSchema.safeParse(v).success;
+const isValidOtpVerify = (v: FourDigitCode) =>
+  otpStepSchema.shape.code.safeParse(v).success;
 export default function OtpLoginPage() {
   const locale = useLocale();
   const tAuth = useTranslations("auth.otp");
-  const tCommon = useTranslations("common");
+  const tCommon = useTranslations();
   const f = useOtpLoginFlow();
 
   const isPhoneInvalid = (field: any) =>
-    f.phoneSubmitted && !field.state.meta.isValid;
+    field.state.meta.isTouched && !field.state.meta.isValid;
 
   const isOtpInvalid = (field: any) =>
-    f.otpSubmitted && !field.state.meta.isValid;
+    field.state.meta.isTouched && !field.state.meta.isValid;
+  const phoneValidator = useAfterSubmitValidators(f.phoneForm, mobileSchema);
+  const codeValidator = useAfterSubmitValidators(
+    f.otpForm,
+    otpStepSchema.shape.code,
+  );
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row">
@@ -78,13 +95,13 @@ export default function OtpLoginPage() {
                   <FieldGroup>
                     <f.phoneForm.Field
                       name="phone"
-                      validators={f.phoneFieldValidators}
+                      validators={phoneValidator}
                       children={(field) => {
                         const invalid = isPhoneInvalid(field);
                         return (
                           <Field data-invalid={invalid}>
                             <FieldLabel htmlFor={field.name}>
-                              {tCommon("fields.phone")}
+                              {tCommon("common.fields.phone")}
                             </FieldLabel>
                             <Input
                               id={field.name}
@@ -127,7 +144,7 @@ export default function OtpLoginPage() {
                   <FieldGroup>
                     <f.otpForm.Field
                       name="code"
-                      validators={f.otpFieldValidators}
+                      validators={codeValidator}
                       children={(field) => {
                         const invalid = isOtpInvalid(field);
                         return (
@@ -141,14 +158,13 @@ export default function OtpLoginPage() {
                                 onBlur={field.handleBlur}
                                 disabled={f.isVerifying}
                                 error={invalid}
-                                aria-label={tCommon("fields.otp")}
                               />
                               {invalid && (
                                 <FieldError
                                   errors={getFormErrorMessage(
                                     field.state.meta.errors,
                                     tCommon,
-                                    "otp",
+                                    "code",
                                   )}
                                 />
                               )}
@@ -164,44 +180,72 @@ export default function OtpLoginPage() {
 
             <CardFooter className="flex-col gap-y-3">
               {f.step === "phone" ? (
-                <>
-                  <Button
-                    className="w-full"
-                    onClick={() => f.phoneForm.handleSubmit()}
-                    disabled={f.isSending}
-                  >
-                    {tAuth("sendButton")}
-                  </Button>
-                  <Link href="/auth" className="block w-full">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      color="secondary"
-                    >
-                      {tAuth("classicLogin")}
-                    </Button>
-                  </Link>
-                </>
+                <f.phoneForm.Subscribe
+                  selector={(s) => s.values}
+                  children={(values) => {
+                    const valid = isValidOtpRequest(values.phone);
+                    return (
+                      <>
+                        <div
+                          onMouseDown={(e) => {
+                            if (!valid) e.preventDefault();
+                          }}
+                          className="w-full"
+                        >
+                          <Button
+                            className="w-full"
+                            onClick={() => f.phoneForm.handleSubmit()}
+                            disabled={f.isSending}
+                          >
+                            {tAuth("sendButton")}
+                          </Button>
+                        </div>
+
+                        <Link href="/auth" className="block w-full">
+                          <Button variant="outline" className="w-full">
+                            {tAuth("classicLogin")}
+                          </Button>
+                        </Link>
+                      </>
+                    );
+                  }}
+                />
               ) : (
-                <>
-                  <Button
-                    className="w-full"
-                    onClick={() => f.otpForm.handleSubmit()}
-                    disabled={f.isVerifying}
-                  >
-                    {tAuth("verifyButton")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    disabled={!f.canResend}
-                    onClick={f.resend}
-                  >
-                    {f.timer > 0
-                      ? `${tAuth("resendButton")} (${f.timer})`
-                      : tAuth("resendButton")}
-                  </Button>
-                </>
+                <f.otpForm.Subscribe
+                  selector={(s) => s.values}
+                  children={(values) => {
+                    const valid = isValidOtpVerify(values.code);
+                    return (
+                      <>
+                        <div
+                          onMouseDown={(e) => {
+                            if (!valid) e.preventDefault();
+                          }}
+                          className="w-full"
+                        >
+                          <Button
+                            className="w-full"
+                            onClick={() => f.otpForm.handleSubmit()}
+                            disabled={f.isVerifying}
+                          >
+                            {tAuth("verifyButton")}
+                          </Button>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          disabled={!f.canResend}
+                          onClick={f.resend}
+                        >
+                          {f.timer > 0
+                            ? `${tAuth("resendButton")} (${f.timer})`
+                            : tAuth("resendButton")}
+                        </Button>
+                      </>
+                    );
+                  }}
+                />
               )}
             </CardFooter>
           </Card>

@@ -15,7 +15,18 @@
       "VALIDATION_INVALID": "{field} نامعتبر است",
       "VALIDATION_MIN_LENGTH": "تعداد کاراکتر های {field} ناکافی است",
       "VALIDATION_MAX_LENGTH": "تعداد کاراکتر های {field} زیاد است",
-      "VALIDATION_PATTERN": "فرمت {field} صحیح نیست"
+      "VALIDATION_PATTERN": "فرمت {field} صحیح نیست",
+      "phoneRequired": "شماره موبایل الزامی است",
+      "phone": "شماره موبایل باید با ۰۹ شروع شود و ۱۱ رقم باشد",
+      "passwordRequired": "رمز عبور الزامی است",
+      "passwordMin": "رمز عبور باید حداقل ۸ کاراکتر باشد",
+      "passwordMax": "رمز عبور بیش از حد طولانی است",
+      "passwordLetter": "رمز عبور باید حداقل یک حرف داشته باشد",
+      "passwordDigit": "رمز عبور باید حداقل یک عدد داشته باشد",
+      "nameMin": "نام باید حداقل ۳ کاراکتر باشد",
+      "nameMax": "نام حداکثر ۶۰ کاراکتر است",
+      "otpLength": "کد باید دقیقاً {length} رقم باشد",
+      "otpRequired": "کد تایید الزامی است"
     },
     "buttons": {
       "submit": "ارسال",
