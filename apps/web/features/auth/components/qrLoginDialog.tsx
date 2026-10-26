@@ -1,13 +1,6 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Loader2,
@@ -26,14 +19,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldError } from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
 import { ApiError } from "@/lib/apiError";
 import { deviceLinkApi } from "@/features/account/api/qrLogin";
-import { deviceLinkCodeSchema } from "../schema/form";
+import { fieldValidators, validationLogic } from "@/lib/validation/fieldValidator";
+import { fourDigitCode } from "@/lib/validation/primitivesValidations";
+import { useAppForm } from "@/components/form";
+import { setFieldError } from "@/lib/validation/applyFieldErrors";
 
-const OtpInput = dynamic(() => import("@/components/ui/otp"), {
-  ssr: false,
-});
+const codeValidators = fieldValidators(fourDigitCode);
 
 type Phase =
   | "creating"
@@ -48,7 +42,6 @@ type Phase =
 const TERMINAL = ["approved", "consumed", "denied"];
 
 function describeUA(ua?: string | null) {
-  // ... بدون تغییر
   if (!ua) return "دستگاه ناشناس";
   const browser = /Edg\//.test(ua)
     ? "Edge"
@@ -83,7 +76,7 @@ export function QrLoginDialog() {
 
   const create = useMutation({ mutationFn: deviceLinkApi.create });
   const link = create.data ?? null;
- 
+  console.log(link);
   const owner = useQuery({
     queryKey: ["device-link", link?.id],
     queryFn: () => deviceLinkApi.get(link!.id),
@@ -97,14 +90,14 @@ export function QrLoginDialog() {
     },
   });
 
-  const codeForm = useForm({
+  const codeForm = useAppForm({
+    validationLogic,
     defaultValues: { code: "" },
-    validators: { onSubmit: deviceLinkCodeSchema },
     onSubmit: async ({ value }) => {
       try {
         await approve.mutateAsync(value.code);
       } catch {
-        // خطا در onError مدیریت میشود
+        /* handled in onError */
       }
     },
   });
@@ -113,13 +106,16 @@ export function QrLoginDialog() {
     mutationFn: (c: string) => deviceLinkApi.approve(link!.id, c),
     onSuccess: () => toast.success("دستگاه جدید وارد حساب شما شد"),
     onError: (e) => {
-      codeForm.reset();
       void qc.invalidateQueries({ queryKey: ["device-link", link?.id] });
-      toast.error(
-        e instanceof ApiError && String(e.code) === "DEVICE_LINK_CODE_INVALID"
-          ? "کد اشتباه است"
-          : "تایید ناموفق بود",
-      );
+
+      if (e instanceof ApiError && String(e.code) === "DEVICE_LINK_CODE_INVALID") {
+        // کد را پاک کن (بدون validate)، و خطا را روی خود فیلد بنشان.
+        // با اولین تایپ جدید، خودکار پاک می‌شود.
+        codeForm.setFieldValue("code", "", { dontValidate: true });
+        setFieldError(codeForm, "code", { key: "deviceLinkCodeInvalid" });
+      } else {
+        toast.error("تایید ناموفق بود");
+      }
     },
   });
 
@@ -235,67 +231,43 @@ export function QrLoginDialog() {
                 </p>
               </div>
 
-              <div className="w-full space-y-2">
+              <form
+                id="device-code-form"
+                noValidate
+                className="w-full space-y-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  codeForm.handleSubmit();
+                }}
+              >
                 <p className="text-sm">
                   کد ۴ رقمی نمایشدادهشده روی دستگاه جدید را وارد کنید:
                 </p>
 
-                <codeForm.Field
-                  name="code"
-                  children={(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched &&
-                      !field.state.meta.isValid;
-                    const isComplete = field.state.value.length === 4;
+                <FieldGroup>
+                  <codeForm.AppField name="code" validators={codeValidators}>
+                    {(field) => (
+                      <field.OtpField
+                        length={4}
+                        ariaLabel="کد تایید دستگاه جدید"
+                      />
+                    )}
+                  </codeForm.AppField>
+                </FieldGroup>
 
-                    return (
-                      <>
-                        <Field data-invalid={isInvalid || approve.isError}>
-                          <OtpInput
-                            length={4}
-                            value={field.state.value}
-                            onChange={(v) => {
-                              approve.reset(); // با هر تایپ، خطای سرور پاک شود
-                              field.handleChange(v);
-                            }}
-                            onBlur={field.handleBlur}
-                            onComplete={() => codeForm.handleSubmit()}
-                            disabled={phase === "approving"}
-                            error={isInvalid || approve.isError}
-                            aria-label="کد تایید دستگاه جدید"
-                          />
-                          {isInvalid && (
-                            <FieldError
-                              errors={field.state.meta.errors.map((e) =>
-                                typeof e === "string"
-                                  ? e
-                                  : ((e as { message?: string })?.message ??
-                                    ""),
-                              )}
-                            />
-                          )}
-                          {approve.isError && !isInvalid && (
-                            <p className="text-xs text-destructive">
-                              کد اشتباه بود. دوباره تلاش کنید.
-                            </p>
-                          )}
-                        </Field>
-
-                        <Button
-                          className="w-full"
-                          disabled={!isComplete || phase === "approving"}
-                          onClick={() => codeForm.handleSubmit()}
-                        >
-                          {phase === "approving" && (
-                            <Loader2 className="size-4 animate-spin" />
-                          )}
-                          تایید ورود
-                        </Button>
-                      </>
-                    );
-                  }}
-                />
-              </div>
+                <codeForm.AppForm>
+                  <codeForm.Subscribe selector={(s) => s.values.code.length === 4}>
+                    {(isComplete) => (
+                      <codeForm.SubmitButton
+                        form="device-code-form"
+                        className="w-full"
+                        label="تایید ورود"
+                        disabled={!isComplete}
+                      />
+                    )}
+                  </codeForm.Subscribe>
+                </codeForm.AppForm>
+              </form>
 
               <Button
                 variant="ghost"
@@ -322,9 +294,7 @@ export function QrLoginDialog() {
             </>
           )}
 
-          {(phase === "denied" ||
-            phase === "expired" ||
-            phase === "error") && (
+          {(phase === "denied" || phase === "expired" || phase === "error") && (
             <>
               <XCircle className="size-12 text-destructive" />
               <p className="font-medium">
