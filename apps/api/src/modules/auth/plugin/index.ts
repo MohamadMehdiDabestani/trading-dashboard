@@ -38,7 +38,14 @@ export const authPlugin = fp(async (fastify) => {
     10 * 60_000,
   );
   fastify.addHook("onClose", async () => clearInterval(purge));
+
+  const tokenPurge = setInterval(
+    () =>
+      tokenService
+        .purgeStale()
+        .catch((err) => fastify.log.error({ err }, "token purge failed")),
+    10 * 60_000,
+  );
+  tokenPurge.unref();
+  fastify.addHook("onClose", async () => clearInterval(tokenPurge));
 });
-// export async function authPlugin(fastify: FastifyInstance) {
-//
-// }

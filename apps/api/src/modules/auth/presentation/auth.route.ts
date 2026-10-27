@@ -58,14 +58,10 @@ export async function authRoutes(fastify: FastifyInstance) {
     async (req, reply) => {
       const raw = req.cookies?.[REFRESH_COOKIE];
       if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
-      try {
-        const { accessToken, refreshToken } = await authService.refresh(raw);
-        setAuthCookies(reply, accessToken, refreshToken);
-        return reply.send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
-      } catch (e) {
-        clearAuthCookies(reply);
-        throw e;
-      }
+
+      const { accessToken, refreshToken } = await authService.refresh(raw);
+      setAuthCookies(reply, accessToken, refreshToken);
+      return reply.send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
     },
   );
 
