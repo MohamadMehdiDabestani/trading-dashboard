@@ -36,7 +36,12 @@ export default function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return handleI18nRouting(request);
+  const res = handleI18nRouting(request);
+  res.headers.set(
+    "x-pathname",
+    request.nextUrl.pathname + request.nextUrl.search,
+  );
+  return res;
 }
 
 export const config = {
