@@ -1,11 +1,12 @@
 import { PaginatedResult } from "../common";
-import { OrderStatus } from "../trading/order";
+import { OrderStatus, Side } from "../trading/order";
 
 export interface GetRecentTradesReply extends PaginatedResult<{
   id: string;
   type: string;
   symbol: string;
-  status : OrderStatus,
+  side: Side;
+  status: OrderStatus;
   price: string;
   quantity: string;
   filledQuantity: string;
@@ -13,8 +14,8 @@ export interface GetRecentTradesReply extends PaginatedResult<{
 }> {}
 
 export interface CreateOrderReply {
-  orderId : string,
-  status : string
+  orderId: string;
+  status: string;
 }
 
-export type CancelOrderReply = string 
+export type CancelOrderReply = string;

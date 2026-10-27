@@ -43,3 +43,6 @@ export interface PaginatedResult<T> {
   total: number;
   totalPage: number;
 }
+export const ValueSortDirection = ["asc" , "desc"];
+export type SortDirection = (typeof ValueSortDirection)[number]
+ 

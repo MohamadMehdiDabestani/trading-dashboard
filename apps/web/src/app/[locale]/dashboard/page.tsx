@@ -11,32 +11,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Fragment } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { columns, Position } from "@/features/order/utils/columns";
+// import { columns, Position } from "@/features/order/utils/columns";
 import { DataTable } from "@/components/data-table";
 import { Input } from "@/components/ui/input";
 // این دیتا معمولاً از API یا دیتابیس می‌آید
-const data: Position[] = [
-  {
-    id: "1",
-    pair: "BTC/USDT",
-    type: "BUY",
-    amount: 0.25,
-    entryPrice: "$64,210.00",
-    currentPrice: "$65,100.50",
-    pnl: "$222.62",
-    status: "up",
-  },
-  {
-    id: "2",
-    pair: "ETH/USDT",
-    type: "SELL",
-    amount: 4.5,
-    entryPrice: "$3,550.00",
-    currentPrice: "$3,420.00",
-    pnl: "$585.020",
-    status: "up",
-  },
-];
+// const data: Position[] = [
+//   {
+//     id: "1",
+//     pair: "BTC/USDT",
+//     type: "BUY",
+//     amount: 0.25,
+//     entryPrice: "$64,210.00",
+//     currentPrice: "$65,100.50",
+//     pnl: "$222.62",
+//     status: "up",
+//   },
+//   {
+//     id: "2",
+//     pair: "ETH/USDT",
+//     type: "SELL",
+//     amount: 4.5,
+//     entryPrice: "$3,550.00",
+//     currentPrice: "$3,420.00",
+//     pnl: "$585.020",
+//     status: "up",
+//   },
+// ];
 export default function Page() {
   return (
     <Fragment>
@@ -306,12 +306,12 @@ export default function Page() {
               <CardContent className="p-0">
                 <TabsContent value="orders" className="m-0">
                   <div className="rounded-md border-none">
-                    <DataTable columns={columns} data={data} />
+                    {/* <DataTable columns={columns} data={data} /> */}
                   </div>
                 </TabsContent>
                 <TabsContent value="history" className="m-0">
                   <div className="rounded-md border-none">
-                    <DataTable columns={columns} data={data} />
+                    {/* <DataTable columns={columns} data={data} /> */}
                   </div>
                 </TabsContent>
               </CardContent>

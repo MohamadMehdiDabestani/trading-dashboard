@@ -14,6 +14,8 @@ import {
   CreateOrderReply,
   GetRecentTradesReply,
   OrderStatus,
+  OrderSortField,
+  SortDirection,
 } from "@repo/types";
 import { AppError } from "@/errors/appError";
 
@@ -110,6 +112,8 @@ export async function tradeRoutes(fastify: FastifyInstance) {
       pageSize?: string;
       status?: OrderStatus;
       symbol: string;
+      sortBy?: OrderSortField;
+      sortOrder?: SortDirection;
     };
     Reply: APIResult<GetRecentTradesReply>;
   }>(
@@ -121,13 +125,22 @@ export async function tradeRoutes(fastify: FastifyInstance) {
     async (req, reply) => {
       try {
         const userId = req.user.sub;
-        const { symbol, status, page = 1, pageSize = 20 } = req.query;
+        const {
+          symbol,
+          status,
+          page = 1,
+          pageSize = 20,
+          sortBy,
+          sortOrder,
+        } = req.query;
         const data = await tradeService.getRecentOrders({
           symbol : symbol.toUpperCase(),
           userId,
           status,
-          page: Number(page),
-          pageSize: Number(pageSize),
+          page: Math.max(1, Number(page) || 1),
+          pageSize: Math.min(100, Math.max(1, Number(pageSize) || 20)),
+          sortBy,
+          sortOrder,
         });
 
         return reply.status(200).send(ok(data));

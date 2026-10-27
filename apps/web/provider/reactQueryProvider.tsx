@@ -38,6 +38,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       if (error.fields && Object.keys(error.fields).length > 0) return;
 
       const { t } = ctx.current;
+      console.log("error.code ===" , error.code);
       toast.error(
         t.has(error.code) ? t(error.code, error.params) : t("INTERNAL_SERVER_ERROR"),
       );
