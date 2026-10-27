@@ -34,7 +34,7 @@ export async function tradeRoutes(fastify: FastifyInstance) {
         const userId = request.user.sub;
 
         const { symbol, baseAsset, quoteAsset, side, type, quantity, price } =
-          request.body as any;
+          request.body;
 
         const bigIntQty = parseToScaledBigInt(quantity);
 

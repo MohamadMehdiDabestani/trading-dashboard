@@ -541,9 +541,6 @@ importers:
       '@casl/ability':
         specifier: ^7.0.2
         version: 7.0.2
-      '@repo/types':
-        specifier: workspace:^
-        version: 'link:'
       '@repo/typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
