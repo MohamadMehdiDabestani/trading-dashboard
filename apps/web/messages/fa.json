@@ -66,6 +66,8 @@
     "OTP_INVALID": "کد نامعتبر است",
     "OTP_MAX_ATTEMPTS": "تلاش های غیر مجاز",
     "OTP_WRONG": "کد نامعتبر است",
-    "VALIDATION_INVALID_VALUE": "{field} نامعتبر است"
+    "VALIDATION_INVALID_VALUE": "{field} نامعتبر است",
+    "INSUFFICIENT_BALANCE" : "موجودی ناکافی است",
+    "RATE_LIMIT" : "کمی صبر کنید و مجدد تلاش کنید"
   }
 }

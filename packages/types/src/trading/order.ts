@@ -1,6 +1,11 @@
 export type Side = "buy" | "sell";
 export type OrderType = "limit" | "market";
-export const ValueOrderStatus = ["open", "partial", "filled", "cancelled"] as const;
+export const ValueOrderStatus = [
+  "open",
+  "partial",
+  "filled",
+  "cancelled",
+] as const;
 // export type OrderStatus = "open" | "partial" | "filled" | "cancelled";
 export type OrderStatus = (typeof ValueOrderStatus)[number];
 export const SCALE = 10n ** 18n;
@@ -50,7 +55,6 @@ export type OrderBookDelta = {
   asks: OrderBookLevelDelta[];
 };
 
-
 export interface MatchResult {
   trades: EngineTrade[];
   updates: FilledOrderUpdate[];
@@ -61,7 +65,6 @@ export interface PriceLevel {
   price: bigint;
   orders: EngineOrder[]; // FIFO queue — index 0 is oldest
   totalQuantity: bigint; // اضافه شد
-
 }
 
 export interface OrderBookSnapshot {
@@ -71,15 +74,26 @@ export interface OrderBookSnapshot {
   timestamp: number;
 }
 
-
 export interface UserBalance {
   available: bigint; // مقیاس شده با SCALE (10^18)
-  locked: bigint;    // مقیاس شده با SCALE (10^18)
+  locked: bigint; // مقیاس شده با SCALE (10^18)
 }
 
 export interface SpotSymbolInfo {
-  symbol: string;     // مانند "BTCUSDT"
-  baseAsset: string;  // مانند "BTC"
+  symbol: string; // مانند "BTCUSDT"
+  baseAsset: string; // مانند "BTC"
   quoteAsset: string; // مانند "USDT"
-  minQty: bigint;     // حداقل مقدار مجاز خرید/فروش (scaled)
+  minQty: bigint; // حداقل مقدار مجاز خرید/فروش (scaled)
 }
+
+export const ValueOrderSortField = [
+  "createdAt",
+  "symbol",
+  "type",
+  "side",
+  "status",
+  "price",
+  "quantity",
+  "filledQuantity",
+];
+export type OrderSortField = (typeof ValueOrderSortField)[number];

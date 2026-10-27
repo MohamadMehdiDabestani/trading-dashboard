@@ -1,14 +1,27 @@
 import { DbTransaction, orders } from "@repo/db";
-import { and, count, desc, eq, inArray, SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, SQL, sql } from "drizzle-orm";
 import {
   OrderStatus,
   OrderType,
   Side,
+  OrderSortField,
+  SortDirection,
 } from "@repo/types";
 import {
   toDbDecimal,
 } from "@/utils/scaleBigInt";
 import { applyPagination } from "@/utils/pagination";
+
+const ORDER_SORT_COLUMNS = {
+  createdAt: orders.createdAt,
+  symbol: orders.symbol,
+  type: orders.type,
+  side: orders.side,
+  status: orders.status,
+  price: orders.price,
+  quantity: orders.quantity,
+  filledQuantity: orders.filledQuantity,
+} as const;
 
 export class OrderTxRepository {
   constructor(private readonly tx: DbTransaction) {}
@@ -124,8 +137,21 @@ export class OrderReadRepository {
     status?: OrderStatus;
     page: number;
     pageSize: number;
+    sortBy?: OrderSortField;
+    sortOrder?: SortDirection;
   }) {
-    const { userId, symbol, status, page, pageSize } = params;
+    const {
+      userId,
+      symbol,
+      status,
+      page,
+      pageSize,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = params;
+
+    const sortColumn = ORDER_SORT_COLUMNS[sortBy] ?? orders.createdAt;
+    const direction = sortOrder === "asc" ? asc : desc;
 
     const filters: SQL[] = [eq(orders.userId, userId)];
 
@@ -151,7 +177,8 @@ export class OrderReadRepository {
       })
       .from(orders)
       .where(where)
-      .orderBy(desc(orders.createdAt));
+      // id as tie-breaker => stable ordering between pages
+      .orderBy(direction(sortColumn), desc(orders.id));
 
     const [items, totalRows] = await Promise.all([
       applyPagination(query.$dynamic(), page, pageSize),

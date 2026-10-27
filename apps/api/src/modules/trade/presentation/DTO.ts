@@ -1,4 +1,4 @@
-import { ValueOrderStatus } from "@repo/types";
+import { ValueOrderStatus , ValueOrderSortField ,ValueSortDirection} from "@repo/types";
 
 export const createOrderSchema = {
   description: "Submit a new spot order",
@@ -44,6 +44,8 @@ export const getRecentTradeSchema = {
       status: { type: "string", enum: ValueOrderStatus },
       page: { type: "integer", minimum: 1, default: 1 },
       pageSize: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+      sortBy: { type: "string" , enum: ValueOrderSortField},
+      sortOrder: { type: "string" , enum: ValueSortDirection},
     },
     additionalProperties: false,
   },

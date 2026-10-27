@@ -4,10 +4,12 @@ import {
   EngineOrder,
   GetRecentTradesReply,
   MatchResult,
+  OrderSortField,
   OrderStatus,
   OrderType,
   SCALE,
   Side,
+  SortDirection,
 } from "@repo/types";
 import { MatchingEngine } from "@/engine";
 import { MarketEventBus } from "@/utils/eventBus";
@@ -225,11 +227,13 @@ export class TradeService {
     symbol: string;
     userId: string;
     status?: OrderStatus;
+    sortBy?: OrderSortField;
+    sortOrder?: SortDirection;
     page: number;
     pageSize: number;
   }): Promise<GetRecentTradesReply> {
     try {
-      const { symbol, userId, status, page, pageSize } = params;
+      const { symbol, userId, status, page, pageSize , sortOrder , sortBy } = params;
       const safePage = Math.max(page, 1);
       const safePageSize = Math.min(Math.max(pageSize, 1), 100);
 
@@ -237,6 +241,8 @@ export class TradeService {
         symbol,
         userId,
         status,
+        sortBy,
+        sortOrder,
         page: safePage,
         pageSize: safePageSize,
       });

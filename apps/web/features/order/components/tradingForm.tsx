@@ -1,18 +1,17 @@
-'use client'
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useTheme } from "next-themes";
+import { GripVertical } from "lucide-react";
+import type { OrderSortField } from "@repo/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { OpenOrderForm } from "@/features/order/components/openOrderForm";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/data-table";
+import { DataTablePagination } from "@/components/data-table-pagination";
 import {
   DraggableLayout,
   SortablePanel,
 } from "@/components/ui/draggableLayout";
-import { Button } from "@/components/ui/button";
-import { GripVertical } from "lucide-react";
-import { OrderBook } from "@/features/order/components/orderBook";
-import { cn } from "@/lib/cn";
-import { columns, Position } from "@/features/order/utils/columns";
-import { DataTable } from "@/components/data-table";
-import { TradingViewChart } from "@/features/order/components/tradingViewChart";
 import {
   Select,
   SelectContent,
@@ -20,53 +19,108 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTheme } from "next-themes";
-import { SYMBOLS, SymbolValue } from "@/features/order/constants/symbols";
+import {
+  useTradeTableParams,
+  type StatusFilter,
+} from "../hooks/useTradeTableParams";
+import { OrderCards, OrderSortBar } from "./orderCards";
+import { OpenOrderForm } from "@/features/order/components/openOrderForm";
+import { OrderBook } from "@/features/order/components/orderBook";
+import { TradingViewChart } from "@/features/order/components/tradingViewChart";
+import { SYMBOLS, type SymbolValue } from "@/features/order/constants/symbols";
+import { useRecentTrades } from "../hooks/useRecentTrades";
+import { useCancelOrder } from "../hooks/useTradeMutations";
+import { buildOrderColumns, Order } from "../utils/columns";
+import { cn } from "@/lib/cn";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-const data: Position[] = [
-  {
-    id: "1",
-    pair: "BTC/USDT",
-    type: "BUY",
-    amount: 0.25,
-    entryPrice: "$64,210.00",
-    currentPrice: "$65,100.50",
-    pnl: "$222.62",
-    status: "up",
-  },
-  {
-    id: "2",
-    pair: "ETH/USDT",
-    type: "SELL",
-    amount: 4.5,
-    entryPrice: "$3,550.00",
-    currentPrice: "$3,420.00",
-    pnl: "$585.020",
-    status: "up",
-  },
+type TradingFormProps = { initialSymbol: SymbolValue };
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "همه" },
+  { value: "open", label: "باز" },
+  { value: "partial", label: "نیمه‌پر" },
+  { value: "filled", label: "انجام‌شده" },
+  { value: "cancelled", label: "لغو شده" },
 ];
-type TradingFormProps = {
-  initialSymbol: SymbolValue;
-};
+
 export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
   const [order, setOrder] = useState(["form", "chart", "orderbook"]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [symbol, setSymbol] = useState<SymbolValue>(initialSymbol);
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+
+  const cancelOrder = useCancelOrder();
+
+  const cancellingId = cancelOrder.isPending
+    ? cancelOrder.variables?.orderId
+    : undefined;
+  const { mutate: cancelMutate } = cancelOrder;
+
+  const columns = useMemo(
+    () =>
+      buildOrderColumns(
+        (o: Order) => cancelMutate({ symbol: o.symbol, orderId: o.id }),
+        cancellingId,
+      ),
+    [cancelMutate, cancellingId],
+  );
+  const {
+    status,
+    page,
+    pageSize,
+    sorting,
+    setStatus,
+    setPage,
+    setPageSize,
+    setSorting,
+  } = useTradeTableParams();
+  const sort = sorting[0];
+  const recentTrades = useRecentTrades({
+    symbol,
+    status: status === "all" ? undefined : status,
+    page,
+    pageSize,
+    sortBy: sort ? (sort.id as OrderSortField) : undefined,
+    sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
+  });
+  const total = recentTrades.data?.total ?? 0;
+  const totalPage = recentTrades.data?.totalPage ?? 0;
+  const handleSymbolChange = (v: SymbolValue) => {
+    const next = SYMBOLS.find((s) => s.value === v);
+    if (!next) return;
+
+    setSymbol(v);
+
+    const nextPath = pathname.replace(/[^/]+\/?$/, next.slug);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    const qs = params.toString();
+
+    router.push(qs ? `${nextPath}?${qs}` : nextPath, { scroll: false });
+  };
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (totalPage > 0 && page > totalPage) setPage(totalPage);
+  }, [totalPage, page]);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setSymbol(initialSymbol);
+  }, [initialSymbol]);
+  const activeSymbol = useMemo(
+    () => SYMBOLS.find((s) => s.value === symbol) ?? SYMBOLS[0],
+    [symbol],
+  );
   return (
     <div className="flex flex-col gap-4">
       <DraggableLayout
         items={order}
         onChange={setOrder}
-        className="  flex-1
-  grid
-  grid-cols-1
-  md:grid-cols-2
-  xl:grid-cols-[384px_1fr_288px]
-  gap-4"
+        className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[384px_1fr_288px] gap-4"
       >
         {order.map((id) => (
           <SortablePanel
@@ -83,7 +137,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
               switch (id) {
                 case "form":
                   return (
-                    <Card className="h-full flex flex-col pt-3 ">
+                    <Card className="h-full flex flex-col pt-3">
                       <CardHeader className="flex items-center flex-row">
                         <Button
                           variant="ghost"
@@ -97,7 +151,12 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
                         <p className="font-bold">باز کردن معامله</p>
                       </CardHeader>
                       <CardContent className="flex flex-col h-full">
-                        <OpenOrderForm />
+                        <OpenOrderForm
+                          key={activeSymbol.value}
+                          symbol={activeSymbol.value}
+                          baseAsset={activeSymbol.baseAsset}
+                          quoteAsset={activeSymbol.quoteAsset}
+                        />
                       </CardContent>
                     </Card>
                   );
@@ -117,7 +176,9 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
 
                         <Select
                           value={symbol}
-                          onValueChange={(v) => setSymbol(v as SymbolValue)}
+                          onValueChange={(v) =>
+                            handleSymbolChange(v as SymbolValue)
+                          }
                         >
                           <SelectTrigger className="w-40" dir="ltr">
                             <SelectValue placeholder="انتخاب سمبل" />
@@ -131,7 +192,6 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
                           </SelectContent>
                         </Select>
                       </CardHeader>
-
                       <CardContent className="relative flex-1 min-h-[400px] min-w-0 px-2">
                         {mounted && (
                           <TradingViewChart
@@ -172,9 +232,88 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
         ))}
       </DraggableLayout>
 
-      <Card className="h-60 shrink-0">
-        <DataTable columns={columns} data={data} />
+      <Card className="shrink-0 overflow-hidden flex flex-col">
+        <CardHeader className="py-2 flex flex-wrap items-center gap-2 flex-row">
+          <p className="font-bold">سفارش‌های اخیر</p>
+          {recentTrades.isFetching && (
+            <span className="text-[10px] text-muted-foreground">
+              در حال به‌روزرسانی...
+            </span>
+          )}
+
+          <div className="ms-auto flex items-center gap-1" role="tablist">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                role="tab"
+                aria-selected={status === f.value}
+                onClick={() => setStatus(f.value)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs transition-colors",
+                  status === f.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+
+        <CardContent className="px-0">
+          <div className="md:hidden">
+            <OrderSortBar sorting={sorting} onChange={setSorting} />
+            <OrderCards
+              orders={recentTrades.data?.items ?? []}
+              isLoading={recentTrades.isLoading}
+              isFetching={recentTrades.isFetching}
+              cancellingId={cancellingId}
+              onCancel={(o) =>
+                cancelMutate({ symbol: o.symbol, orderId: o.id })
+              }
+              emptyText={
+                status === "all"
+                  ? "هنوز سفارشی ثبت نشده است"
+                  : "سفارشی با این فیلتر پیدا نشد"
+              }
+            />
+          </div>
+
+          <div className="hidden md:block">
+            <DataTable
+              columns={columns}
+              data={recentTrades.data?.items ?? []}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              isLoading={recentTrades.isLoading}
+              isFetching={recentTrades.isFetching}
+              skeletonRows={Math.min(pageSize, 5)}
+              scrollClassName="max-h-[30rem]"
+              getRowClassName={(o: Order) =>
+                o.status === "cancelled" ? "opacity-60" : undefined
+              }
+              emptyText={
+                status === "all"
+                  ? "هنوز سفارشی ثبت نشده است"
+                  : "سفارشی با این فیلتر پیدا نشد"
+              }
+            />
+          </div>
+        </CardContent>
+
+        {total > 0 && (
+          <DataTablePagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            totalPage={totalPage}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
       </Card>
     </div>
   );
-}
+};
