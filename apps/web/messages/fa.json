@@ -58,6 +58,9 @@
       "classicLogin": "ورود کلاسیک"
     }
   },
+  "trade": {
+    "successCloseTrade": "سفارش با موفقیت لغو شد"
+  },
   "errors": {
     "VALIDATION_ERROR": "خطای اعتبارسنجی",
     "SESSION_EXPIRED": "نشست منقضی شده است",
@@ -67,7 +70,7 @@
     "OTP_MAX_ATTEMPTS": "تلاش های غیر مجاز",
     "OTP_WRONG": "کد نامعتبر است",
     "VALIDATION_INVALID_VALUE": "{field} نامعتبر است",
-    "INSUFFICIENT_BALANCE" : "موجودی ناکافی است",
-    "RATE_LIMIT" : "کمی صبر کنید و مجدد تلاش کنید"
+    "INSUFFICIENT_BALANCE": "موجودی ناکافی است",
+    "RATE_LIMIT": "کمی صبر کنید و مجدد تلاش کنید"
   }
 }
