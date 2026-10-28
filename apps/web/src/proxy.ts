@@ -26,7 +26,11 @@ export default function proxy(request: NextRequest) {
     hasRefresh: !!refresh,
     expired: isExpired(access),
   });
-  if (isExpired(access) && refresh) {
+  const isPrefetch =
+  request.headers.get("next-router-prefetch") ||
+  request.headers.get("purpose") === "prefetch" ||
+  request.headers.has("rsc");
+  if (isExpired(access) && refresh && !isPrefetch) {
     console.log("expired");
     const url = new URL("/api/auth/refresh-redirect", request.url);
     url.searchParams.set(
@@ -36,7 +40,12 @@ export default function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return handleI18nRouting(request);
+  const res = handleI18nRouting(request);
+  res.headers.set(
+    "x-pathname",
+    request.nextUrl.pathname + request.nextUrl.search,
+  );
+  return res;
 }
 
 export const config = {

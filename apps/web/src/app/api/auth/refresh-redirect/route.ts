@@ -18,8 +18,10 @@ export async function GET(req: NextRequest) {
 
   if (!r.ok) {
     const res = NextResponse.redirect(loginUrl);
-    res.cookies.delete("access_token");
-    res.cookies.delete("refresh_token");
+    if (r.status === 401) {
+      res.cookies.delete("access_token");
+      res.cookies.delete("refresh_token");
+    }
     return res;
   }
 

@@ -13,4 +13,6 @@ export interface ITokenService {
   } | null>;
 
   revokeAllForUser(userId: string): Promise<void>;
+
+  purgeStale(graceMs?: number): Promise<void>;
 }

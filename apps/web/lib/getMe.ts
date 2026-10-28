@@ -9,7 +9,8 @@ export const getMe = cache(async (): Promise<MeReply | null> => {
     headers: { cookie: cookieStore.toString() },
     cache: "no-store",
   });
-  if (!res.ok) return null;
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error("ME_FAILED");
   const body: APIResult<MeReply> = await res.json();
   return body.success ? body.data : null;
 });

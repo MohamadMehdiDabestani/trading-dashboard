@@ -17,6 +17,7 @@ import { getMe } from "@/lib/getMe";
 import { authKeys } from "@/features/auth/api/auth.keys";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { cookies, headers } from "next/headers";
 
 export default async function Layout({
   children,
@@ -28,8 +29,15 @@ export default async function Layout({
   const locale = await getLocale();
   const qc = new QueryClient();
   const me = await getMe();
-  if (me) qc.setQueryData(authKeys.me(), me);
-  else redirect(`/${locale}/auth`);
+  if (!me) {
+    const h = await headers();
+    const path = h.get("x-pathname") ?? `/${locale}`;
+    const hasRefresh = (await cookies()).has("refresh_token");
+    if (hasRefresh) {
+      redirect(`/api/auth/refresh-redirect?next=${encodeURIComponent(path)}`);
+    }
+    redirect(`/${locale}/auth`);
+  } else qc.setQueryData(authKeys.me(), me);
   return (
     <HydrationBoundary state={dehydrate(qc)}>
       <SidebarProvider>
