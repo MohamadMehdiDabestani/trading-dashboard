@@ -6,6 +6,7 @@ import { tradeKeys } from "../api/trade.keys";
 import { tradeApi } from "../api";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { walletKeys } from "@/features/wallet/api/wallet.keys";
 
 export function useCreateOrder() {
   const qc = useQueryClient();
@@ -13,6 +14,7 @@ export function useCreateOrder() {
     mutationFn: (body: CreateOrderDTO) => tradeApi.createOrder(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: tradeKeys.all });
+      qc.invalidateQueries({ queryKey: walletKeys.balance() });
     },
   });
 }
@@ -25,6 +27,8 @@ export function useCancelOrder() {
     mutationFn: (body: CancelOrderDTO) => tradeApi.cancelOrder(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: tradeKeys.all });
+      // با لغو، مبلغ lock شده آزاد می‌شود
+      qc.invalidateQueries({ queryKey: walletKeys.balance() });
       toast.success(t("successCloseTrade"));
     },
   });

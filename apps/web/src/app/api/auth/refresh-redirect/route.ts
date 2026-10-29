@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const refresh = req.cookies.get("refresh_token")?.value;
   if (!refresh) return NextResponse.redirect(loginUrl);
 
-  const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
+  const r = await fetch(`${process.env.API_URL}/auth/refresh`, {
     method: "POST",
     headers: { cookie: `refresh_token=${refresh}` },
     cache: "no-store",

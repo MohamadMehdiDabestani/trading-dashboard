@@ -53,26 +53,21 @@ export class MarketMaker {
   private readonly lastQuoteAt = new Map<string, number>();
   private readonly busy = new Set<string>(); // mutex per symbol
 
-  private feed?: BinancePriceFeed;
+  private unsubscribeFeed?: () => void;
   private heartbeat?: NodeJS.Timeout;
 
   constructor(
     private readonly userId: string,
     private readonly tradeService: TradeService,
     private readonly engine: MatchingEngine,
+    private readonly feed: BinancePriceFeed,
     configs: MarketMakerSymbolConfig[] = MARKET_MAKER_SYMBOLS,
   ) {
     for (const c of configs) this.configs.set(c.symbol, c);
   }
 
   start() {
-    const symbolMap: Record<string, string> = {};
-    for (const c of this.configs.values()) {
-      symbolMap[c.binanceSymbol] = c.symbol;
-    }
-
-    this.feed = new BinancePriceFeed(symbolMap, (tick) => this.onTick(tick));
-    this.feed.start();
+    this.unsubscribeFeed = this.feed.subscribe((tick) => this.onTick(tick)); // به‌جای ساخت feed و symbolMap
 
     // برای وقتی که تیکی نمی‌آید ولی باید refill / stale-check انجام شود
     this.heartbeat = setInterval(() => {
@@ -85,7 +80,7 @@ export class MarketMaker {
   }
 
   stop() {
-    this.feed?.stop();
+    this.unsubscribeFeed?.();
     if (this.heartbeat) clearInterval(this.heartbeat);
     console.log("[MM] stopped");
   }
@@ -226,7 +221,8 @@ export class MarketMaker {
           qtyStep,
         );
 
-      if (bid > 0n) quotes.push({ side: "buy", price: bid, quantity: randQty() });
+      if (bid > 0n)
+        quotes.push({ side: "buy", price: bid, quantity: randQty() });
       quotes.push({ side: "sell", price: ask, quantity: randQty() });
     }
 

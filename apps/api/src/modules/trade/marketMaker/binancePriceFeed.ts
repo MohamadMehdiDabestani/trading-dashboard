@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { parseToScaledBigInt } from "@/utils/scaleBigInt";
+import { fromScale, parseToScaledBigInt } from "@/utils/scaleBigInt";
 
 export type PriceTick = {
   symbol: string;
@@ -7,6 +7,8 @@ export type PriceTick = {
   ask: bigint;
   mid: bigint;
 };
+
+type Listener = (tick: PriceTick) => void;
 
 export class BinancePriceFeed {
   private ws: WebSocket | null = null;
@@ -16,17 +18,36 @@ export class BinancePriceFeed {
   private reconnectTimer?: NodeJS.Timeout;
   private watchdogTimer?: NodeJS.Timeout;
 
+  private readonly listeners = new Set<Listener>();
+  private readonly lastTicks = new Map<string, PriceTick>();
+
   /**
    * @param symbolMap  کلید: نماد بایننس با حروف کوچک (btcusdt)، مقدار: نماد داخلی (BTCUSDT)
    */
   constructor(
     private readonly symbolMap: Record<string, string>,
-    private readonly onTick: (tick: PriceTick) => void,
     private readonly baseUrl: string = process.env.BINANCE_WS_URL ??
-      "wss://stream.binance.com:9443",
+      "wss://data-stream.binance.vision",
   ) {}
 
+  /** ثبت listener؛ تابع لغو اشتراک را برمی‌گرداند */
+  subscribe(listener: Listener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  getTick(symbol: string): PriceTick | undefined {
+    return this.lastTicks.get(symbol);
+  }
+
+  /** آخرین قیمت (mid) به‌صورت string اعشاری، مناسب ارسال به کلاینت */
+  get(symbol: string): string | undefined {
+    const t = this.lastTicks.get(symbol);
+    return t ? fromScale(t.mid, 8) : undefined;
+  }
+
   start() {
+    if (this.watchdogTimer) return; // قبلاً start شده
     this.stopped = false;
     this.connect();
 
@@ -46,6 +67,7 @@ export class BinancePriceFeed {
     this.stopped = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+    this.watchdogTimer = undefined;
     this.ws?.removeAllListeners();
     this.ws?.terminate();
     this.ws = null;
@@ -82,7 +104,16 @@ export class BinancePriceFeed {
         const ask = parseToScaledBigInt(d.a);
         if (bid <= 0n || ask <= 0n || bid > ask) return;
 
-        this.onTick({ symbol, bid, ask, mid: (bid + ask) / 2n });
+        const tick: PriceTick = { symbol, bid, ask, mid: (bid + ask) / 2n };
+        this.lastTicks.set(symbol, tick);
+
+        for (const l of this.listeners) {
+          try {
+            l(tick);
+          } catch (err) {
+            console.error("[BINANCE_FEED] listener error:", err);
+          }
+        }
       } catch (err) {
         console.error("[BINANCE_FEED] bad message:", err);
       }

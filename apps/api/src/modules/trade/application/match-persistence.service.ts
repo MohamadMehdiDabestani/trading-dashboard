@@ -1,4 +1,4 @@
-import { MatchResult, Side } from "@repo/types";
+import { MatchResult } from "@repo/types";
 import { AppError } from "@/errors/appError";
 import { dbDecimalToScaledBigInt } from "@/utils/scaleBigInt";
 import { TradeUnitOfWork } from "../types/unitOfWork.repository";
@@ -25,7 +25,9 @@ export class MatchPersistenceService {
 
     await this.uow.run(async ({ orders, trades, walletLocks, balances, ledger }) => {
       if (result.updates.length > 0) {
-        await orders.batchUpdateFilledAndStatus(result.updates);
+        // دفاعی: فقط آخرین update هر order
+        const latest = new Map(result.updates.map((u) => [u.orderId, u]));
+        await orders.batchUpdateFilledAndStatus([...latest.values()]);
       }
 
       const deltas = new Map<string, Delta>();
@@ -113,7 +115,7 @@ export class MatchPersistenceService {
           ledgerRows.push({
             userId: trade.buyerId,
             asset: baseAsset,
-            amount: buyerReceiveBase,
+            amount: trade.quantity, // gross؛ fee در ردیف جدا کم می‌شود
             type: "trade_buy",
             refType: "close_trade",
             refId: trade.id,
@@ -122,7 +124,7 @@ export class MatchPersistenceService {
           ledgerRows.push({
             userId: trade.sellerId,
             asset: quoteAsset,
-            amount: sellerReceiveQuote,
+            amount: trade.quoteQuantity, // gross؛ fee در ردیف جدا کم می‌شود
             type: "trade_sell",
             refType: "close_trade",
             refId: trade.id,
@@ -141,21 +143,17 @@ export class MatchPersistenceService {
         }
       }
 
-      const affectedOrderIds = [...lockConsumeByOrder.keys()];
+      // هم orderهای دارای trade و هم orderهایی که فقط status گرفته‌اند (مثلاً cancelled توسط STP)
+      const affectedOrderIds = [
+        ...new Set([
+          ...lockConsumeByOrder.keys(),
+          ...result.updates.map((u) => u.orderId),
+        ]),
+      ];
 
       if (affectedOrderIds.length > 0) {
         const ordRows = await orders.getOrderRowsByIds(affectedOrderIds);
-
-        const ordMap = new Map(
-          ordRows.map((o) => [
-            o.id,
-            {
-              side: o.side as Side,
-              priceScaled: o.price,
-              status: o.status,
-            },
-          ]),
-        );
+        const statusById = new Map(ordRows.map((o) => [o.id, o.status]));
 
         const lockRows = await walletLocks.getByOrderIdsForUpdate(
           affectedOrderIds,
@@ -165,32 +163,28 @@ export class MatchPersistenceService {
           if (lock.releasedAt) continue;
 
           const consumed = lockConsumeByOrder.get(lock.refId) ?? 0n;
-          if (consumed <= 0n) continue;
+          const status = statusById.get(lock.refId);
+          const terminal = status === "filled" || status === "cancelled";
 
-          const remainingScaled = dbDecimalToScaledBigInt(
-            lock.remainingAmount,
-          );
+          if (consumed <= 0n && !terminal) continue;
 
-          const nextRemaining = remainingScaled - consumed;
+          const nextRemaining =
+            dbDecimalToScaledBigInt(lock.remainingAmount) - consumed;
 
           if (nextRemaining < 0n) {
             throw new AppError("INVALID_BALANCE_LOCK_STATE");
           }
 
-          await walletLocks.updateRemaining({
-            id: lock.id,
-            remaining: nextRemaining,
-            releaseIfZero: true,
-          });
+          if (consumed > 0n) {
+            await walletLocks.updateRemaining({
+              id: lock.id,
+              remaining: nextRemaining,
+              releaseIfZero: true,
+            });
+          }
 
-          const ord = ordMap.get(lock.refId);
-          if (!ord) continue;
-
-          if (
-            ord.side === "buy" &&
-            (ord.status === "filled" || ord.status === "cancelled") &&
-            nextRemaining > 0n
-          ) {
+          // سفارش بسته شده ولی lock باقی مانده (buy price improvement، یا cancel/STP/market) → آزاد کن
+          if (terminal && nextRemaining > 0n) {
             addDelta(lock.userId, lock.asset, nextRemaining, -nextRemaining);
 
             ledgerRows.push({
@@ -200,9 +194,7 @@ export class MatchPersistenceService {
               type: "unlock",
               refType: "order",
               refId: lock.refId,
-              meta: {
-                reason: "buy_price_improvement_or_tail_release",
-              },
+              meta: { reason: "order_closed_tail_release" },
             });
 
             await walletLocks.releaseAll(lock.id);
@@ -214,6 +206,10 @@ export class MatchPersistenceService {
         ledgerRows.sort((a, b) => {
           if (a.userId !== b.userId) return a.userId.localeCompare(b.userId);
           if (a.asset !== b.asset) return a.asset.localeCompare(b.asset);
+          // اول credit ها، بعد debit ها (fee) تا running balance الکی منفی نشود
+          const ac = a.amount >= 0n ? 0 : 1;
+          const bc = b.amount >= 0n ? 0 : 1;
+          if (ac !== bc) return ac - bc;
           if (a.refId !== b.refId) return a.refId.localeCompare(b.refId);
           return a.type.localeCompare(b.type);
         });

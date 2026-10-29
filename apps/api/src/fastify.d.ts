@@ -10,6 +10,7 @@ import { TradeService } from "./modules/trade/application/trade.service";
 import type { MarketMaker } from "@/modules/trade/marketMaker/marketMaker";
 import { AppAbility } from "@repo/casl";
 import { DeviceLinkServiceImpl } from "./modules/auth/infrastructure/services/device.service.impl";
+import { BinancePriceFeed } from "./modules/trade/marketMaker/binancePriceFeed";
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -20,6 +21,7 @@ declare module "fastify" {
     eventBus: MarketEventBus;
     tradeService: TradeService;
     marketMaker: MarketMaker | null;
+    priceFeed: BinancePriceFeed;
   }
   interface FastifyRequest {
     ability: AppAbility;

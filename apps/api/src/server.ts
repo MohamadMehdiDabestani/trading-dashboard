@@ -20,6 +20,7 @@ import { dbDecimalToScaledBigInt } from "./utils/scaleBigInt";
 import { tradePlugin } from "./modules/trade/plugin";
 import cors from "@fastify/cors";
 import { AppError } from "./errors/appError";
+import priceFeed from "./modules/trade/plugin/priceFeed";
 
 const app = Fastify({
   trustProxy: true,
@@ -67,6 +68,7 @@ app.decorate("authenticate", async function (req: any, reply: any) {
 
 app.register(engine);
 app.register(eventBus);
+app.register(priceFeed);
 app.register(ws);
 app.addHook("onReady", async () => {
   app.log.info("Bootstrapping active orders into engine...");

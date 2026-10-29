@@ -30,7 +30,12 @@ export const tradePlugin = fp(async (fastify: FastifyInstance) => {
     const mmUserId = process.env.MARKET_MAKER_USER_ID;
     if (!mmUserId) throw new Error("MARKET_MAKER_USER_ID is required");
 
-    marketMaker = new MarketMaker(mmUserId, tradeService, fastify.engine);
+    marketMaker = new MarketMaker(
+      mmUserId,
+      tradeService,
+      fastify.engine,
+      fastify.priceFeed,
+    );
     fastify.addHook("onClose", async () => marketMaker?.stop());
   }
 

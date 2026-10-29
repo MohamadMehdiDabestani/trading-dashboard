@@ -5,7 +5,7 @@ import type { APIResult, MeReply } from "@repo/types";
 
 export const getMe = cache(async (): Promise<MeReply | null> => {
   const cookieStore = await cookies();
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
+  const res = await fetch(`${process.env.API_URL}/me`, {
     headers: { cookie: cookieStore.toString() },
     cache: "no-store",
   });
