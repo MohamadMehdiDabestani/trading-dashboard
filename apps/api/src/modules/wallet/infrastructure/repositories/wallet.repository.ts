@@ -1,7 +1,7 @@
 import { balances, Db, ledgerEntries } from "@repo/db";
 import Big from "big.js";
-import { and, count, desc, eq } from "drizzle-orm";
-import { PaginatedResult } from "@repo/types";
+import { and, asc, count, desc, eq, gte, inArray, lt } from "drizzle-orm";
+import { LedgerEntryType, PaginatedResult } from "@repo/types";
 import { applyPagination } from "@/utils/pagination";
 
 const balanceRowMap = {
@@ -11,7 +11,7 @@ const balanceRowMap = {
   id: balances.id,
 };
 
-export class WalletRepository  {
+export class WalletRepository {
   constructor(private db: Db) {}
 
   async getSingleAsset(
@@ -19,6 +19,7 @@ export class WalletRepository  {
     asset: string,
     page = 1,
     pageSize = 20,
+    filters: { from?: Date; types?: LedgerEntryType[] } = {},
   ): Promise<
     | {
         asset: string;
@@ -32,6 +33,16 @@ export class WalletRepository  {
       }
     | undefined
   > {
+    // یک where مشترک برای لیست و شمارش (undefined توسط and نادیده گرفته می‌شود)
+    const historyWhere = and(
+      eq(ledgerEntries.userId, userId),
+      eq(ledgerEntries.asset, asset),
+      filters.from ? gte(ledgerEntries.createdAt, filters.from) : undefined,
+      filters.types?.length
+        ? inArray(ledgerEntries.type, filters.types)
+        : undefined,
+    );
+
     const historyBaseQuery = this.db
       .select({
         time: ledgerEntries.createdAt,
@@ -39,9 +50,7 @@ export class WalletRepository  {
         type: ledgerEntries.type,
       })
       .from(ledgerEntries)
-      .where(
-        and(eq(ledgerEntries.userId, userId), eq(ledgerEntries.asset, asset)),
-      )
+      .where(historyWhere)
       .orderBy(desc(ledgerEntries.createdAt));
 
     const [balanceRows, historyRows, totalRows] = await Promise.all([
@@ -55,9 +64,7 @@ export class WalletRepository  {
       this.db
         .select({ value: count() })
         .from(ledgerEntries)
-        .where(
-          and(eq(ledgerEntries.userId, userId), eq(ledgerEntries.asset, asset)),
-        ),
+        .where(historyWhere),
     ]);
 
     const row = balanceRows[0];
@@ -93,5 +100,45 @@ export class WalletRepository  {
       .select(balanceRowMap)
       .from(balances)
       .where(eq(balances.userId, userId));
+  }
+
+  /**
+   * داده‌ی خام نمودار روند از ledger:
+   * - rows: ورودی‌های ledger از `from` به بعد (صعودی) با balanceBefore/After
+   * - openingBalance: balanceAfter آخرین ورودی قبل از `from` (اگر باشد)
+   */
+  async getBalanceTrend(userId: string, asset: string, from: Date) {
+    const [rows, prev] = await Promise.all([
+      this.db
+        .select({
+          time: ledgerEntries.createdAt,
+          before: ledgerEntries.balanceBefore,
+          after: ledgerEntries.balanceAfter,
+        })
+        .from(ledgerEntries)
+        .where(
+          and(
+            eq(ledgerEntries.userId, userId),
+            eq(ledgerEntries.asset, asset),
+            gte(ledgerEntries.createdAt, from),
+          ),
+        )
+        .orderBy(asc(ledgerEntries.createdAt)),
+
+      this.db
+        .select({ after: ledgerEntries.balanceAfter })
+        .from(ledgerEntries)
+        .where(
+          and(
+            eq(ledgerEntries.userId, userId),
+            eq(ledgerEntries.asset, asset),
+            lt(ledgerEntries.createdAt, from),
+          ),
+        )
+        .orderBy(desc(ledgerEntries.createdAt))
+        .limit(1),
+    ]);
+
+    return { rows, openingBalance: prev[0]?.after ?? null };
   }
 }
