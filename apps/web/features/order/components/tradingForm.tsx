@@ -27,7 +27,7 @@ import { OrderCards, OrderSortBar } from "./orderCards";
 import { OpenOrderForm } from "@/features/order/components/openOrderForm";
 import { OrderBook } from "@/features/order/components/orderBook";
 import { TradingViewChart } from "@/features/order/components/tradingViewChart";
-import { SYMBOLS, type SymbolValue } from "@/features/order/constants/symbols";
+import { SYMBOLS, type SymbolValue } from "@repo/types";
 import { useRecentTrades } from "../hooks/useRecentTrades";
 import { useCancelOrder } from "../hooks/useTradeMutations";
 import { buildOrderColumns, Order } from "../utils/columns";
@@ -219,7 +219,11 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
                         <p className="font-bold">دفتر چه سفاراشات</p>
                       </CardHeader>
                       <CardContent className="h-full px-0">
-                        <OrderBook />
+                        <OrderBook
+                          symbol={activeSymbol.value}
+                          baseAsset={activeSymbol.baseAsset}
+                          quoteAsset={activeSymbol.quoteAsset}
+                        />
                       </CardContent>
                     </Card>
                   );

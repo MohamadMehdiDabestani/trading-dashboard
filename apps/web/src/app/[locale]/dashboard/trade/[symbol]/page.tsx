@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { SYMBOLS } from "@/features/order/constants/symbols";
+import { SYMBOLS } from "@repo/types";
 import { TradingForm } from "@/features/order/components/tradingForm";
 
 export default async function TradePage({ params }: { params: Promise<{ symbol: string }> }) {

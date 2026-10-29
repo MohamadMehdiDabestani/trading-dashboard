@@ -21,7 +21,7 @@ function formatScaled(value: bigint): string {
 export class OrderBook {
   private symbol: string;
 
-  private bids = new BTree<bigint, PriceLevel>(); // key = -price
+  private bids = new BTree<bigint, PriceLevel>(); // key = price (best bid = maxKey)
   private asks = new BTree<bigint, PriceLevel>(); // key = price
 
   private orderIndex = new Map<
@@ -177,6 +177,21 @@ export class OrderBook {
     return level.orders[0] ?? null; // oldest at that price
   }
 
+  /**
+   * وقتی maker (کامل یا جزئی) fill می‌شود، مجموع سطح باید کم شود.
+   * قبلاً این کار انجام نمی‌شد و snapshot/delta اشتباه می‌ماند.
+   * باید قبل از removeFront* صدا زده شود.
+   */
+  consumeMaker(maker: EngineOrder, qty: bigint): OrderBookLevelDelta {
+    const level = this.getLevel(maker);
+    level.totalQuantity -= qty;
+    return {
+      side: maker.side === "buy" ? "bid" : "ask",
+      price: maker.price,
+      quantity: level.totalQuantity,
+    };
+  }
+
   // cancel
   cancel(order: EngineOrder): OrderBookLevelDelta | null {
     const level = this.getLevel(order);
@@ -226,7 +241,7 @@ export class OrderBook {
     const bids = [];
     const asks = [];
 
-    const bidIt = this.bids.entries();
+    const bidIt = this.bids.entriesReversed();
     for (let i = 0; i < depth; i++) {
       const next = bidIt.next();
       if (next.done) break;

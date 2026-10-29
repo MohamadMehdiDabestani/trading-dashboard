@@ -114,19 +114,29 @@ export class MatchingEngine {
     }
   }
 
-  bootstrapActiveOrders(orders: EngineOrder[]): void {
+  private loadOrders(orders: EngineOrder[]): void {
     for (const order of orders) {
-      // فقط سفارش فعال باید وارد بوک شود
+      // فقط سفارش limit فعال باید وارد بوک شود
+      if (order.type !== "limit") continue;
       if (order.filled >= order.quantity) continue;
+      if (order.quantity <= 0n || order.price <= 0n) continue;
 
-      if (order.quantity <= 0n) continue;
-      if (order.type === "limit" && order.price <= 0n) continue;
-
-      const book = this.getBook(order.symbol);
-
-      book.addOrder(order);
+      this.getBook(order.symbol).addOrder(order);
     }
+  }
+
+  bootstrapActiveOrders(orders: EngineOrder[]): void {
+    this.loadOrders(orders);
     this.logBootstrapMatches();
+  }
+
+  replaceSymbolOrders(symbol: string, orders: EngineOrder[]): void {
+    this.books.set(symbol, new OrderBook(symbol));
+    this.loadOrders(orders);
+  }
+
+  getOrder(symbol: string, orderId: string): EngineOrder | null {
+    return this.getBook(symbol).getOrder(orderId);
   }
 
   logActiveOrders(): void {
@@ -153,16 +163,27 @@ export class MatchingEngine {
 
     const result: MatchResult = { trades: [], updates: [], deltas: [] };
 
-    if (order.side === "buy") {
-      this.matchBuy(order, book, result);
-    } else {
-      this.matchSell(order, book, result);
+    // true یعنی matching به‌خاطر self-trade متوقف شده
+    const blocked =
+      order.side === "buy"
+        ? this.matchBuy(order, book, result)
+        : this.matchSell(order, book, result);
+
+    const remaining = order.filled < order.quantity;
+
+    if (blocked || (order.type === "market" && remaining)) {
+      // باقی‌ماندهٔ taker هرگز وارد بوک نمی‌شود (self-trade یا market بدون نقدینگی)
+      result.updates.push({
+        orderId: order.id,
+        filled: order.filled,
+        status: "cancelled",
+      });
+    } else if (order.type === "limit" && remaining) {
+      result.deltas.push(book.addOrder(order));
     }
 
-    if (order.type === "limit" && order.filled < order.quantity) {
-      const delta = book.addOrder(order);
-      result.deltas.push(delta);
-    }
+    // برای هر order فقط آخرین وضعیت (وگرنه CASE در SQL مقدار قدیمی را برمی‌دارد)
+    result.updates = dedupeUpdates(result.updates);
 
     return result;
   }
@@ -197,72 +218,71 @@ export class MatchingEngine {
   }
   // ─── Match logic ──────────────────────────────────────────────────────────
 
+  /** @returns true اگر به‌دلیل self-trade متوقف شد */
   private matchBuy(
     taker: EngineOrder,
     book: OrderBook,
     result: MatchResult,
-  ): void {
+  ): boolean {
     while (taker.filled < taker.quantity) {
       const maker = book.peekBestAsk();
       if (!maker) break;
 
-      // price check: market order همیشه match میکنه، limit فقط اگر ask <= buy price
       if (taker.type === "limit" && maker.price > taker.price) break;
+
+      // جلوگیری از wash trade: taker کنسل می‌شود
+      if (maker.userId === taker.userId) return true;
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,
         maker.quantity - maker.filled,
       );
 
-      // maker is ask (seller), taker is buyer
       this.recordTrade(maker, taker, tradeQty, maker.price, result);
 
-      // اگر maker کاملاً fill شد، از book حذف شود
+      // اول مجموع سطح را کم کن، بعد در صورت fill کامل حذف کن
+      const levelDelta = book.consumeMaker(maker, tradeQty);
+
       if (maker.filled === maker.quantity) {
         const delta = book.removeFrontAsk();
         if (delta) result.deltas.push(delta);
       } else {
-        result.deltas.push({
-          side: "ask",
-          price: maker.price,
-          quantity: maker.quantity - maker.filled,
-        });
+        result.deltas.push(levelDelta);
       }
-      // اگر partial، در book باقی میماند — هیچ reinsert لازم نیست
     }
+    return false;
   }
 
   private matchSell(
     taker: EngineOrder,
     book: OrderBook,
     result: MatchResult,
-  ): void {
+  ): boolean {
     while (taker.filled < taker.quantity) {
       const maker = book.peekBestBid();
       if (!maker) break;
 
-      // price check: market همیشه، limit فقط اگر bid >= sell price
       if (taker.type === "limit" && maker.price < taker.price) break;
+
+      if (maker.userId === taker.userId) return true;
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,
         maker.quantity - maker.filled,
       );
 
-      // maker is bid (buyer), taker is seller
       this.recordTrade(maker, taker, tradeQty, maker.price, result);
+
+      const levelDelta = book.consumeMaker(maker, tradeQty);
 
       if (maker.filled === maker.quantity) {
         const delta = book.removeFrontBid();
         if (delta) result.deltas.push(delta);
       } else {
-        result.deltas.push({
-          side: "bid",
-          price: maker.price,
-          quantity: maker.quantity - maker.filled,
-        });
+        result.deltas.push(levelDelta);
       }
     }
+    return false;
   }
 
   // ─── Trade factory ────────────────────────────────────────────────────────
@@ -319,4 +339,10 @@ function makeUpdate(order: EngineOrder): FilledOrderUpdate {
     status = "open";
   }
   return { orderId: order.id, filled: order.filled, status };
+}
+
+function dedupeUpdates(updates: FilledOrderUpdate[]): FilledOrderUpdate[] {
+  const latest = new Map<string, FilledOrderUpdate>();
+  for (const u of updates) latest.set(u.orderId, u);
+  return [...latest.values()];
 }

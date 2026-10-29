@@ -14,12 +14,20 @@ import {
 import { MatchingEngine } from "@/engine";
 import { MarketEventBus } from "@/utils/eventBus";
 import { AppError } from "@/errors/appError";
-import { fromScale } from "@/utils/scaleBigInt";
+import { dbDecimalToScaledBigInt, fromScale } from "@/utils/scaleBigInt";
 import { TradeUnitOfWork } from "../types/unitOfWork.repository";
 import { MatchPersistenceService } from "./match-persistence.service";
 import { OrderReadRepository } from "../infrastructure/repositories/order.repository";
+import { KeyedMutex } from "@/utils/KeyedMutex";
 
 export class TradeService {
+  /**
+   * همهٔ عملیات‌هایی که engine و DB را با هم تغییر می‌دهند (create-match-persist و cancel)
+   * به ازای هر symbol سریالی اجرا می‌شوند. بدون این، cancel می‌توانست وسط
+   * فاصلهٔ «match در engine» و «persist در DB» وارد شود و lock را دوبار آزاد کند.
+   */
+  private readonly symbolLock = new KeyedMutex();
+
   constructor(
     private readonly uow: TradeUnitOfWork,
     private readonly orderReadRepository: OrderReadRepository,
@@ -50,7 +58,6 @@ export class TradeService {
       const orderId = randomUUID();
 
       const lockAsset = side === "buy" ? quoteAsset : baseAsset;
-
       const lockAmount = side === "buy" ? (price * quantity) / SCALE : quantity;
 
       if (lockAmount <= 0n) {
@@ -61,11 +68,7 @@ export class TradeService {
         new Big(SCALE.toString()),
       );
 
-      /**
-       * Transaction شماره ۱:
-       * فقط reserve balance + create wallet lock + create order.
-       * کوتاه، سریع، atomic.
-       */
+      // Transaction ۱: reserve + lock + create order (خارج از mutex؛ مستقل از بوک است)
       await this.uow.run(async ({ balances, walletLocks, orders }) => {
         await balances.reserve({
           userId,
@@ -91,10 +94,6 @@ export class TradeService {
         });
       });
 
-      /**
-       * Engine خارج از transaction.
-       * این خیلی مهم است.
-       */
       const engineOrder: EngineOrder = {
         id: orderId,
         userId,
@@ -107,23 +106,25 @@ export class TradeService {
         timestamp: Date.now(),
       };
 
-      const matchResult = this.engine.submitOrder(engineOrder);
+      const matchResult = await this.symbolLock.run(symbol, async () => {
+        let result: MatchResult;
 
-      this.emitMarketEvents(symbol, matchResult);
+        try {
+          result = this.engine.submitOrder(engineOrder);
+          // Transaction ۲: persist
+          await this.matchPersistence.persist(result, baseAsset, quoteAsset);
+        } catch (err) {
+          // engine از DB جلو افتاده؛ DB منبع حقیقت است → بوک را به DB برگردان
+          await this.recoverFromFailedMatch(userId, symbol, orderId);
+          throw err;
+        }
 
-      /**
-       * Transaction شماره ۲:
-       * persist کردن match result.
-       *
-       * اگر نمی‌خواهی request منتظر این بماند، می‌توانی await را برداری،
-       * ولی برای consistency بهتر است فعلاً await شود.
-       */
-      await this.matchPersistence.persist(matchResult, baseAsset, quoteAsset);
+        // event ها فقط بعد از persist موفق ارسال می‌شوند (trade فانتوم پخش نمی‌شود)
+        this.emitMarketEvents(symbol, result);
+        return result;
+      });
 
-      return {
-        orderId,
-        matchResult,
-      };
+      return { orderId, matchResult };
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -138,83 +139,19 @@ export class TradeService {
     orderId: string,
   ): Promise<MatchResult> {
     try {
-      /**
-       * اول owner بودن سفارش را validate می‌کنیم.
-       * در کد قبلی، engine قبل از auth DB cancel می‌شد؛
-       * آن می‌توانست bug امنیتی بسازد.
-       */
-      await this.uow.run(async ({ orders }) => {
-        const order = await orders.getOrderOwner(orderId);
+      return await this.symbolLock.run(symbol, async () => {
+        // اول DB (با بررسی owner/symbol/status)؛ اگر خطا بدهد engine دست‌نخورده می‌ماند.
+        await this.cancelInDb(userId, symbol, orderId);
 
-        if (!order) {
-          throw new AppError("ORDER_NOT_FOUND");
-        }
-
-        if (order.userId !== userId) {
-          throw new AppError("FORBIDDEN");
-        }
-
-        if (order.symbol !== symbol) {
-          throw new AppError("INVALID_SYMBOL");
-        }
-
-        if (order.status === "filled" || order.status === "cancelled") {
-          throw new AppError("ORDER_NOT_OPEN");
-        }
-      });
-
-      const matchResult = this.engine.cancelOrder(symbol, orderId);
-
-      if (!matchResult) {
-        throw new AppError("ORDER_NOT_FOUND_IN_ENGINE");
-      }
-
-      /**
-       * Transaction:
-       * mark cancelled + release remaining lock + ledger unlock.
-       */
-      await this.uow.run(async ({ orders, walletLocks, balances, ledger }) => {
-        const order = await orders.getOrderOwner(orderId);
-
-        if (!order || order.userId !== userId) {
-          throw new AppError("FORBIDDEN");
-        }
-
-        await orders.markCancelled(orderId);
-
-        const lock = await walletLocks.getByOrderIdForUpdate(orderId);
-
-        if (!lock || lock.releasedAt) return;
-
-        const remainingScaled = walletLocks.toScaled(lock);
-
-        if (remainingScaled <= 0n) {
-          await walletLocks.releaseAll(lock.id);
-          return;
-        }
-
-        const { beforeAvailable, afterAvailable } =
-          await balances.releaseLocked({
-            userId,
-            asset: lock.asset,
-            amount: remainingScaled,
-          });
-
-        await ledger.insertUnlock({
-          userId,
-          asset: lock.asset,
-          amount: remainingScaled,
-          balanceBefore: beforeAvailable,
-          balanceAfter: afterAvailable,
+        // کنسل در حافظه است و fail نمی‌شود؛ اگر سفارش در engine نبود (مثلاً market) مهم نیست.
+        const matchResult: MatchResult = this.engine.cancelOrder(
+          symbol,
           orderId,
-        });
+        ) ?? { trades: [], updates: [], deltas: [] };
 
-        await walletLocks.releaseAll(lock.id);
+        this.emitOrderBookDeltas(symbol, matchResult);
+        return matchResult;
       });
-
-      this.emitOrderBookDeltas(symbol, matchResult);
-
-      return matchResult;
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -233,11 +170,13 @@ export class TradeService {
     pageSize: number;
   }): Promise<GetRecentTradesReply> {
     try {
-      const { symbol, userId, status, page, pageSize , sortOrder , sortBy } = params;
+      const { symbol, userId, status, page, pageSize, sortOrder, sortBy } =
+        params;
       const safePage = Math.max(page, 1);
       const safePageSize = Math.min(Math.max(pageSize, 1), 100);
 
-      return this.orderReadRepository.getRecentOrders({
+      // await لازم است تا خطاهای async داخل try/catch گرفته شوند
+      return await this.orderReadRepository.getRecentOrders({
         symbol,
         userId,
         status,
@@ -251,6 +190,102 @@ export class TradeService {
 
       console.error("getRecentOrders error:", error);
       throw new AppError("INTERNAL_SERVER_ERROR");
+    }
+  }
+
+  // ─── internals ────────────────────────────────────────────────────────────
+
+  /** validate + mark cancelled + release remaining lock + ledger unlock، همه در یک transaction */
+  private async cancelInDb(userId: string, symbol: string, orderId: string) {
+    await this.uow.run(async ({ orders, walletLocks, balances, ledger }) => {
+      const order = await orders.getOrderOwner(orderId);
+
+      if (!order) throw new AppError("ORDER_NOT_FOUND");
+      if (order.userId !== userId) throw new AppError("FORBIDDEN");
+      if (order.symbol !== symbol) throw new AppError("INVALID_SYMBOL");
+      if (order.status === "filled" || order.status === "cancelled") {
+        throw new AppError("ORDER_NOT_OPEN");
+      }
+
+      await orders.markCancelled(orderId);
+
+      const lock = await walletLocks.getByOrderIdForUpdate(orderId);
+      if (!lock || lock.releasedAt) return;
+
+      const remainingScaled = walletLocks.toScaled(lock);
+
+      if (remainingScaled <= 0n) {
+        await walletLocks.releaseAll(lock.id);
+        return;
+      }
+
+      const { beforeAvailable, afterAvailable } = await balances.releaseLocked({
+        userId,
+        asset: lock.asset,
+        amount: remainingScaled,
+      });
+
+      await ledger.insertUnlock({
+        userId,
+        asset: lock.asset,
+        amount: remainingScaled,
+        balanceBefore: beforeAvailable,
+        balanceAfter: afterAvailable,
+        orderId,
+      });
+
+      await walletLocks.releaseAll(lock.id);
+    });
+  }
+
+  /**
+   * اگر match در engine انجام شد ولی persist (یا خود submit) شکست خورد:
+   * ۱) سفارش taker در DB کنسل و lock آزاد می‌شود،
+   * ۲) بوک engine از روی سفارش‌های فعال DB بازسازی می‌شود (trade های persist‌نشده برمی‌گردند).
+   */
+  private async recoverFromFailedMatch(
+    userId: string,
+    symbol: string,
+    takerOrderId: string,
+  ) {
+    try {
+      await this.cancelInDb(userId, symbol, takerOrderId);
+    } catch (err) {
+      console.error(
+        `[RECOVERY][${symbol}] failed to cancel taker ${takerOrderId} in DB:`,
+        err,
+      );
+    }
+
+    try {
+      const rows = await this.orderReadRepository.getActiveOrdersBySymbol(
+        symbol,
+      );
+
+      const active: EngineOrder[] = rows.map((o: any) => ({
+        id: o.id,
+        userId: o.userId,
+        symbol: o.symbol,
+        side: o.side,
+        type: o.type,
+        price: dbDecimalToScaledBigInt(o.price ?? 0),
+        quantity: dbDecimalToScaledBigInt(o.quantity),
+        filled: dbDecimalToScaledBigInt(o.filledQuantity),
+        timestamp: o.createdAt.getTime(),
+      }));
+
+      this.engine.replaceSymbolOrders(symbol, active);
+
+      // ws هر event غیر ticker را «بوک عوض شد» می‌گیرد و snapshot کامل می‌فرستد
+      this.eventBus.emit({
+        type: "orderbook_delta",
+        data: { symbol, deltas: [] },
+      });
+    } catch (err) {
+      console.error(
+        `[RECOVERY][${symbol}] CRITICAL: engine resync from DB failed:`,
+        err,
+      );
     }
   }
 

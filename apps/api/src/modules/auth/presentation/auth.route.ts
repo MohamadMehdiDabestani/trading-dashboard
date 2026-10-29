@@ -57,6 +57,13 @@ export async function authRoutes(fastify: FastifyInstance) {
     { ...rl(30) },
     async (req, reply) => {
       const raw = req.cookies?.[REFRESH_COOKIE];
+      const count = (req.headers.cookie ?? "")
+        .split(";")
+        .filter((c) => c.trim().startsWith(`${REFRESH_COOKIE}=`)).length;
+      req.log.info(
+        { refreshCookieCount: count, prefix: raw?.slice(0, 8) },
+        "refresh cookie",
+      );
       if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
 
       const { accessToken, refreshToken } = await authService.refresh(raw);

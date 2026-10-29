@@ -11,8 +11,9 @@ import {
   toDbDecimal,
 } from "@/utils/scaleBigInt";
 import { applyPagination } from "@/utils/pagination";
+import { PgColumn } from "drizzle-orm/pg-core";
 
-const ORDER_SORT_COLUMNS = {
+const ORDER_SORT_COLUMNS : Record<OrderSortField, PgColumn>= {
   createdAt: orders.createdAt,
   symbol: orders.symbol,
   type: orders.type,
@@ -130,6 +131,20 @@ export class OrderTxRepository {
 
 export class OrderReadRepository {
   constructor(private readonly db: any) {}
+
+  /** سفارش‌های فعال یک symbol؛ برای بازسازی بوک engine از DB */
+  async getActiveOrdersBySymbol(symbol: string) {
+    return this.db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.symbol, symbol),
+          inArray(orders.status, ["open", "partial"]),
+        ),
+      )
+      .orderBy(asc(orders.createdAt));
+  }
 
   async getRecentOrders(params: {
     userId: string;

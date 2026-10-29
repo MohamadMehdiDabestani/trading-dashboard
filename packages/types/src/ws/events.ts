@@ -1,4 +1,3 @@
-
 export type MarketTradeEvent = {
   symbol: string;
   price: string;
@@ -11,7 +10,7 @@ type OrderBookLevelDelta = {
   side: "bid" | "ask";
   price: string;
   quantity: string;
-}
+};
 export type OrderBookDeltaEvent = {
   symbol: string;
   deltas: OrderBookLevelDelta[];
@@ -19,4 +18,5 @@ export type OrderBookDeltaEvent = {
 
 export type MarketEvent =
   | { type: "trade"; data: MarketTradeEvent }
-  | { type: "orderbook_delta"; data: OrderBookDeltaEvent };
+  | { type: "orderbook_delta"; data: OrderBookDeltaEvent }
+  | { type: "ticker"; data: { symbol: string; price: string; ts: number } };
