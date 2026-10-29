@@ -27,6 +27,7 @@
     "drizzle-kit": "^0.31.10"
   },
   "dependencies": {
+    "@repo/types": "workspace:*",
     "@types/big.js": "^7.0.0",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"

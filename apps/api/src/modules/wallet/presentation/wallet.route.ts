@@ -4,10 +4,17 @@ import {
   WalletAssetReply,
   WalletDepositDto,
   WalletGetReply,
+  LedgerEntryType,
+  WalletTrendRange,
+  WalletTrendReply,
 } from "@repo/types";
 import Big from "big.js";
 import { FastifyInstance } from "fastify";
-import { walletDepositSchema } from "./DTO";
+import {
+  walletAssetSchema,
+  walletDepositSchema,
+  walletTrendSchema,
+} from "./DTO";
 import { AppError } from "@/errors/appError";
 
 export async function walletRoutes(fastify: FastifyInstance) {
@@ -27,8 +34,13 @@ export async function walletRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: { asset: string };
     Reply: APIResult<WalletAssetReply>;
-    Querystring: { page?: string; pageSize?: string };
-  }>("/asset/:asset", async (req, reply) => {
+    Querystring: {
+      page?: string;
+      pageSize?: string;
+      period?: WalletTrendRange;
+      type?: LedgerEntryType[];
+    };
+  }>("/asset/:asset", { schema: walletAssetSchema }, async (req, reply) => {
     const { asset } = req.params;
 
     const page = Math.max(Number(req.query.page ?? 1), 1);
@@ -43,10 +55,29 @@ export async function walletRoutes(fastify: FastifyInstance) {
       asset,
       page,
       pageSize,
+      { period: req.query.period, types: req.query.type },
     );
 
     return reply.code(200).send(ok(res));
   });
+
+  // روند موجودی یک دارایی بر اساس ledger
+  fastify.get<{
+    Params: { asset: string };
+    Querystring: { range?: WalletTrendRange };
+    Reply: APIResult<WalletTrendReply>;
+  }>(
+    "/asset/:asset/trend",
+    { schema: walletTrendSchema },
+    async (req, reply) => {
+      const res = await walletService.getTrend(
+        req.user.sub,
+        req.params.asset.toUpperCase(),
+        req.query.range ?? "1M",
+      );
+      return reply.code(200).send(ok(res));
+    },
+  );
 
   fastify.post<{
     Body: WalletDepositDto;
