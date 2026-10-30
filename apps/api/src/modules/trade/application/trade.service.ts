@@ -18,7 +18,7 @@ import { dbDecimalToScaledBigInt, fromScale } from "@/utils/scaleBigInt";
 import { TradeUnitOfWork } from "../types/unitOfWork.repository";
 import { MatchPersistenceService } from "./match-persistence.service";
 import { OrderReadRepository } from "../infrastructure/repositories/order.repository";
-import { KeyedMutex } from "@/utils/KeyedMutex";
+import { KeyedMutex } from "@/utils/keyedMutex";
 
 export class TradeService {
   /**
@@ -69,8 +69,8 @@ export class TradeService {
       );
 
       // Transaction ۱: reserve + lock + create order (خارج از mutex؛ مستقل از بوک است)
-      await this.uow.run(async ({ balances, walletLocks, orders }) => {
-        await balances.reserve({
+      await this.uow.run(async ({ balances, walletLocks, orders, ledger }) => {
+        const { beforeAvailable, afterAvailable } = await balances.reserve({
           userId,
           asset: lockAsset,
           amountDecimal: lockAmountDecimal,
@@ -92,8 +92,16 @@ export class TradeService {
           price,
           quantity,
         });
-      });
 
+        await ledger.insertLock({
+          userId,
+          asset: lockAsset,
+          amount: -lockAmount,
+          balanceBefore: beforeAvailable,
+          balanceAfter: afterAvailable,
+          orderId,
+        });
+      });
       const engineOrder: EngineOrder = {
         id: orderId,
         userId,
@@ -258,9 +266,8 @@ export class TradeService {
     }
 
     try {
-      const rows = await this.orderReadRepository.getActiveOrdersBySymbol(
-        symbol,
-      );
+      const rows =
+        await this.orderReadRepository.getActiveOrdersBySymbol(symbol);
 
       const active: EngineOrder[] = rows.map((o: any) => ({
         id: o.id,

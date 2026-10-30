@@ -22,4 +22,27 @@ export class LedgerRepository {
       balanceAfter,
     });
   }
+  async createWithdrawEntry(input: {
+  userId: string;
+  asset: string;
+  amount: Big;
+  balanceBefore: Big;
+  balanceAfter: Big;
+  withdrawId: string;
+  meta?: Record<string, unknown> | null;
+}): Promise<void> {
+  const { userId, asset, amount, balanceBefore, balanceAfter, withdrawId, meta } = input;
+
+  await this.tx.insert(ledgerEntries).values({
+    userId,
+    asset,
+    type: "withdraw",
+    amount: amount.times(-1),
+    balanceBefore,
+    balanceAfter,
+    refType: "withdrawal",
+    refId: withdrawId,
+    meta: meta ?? null,
+  });
+}
 }

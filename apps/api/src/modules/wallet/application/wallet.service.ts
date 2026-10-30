@@ -8,6 +8,7 @@ import {
 } from "@repo/types";
 import { WalletRepository } from "../infrastructure/repositories/wallet.repository";
 import { DrizzleWalletUnitOfWork } from "../infrastructure/unitOfWork/drizzleUnitOfWork";
+import { randomUUID } from "crypto";
 
 const DAY = 24 * 60 * 60 * 1000;
 const RANGE_MS: Record<WalletTrendRange, number> = {
@@ -132,6 +133,33 @@ export class WalletService {
         amount,
         balanceBefore,
         balanceAfter,
+      });
+    });
+  }
+
+  async withdraw(
+    userId: string,
+    asset: string,
+    amount: Big,
+    address?: string,
+  ): Promise<void> {
+    const withdrawId = randomUUID();
+
+    await this.walletUow.run(async ({ balance, ledger }) => {
+      const { balanceBefore, balanceAfter } = await balance.debitAvailable({
+        userId,
+        asset,
+        amount,
+      });
+
+      await ledger.createWithdrawEntry({
+        userId,
+        asset,
+        amount,
+        balanceBefore,
+        balanceAfter,
+        withdrawId,
+        meta: address ? { address } : null,
       });
     });
   }

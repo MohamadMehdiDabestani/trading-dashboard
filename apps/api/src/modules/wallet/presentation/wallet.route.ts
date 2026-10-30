@@ -7,6 +7,7 @@ import {
   LedgerEntryType,
   WalletTrendRange,
   WalletTrendReply,
+  WalletWithdrawDto,
 } from "@repo/types";
 import Big from "big.js";
 import { FastifyInstance } from "fastify";
@@ -14,6 +15,7 @@ import {
   walletAssetSchema,
   walletDepositSchema,
   walletTrendSchema,
+  walletWithdrawSchema,
 } from "./DTO";
 import { AppError } from "@/errors/appError";
 
@@ -101,4 +103,25 @@ export async function walletRoutes(fastify: FastifyInstance) {
       return reply.code(200).send(ok(undefined));
     },
   );
+
+  fastify.post<{
+    Body: WalletWithdrawDto;
+    Reply: APIResult<void>;
+  }>("/withdraw", { schema: walletWithdrawSchema }, async (req, reply) => {
+    const { asset, amount, address } = req.body;
+
+    const bigAmount = new Big(amount);
+    if (bigAmount.lte(0)) {
+      throw new AppError("WALLET_INVALID_AMOUNT");
+    }
+
+    await walletService.withdraw(
+      req.user.sub,
+      asset.toUpperCase(),
+      bigAmount,
+      address,
+    );
+
+    return reply.code(200).send(ok(undefined));
+  });
 }

@@ -18,3 +18,9 @@ export interface WalletAssetReply {
   available: Big;
   history : PaginatedResult<AssetHistory>
 }
+
+export type WalletWithdrawDto = {
+  asset: string;
+  amount: string;
+  address?: string;
+};
