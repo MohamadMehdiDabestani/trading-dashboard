@@ -18,8 +18,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { WalletHistoryFilters, WalletTrendRange } from "@repo/types";
 import {
+  SYMBOLS,
+  type WalletHistoryFilters,
+  type WalletTrendRange,
+} from "@repo/types";
+import {
+  ASSET_DECIMALS,
+  DEFAULT_ASSET_DECIMALS,
   INCOMING_TYPES,
   PERIOD_OPTIONS,
   TYPE_GROUPS,
@@ -34,7 +40,12 @@ import { useWalletAsset } from "@/features/wallet/hooks/useWalletAsset";
 import { useWalletDeposit } from "@/features/wallet/hooks/useWalletDeposit";
 import { useMarketPrices } from "@/features/wallet/hooks/useMarketPrices";
 import { useWalletTrend } from "@/features/wallet/hooks/useWalletTrend";
-
+import { cn } from "@/lib/cn";
+import { useWalletWithdraw } from "@/features/wallet/hooks/useWalletWithdraw";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+const decimalsOf = (symbol: string) =>
+  ASSET_DECIMALS[symbol] ?? DEFAULT_ASSET_DECIMALS;
 // فقط متادیتای نمایشی (نام فارسی/آیکن). همه‌ی اعداد از API می‌آیند.
 const COIN_META = [
   {
@@ -90,12 +101,13 @@ const fmtUsd = (v: number) =>
     maximumFractionDigits: 2,
   });
 
-const fmtAmount = (v: unknown, min = 0) =>
-  Number(v ?? 0).toLocaleString(undefined, {
-    minimumFractionDigits: min,
-    maximumFractionDigits: 8,
+const fmtAsset = (v: unknown, symbol: string, fixed = false) => {
+  const d = decimalsOf(symbol);
+  return Number(v ?? 0).toLocaleString(undefined, {
+    minimumFractionDigits: fixed ? d : 0,
+    maximumFractionDigits: d,
   });
-
+};
 const faDateTime = (d: string | Date) => {
   const date = new Date(d);
   return {
@@ -117,6 +129,7 @@ export default function WalletPage() {
   const balances = useWalletBalance();
   const [period, setPeriod] = useState<PeriodId>("all");
   const [typeGroup, setTypeGroup] = useState<TypeGroupId>("all");
+  const router = useRouter();
 
   const filters = useMemo<WalletHistoryFilters>(() => {
     const types = TYPE_GROUPS.find((g) => g.id === typeGroup)?.types ?? [];
@@ -130,6 +143,9 @@ export default function WalletPage() {
   const asset = useWalletAsset(selected, page, PAGE_SIZE, filters);
   const deposit = useWalletDeposit();
   const prices = useMarketPrices();
+  const withdraw = useWalletWithdraw();
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [range, setRange] = useState<WalletTrendRange>("1M");
 
   const coins = useMemo(() => {
@@ -168,7 +184,9 @@ export default function WalletPage() {
       }, 0),
     [coins, prices.data],
   );
-
+  const tradeSlug =
+    SYMBOLS.find((s) => s.baseAsset === activeCoin.symbol)?.slug ??
+    SYMBOLS[0].slug;
   const trend = useWalletTrend(selected, range);
   const trendData = useMemo(
     () =>
@@ -182,12 +200,40 @@ export default function WalletPage() {
   const chartColor =
     change != null && change < 0 ? "var(--destructive)" : "var(--success)";
   const history = asset.data?.history;
+  const toPlain = (v: unknown) => {
+    const s = String(v ?? "0");
+    return /e/i.test(s)
+      ? Number(s)
+          .toFixed(18)
+          .replace(/\.?0+$/, "")
+      : s;
+  };
+  const withdrawFormatOk =
+    /^\d+(\.\d{1,18})?$/.test(withdrawAmount) && Number(withdrawAmount) > 0;
+  const withdrawExceeds =
+    withdrawFormatOk && Number(withdrawAmount) > activeCoin.available;
+  const withdrawValid = withdrawFormatOk && !withdrawExceeds;
 
+  const submitWithdraw = () => {
+    if (!withdrawValid) return;
+    withdraw.mutate(
+      { asset: activeCoin.symbol, amount: withdrawAmount },
+      {
+        onSuccess: () => {
+          setWithdrawAmount("");
+          setShowWithdraw(false);
+        },
+      },
+    );
+  };
   const selectCoin = (symbol: string) => {
     setSelected(symbol);
     setPage(1);
     setShowDeposit(false);
+    setShowWithdraw(false);
+    setWithdrawAmount("");
     deposit.reset();
+    withdraw.reset();
   };
 
   const changePeriod = (p: PeriodId) => {
@@ -298,7 +344,7 @@ export default function WalletPage() {
 
                     <div className="text-end">
                       <p className="font-mono font-bold text-sm">
-                        {fmtAmount(coin.total, 4)}
+                        {fmtAsset(coin.total, coin.symbol, true)}
                       </p>
                       {priceOf(coin.symbol) != null && (
                         <p className="text-xs text-muted-foreground font-mono">
@@ -341,7 +387,7 @@ export default function WalletPage() {
                   <p className="text-xs text-muted-foreground">موجودی کل</p>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-3xl font-mono font-black">
-                      {fmtAmount(activeCoin.total)}
+                      {fmtAsset(activeCoin.total, activeCoin.symbol)}
                     </span>
                     <span className="text-sm font-bold text-muted-foreground">
                       {activeCoin.symbol}
@@ -351,27 +397,54 @@ export default function WalletPage() {
                     <p className="text-sm text-muted-foreground font-mono mt-0.5">
                       ${fmtUsd(activeFiat)} ≈
                       <span className="ms-2 text-xs">
-                        (۱ {activeCoin.symbol} = ${fmtUsd(activePrice!)})
+                        (1 {activeCoin.symbol} = ${fmtUsd(activePrice!)})
                       </span>
                     </p>
                   )}
-                  <div className="flex gap-4 text-xs text-muted-foreground font-mono mt-1.5">
-                    <span>قابل استفاده: {fmtAmount(activeCoin.available)}</span>
-                    <span>قفل‌شده: {fmtAmount(activeCoin.locked)}</span>
+                  <div className="flex gap-4 text-xs text-muted-foreground mt-1.5">
+                    <span>
+                      قابل استفاده:{" "}
+                      <span className="font-mono">
+                        {fmtAsset(activeCoin.available, activeCoin.symbol)}
+                      </span>
+                    </span>
+                    <span>
+                      قفل‌شده:{" "}
+                      <span className="font-mono">
+                        {fmtAsset(activeCoin.locked, activeCoin.symbol)}
+                      </span>
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 md:flex items-center gap-3 md:self-end">
-                <Button size="xl" onClick={() => setShowDeposit((s) => !s)}>
+                <Button
+                  size="xl"
+                  onClick={() => {
+                    setShowDeposit((s) => !s);
+                    setShowWithdraw(false);
+                  }}
+                >
                   <ArrowDownLeft className="w-4 h-4" />
                   <span>واریز به {activeCoin.symbol}</span>
                 </Button>
-                <Button variant="secondary" size="xl">
+                <Button
+                  variant="secondary"
+                  size="xl"
+                  onClick={() => {
+                    setShowWithdraw((s) => !s);
+                    setShowDeposit(false);
+                  }}
+                >
                   <ArrowUpRight className="w-4 h-4" />
                   <span>برداشت</span>
                 </Button>
-                <Button variant="secondary" size="xl">
+                <Button
+                  variant="secondary"
+                  size="xl"
+                  onClick={() => router.push(`/dashboard/trade/${tradeSlug}`)}
+                >
                   <RefreshCw className="w-4 h-4" />
                   <span>معامله</span>
                 </Button>
@@ -387,7 +460,7 @@ export default function WalletPage() {
                     placeholder={`مقدار ${activeCoin.symbol}`}
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
-                    className="font-mono"
+                    className={cn(Number(depositAmount) > 0 ? "font-mono" : "")}
                   />
                   <Button
                     onClick={submitDeposit}
@@ -399,6 +472,61 @@ export default function WalletPage() {
                 {deposit.isError && (
                   <p className="text-xs text-destructive">
                     واریز ناموفق بود. دوباره تلاش کنید.
+                  </p>
+                )}
+              </div>
+            )}
+            {showWithdraw && (
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>قابل برداشت</span>
+                  <span className="font-mono">
+                    {fmtAsset(activeCoin.available, activeCoin.symbol)}{" "}
+                    {activeCoin.symbol}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Input
+                    dir="ltr"
+                    inputMode="decimal"
+                    placeholder={`مقدار ${activeCoin.symbol}`}
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    className={cn(
+                      Number(withdrawAmount) > 0 ? "font-mono" : "",
+                    )}
+                  />
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={() =>
+                      setWithdrawAmount(
+                        toPlain(
+                          balances.data?.find(
+                            (b) => b.asset === activeCoin.symbol,
+                          )?.available,
+                        ),
+                      )
+                    }
+                    disabled={activeCoin.available <= 0}
+                  >
+                    حداکثر
+                  </Button>
+                  <Button
+                    onClick={submitWithdraw}
+                    disabled={!withdrawValid || withdraw.isPending}
+                  >
+                    {withdraw.isPending ? "در حال ثبت..." : "تأیید برداشت"}
+                  </Button>
+                </div>
+                {withdrawExceeds && (
+                  <p className="text-xs text-destructive">
+                    مقدار واردشده از موجودی قابل برداشت بیشتر است.
+                  </p>
+                )}
+                {withdraw.isError && (
+                  <p className="text-xs text-destructive">
+                    برداشت ناموفق بود. دوباره تلاش کنید.
                   </p>
                 )}
               </div>
@@ -437,13 +565,8 @@ export default function WalletPage() {
                 {RANGES.map((r) => (
                   <Button
                     key={r}
-                    variant="ghost"
                     onClick={() => setRange(r)}
-                    className={
-                      range === r
-                        ? "bg-primary text-primary-foreground shadow"
-                        : ""
-                    }
+                    variant={range === r ? "default" : "ghost"}
                   >
                     {r}
                   </Button>
@@ -527,7 +650,8 @@ export default function WalletPage() {
                               })}
                             </p>
                             <p className="text-sm font-mono font-bold">
-                              {fmtAmount(p.balance)} {activeCoin.symbol}
+                              {fmtAsset(p.balance, activeCoin.symbol)}{" "}
+                              {activeCoin.symbol}
                             </p>
                             {activePrice != null && (
                               <p className="text-[11px] text-muted-foreground font-mono">
@@ -669,7 +793,11 @@ export default function WalletPage() {
                       >
                         {incoming ? "+" : "-"}
                         {activeCoin.symbol}{" "}
-                        {fmtAmount(Math.abs(Number(tx.amount)), 4)}
+                        {fmtAsset(
+                          Math.abs(Number(tx.amount)),
+                          activeCoin.symbol,
+                          true,
+                        )}
                       </span>
                       <div className="flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-success" />

@@ -7,6 +7,7 @@ import type {
   WalletHistoryFilters,
   WalletTrendRange,
   WalletTrendReply,
+  WalletWithdrawDto,
 } from "@repo/types";
 
 export const walletApi = {
@@ -36,6 +37,12 @@ export const walletApi = {
 
   deposit: (body: WalletDepositDto) =>
     apiFetch<void>("wallet/deposit", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  withdraw: (body: WalletWithdrawDto) =>
+    apiFetch<void>("/wallet/withdraw", {
       method: "POST",
       body: JSON.stringify(body),
     }),

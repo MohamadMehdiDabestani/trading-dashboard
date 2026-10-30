@@ -477,6 +477,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
       '@types/big.js':
         specifier: ^7.0.0
         version: 7.0.0
@@ -487,9 +490,6 @@ importers:
         specifier: ^3.4.9
         version: 3.4.9
     devDependencies:
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../types
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config

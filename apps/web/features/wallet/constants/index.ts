@@ -22,7 +22,7 @@ export type TypeGroupId =
 export const TYPE_GROUPS: {
   id: TypeGroupId;
   label: string;
-  types: LedgerEntryType[]; // خالی = بدون فیلتر
+  types: LedgerEntryType[];
 }[] = [
   { id: "all", label: "همه", types: [] },
   { id: "deposit", label: "واریز", types: ["deposit"] },
@@ -49,6 +49,19 @@ export const TYPE_LABEL: Record<LedgerEntryType, string> = {
 export const INCOMING_TYPES = new Set<string>([
   "deposit",
   "trade_buy",
+  "trade_sell",
   "unlock",
   "transfer_in",
 ]);
+
+export const ASSET_DECIMALS: Record<string, number> = {
+  BTC: 8,
+  ETH: 8,
+  BNB: 8,
+  SOL: 8,
+  XRP: 6,
+  ADA: 6,
+  USDT: 4,
+};
+
+export const DEFAULT_ASSET_DECIMALS = 8;

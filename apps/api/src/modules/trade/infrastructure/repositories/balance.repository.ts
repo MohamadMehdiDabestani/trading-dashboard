@@ -18,15 +18,12 @@ export class BalanceTxRepository {
     userId: string;
     asset: string;
     amountDecimal: Big;
-  }) {
+  }): Promise<{ beforeAvailable: bigint; afterAvailable: bigint }> {
     const userBalance = await this.tx
       .select()
       .from(balances)
       .where(
-        and(
-          eq(balances.userId, input.userId),
-          eq(balances.asset, input.asset),
-        ),
+        and(eq(balances.userId, input.userId), eq(balances.asset, input.asset)),
       )
       .for("update")
       .then((res) => res[0]);
@@ -43,6 +40,12 @@ export class BalanceTxRepository {
         updatedAt: new Date(),
       })
       .where(eq(balances.id, userBalance.id));
+
+    const beforeAvailable = dbDecimalToScaledBigInt(userBalance.available);
+    const afterAvailable =
+      beforeAvailable - dbDecimalToScaledBigInt(input.amountDecimal);
+
+    return { beforeAvailable, afterAvailable };
   }
 
   async releaseLocked(input: {
@@ -61,10 +64,7 @@ export class BalanceTxRepository {
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(balances.userId, input.userId),
-          eq(balances.asset, input.asset),
-        ),
+        and(eq(balances.userId, input.userId), eq(balances.asset, input.asset)),
       )
       .returning({
         available: balances.available,

@@ -39,3 +39,16 @@ export const walletAssetSchema = {
     },
   },
 } as const;
+
+export const walletWithdrawSchema = {
+  body: {
+    type: "object",
+    required: ["asset", "amount"],
+    additionalProperties: false,
+    properties: {
+      asset: { type: "string", minLength: 1, maxLength: 20 },
+      amount: { type: "string", pattern: "^[0-9]+(\\.[0-9]{1,18})?$" },
+      address: { type: "string", minLength: 1, maxLength: 128 },
+    },
+  },
+} as const;
