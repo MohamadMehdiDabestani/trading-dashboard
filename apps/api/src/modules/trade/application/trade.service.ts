@@ -10,6 +10,7 @@ import {
   SCALE,
   Side,
   SortDirection,
+  TradeStatsReply,
 } from "@repo/types";
 import { MatchingEngine } from "@/engine";
 import { MarketEventBus } from "@/utils/eventBus";
@@ -169,9 +170,9 @@ export class TradeService {
   }
 
   async getRecentOrders(params: {
-    symbol: string;
+    symbol?: string;
     userId: string;
-    status?: OrderStatus;
+    status?: OrderStatus[];
     sortBy?: OrderSortField;
     sortOrder?: SortDirection;
     page: number;
@@ -183,7 +184,6 @@ export class TradeService {
       const safePage = Math.max(page, 1);
       const safePageSize = Math.min(Math.max(pageSize, 1), 100);
 
-      // await لازم است تا خطاهای async داخل try/catch گرفته شوند
       return await this.orderReadRepository.getRecentOrders({
         symbol,
         userId,
@@ -200,7 +200,39 @@ export class TradeService {
       throw new AppError("INTERNAL_SERVER_ERROR");
     }
   }
+  async getStats(userId: string): Promise<TradeStatsReply> {
+    try {
+      const DAY = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const d30 = new Date(now - 30 * DAY);
+      const d60 = new Date(now - 60 * DAY);
 
+      const [all, cur, prev] = await Promise.all([
+        this.orderReadRepository.getFinishedStats(userId),
+        this.orderReadRepository.getFinishedStats(userId, d30),
+        this.orderReadRepository.getFinishedStats(userId, d60, d30),
+      ]);
+
+      const rate = (s: { filled: number; total: number }) =>
+        s.total > 0 ? (s.filled / s.total) * 100 : null;
+      const r1 = (n: number) => Math.round(n * 10) / 10;
+
+      const rAll = rate(all),
+        rCur = rate(cur),
+        rPrev = rate(prev);
+
+      return {
+        successRate: rAll === null ? null : r1(rAll),
+        filled: all.filled,
+        total: all.total,
+        deltaPercent: rCur !== null && rPrev !== null ? r1(rCur - rPrev) : null,
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error("getStats error:", error);
+      throw new AppError("INTERNAL_SERVER_ERROR");
+    }
+  }
   // ─── internals ────────────────────────────────────────────────────────────
 
   /** validate + mark cancelled + release remaining lock + ledger unlock، همه در یک transaction */

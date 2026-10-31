@@ -19,3 +19,10 @@ export interface CreateOrderReply {
 }
 
 export type CancelOrderReply = string;
+
+export interface TradeStatsReply {
+  successRate: number | null;   // درصد، کل دوره
+  filled: number;
+  total: number;                // filled + cancelled
+  deltaPercent: number | null;  // ۳۰ روز اخیر نسبت به ۳۰ روز قبل (امتیاز درصدی)
+}

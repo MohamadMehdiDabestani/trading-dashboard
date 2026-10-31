@@ -16,6 +16,7 @@ import {
   OrderStatus,
   OrderSortField,
   SortDirection,
+  TradeStatsReply,
 } from "@repo/types";
 import { AppError } from "@/errors/appError";
 
@@ -110,8 +111,8 @@ export async function tradeRoutes(fastify: FastifyInstance) {
     Querystring: {
       page?: string;
       pageSize?: string;
-      status?: OrderStatus;
-      symbol: string;
+      status?: OrderStatus[];
+      symbol?: string;
       sortBy?: OrderSortField;
       sortOrder?: SortDirection;
     };
@@ -134,7 +135,7 @@ export async function tradeRoutes(fastify: FastifyInstance) {
           sortOrder,
         } = req.query;
         const data = await tradeService.getRecentOrders({
-          symbol : symbol.toUpperCase(),
+          symbol: symbol?.toUpperCase(),
           userId,
           status,
           page: Math.max(1, Number(page) || 1),
@@ -152,6 +153,22 @@ export async function tradeRoutes(fastify: FastifyInstance) {
         }
 
         return reply.status(500).send(fail("INTERNAL_SERVER_ERROR"));
+      }
+    },
+  );
+  fastify.get<{ Reply: APIResult<TradeStatsReply> }>(
+    "/stats",
+    { onRequest: [fastify.authenticate] },
+    async (req, reply) => {
+      try {
+        const data = await tradeService.getStats(req.user.sub);
+        return reply.send(ok(data));
+      } catch (error: any) {
+        req.log.error(error);
+        if (error instanceof AppError) {
+          return reply.code(error.statusCode).send(fail(error.code));
+        }
+        return reply.code(500).send(fail("INTERNAL_SERVER_ERROR"));
       }
     },
   );
