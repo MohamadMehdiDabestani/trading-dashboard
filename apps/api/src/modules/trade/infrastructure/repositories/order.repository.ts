@@ -1,5 +1,16 @@
 import { DbTransaction, orders } from "@repo/db";
-import { and, asc, count, desc, eq, inArray, SQL, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lt,
+  SQL,
+  sql,
+} from "drizzle-orm";
 import {
   OrderStatus,
   OrderType,
@@ -7,13 +18,11 @@ import {
   OrderSortField,
   SortDirection,
 } from "@repo/types";
-import {
-  toDbDecimal,
-} from "@/utils/scaleBigInt";
+import { toDbDecimal } from "@/utils/scaleBigInt";
 import { applyPagination } from "@/utils/pagination";
 import { PgColumn } from "drizzle-orm/pg-core";
 
-const ORDER_SORT_COLUMNS : Record<OrderSortField, PgColumn>= {
+const ORDER_SORT_COLUMNS: Record<OrderSortField, PgColumn> = {
   createdAt: orders.createdAt,
   symbol: orders.symbol,
   type: orders.type,
@@ -149,7 +158,7 @@ export class OrderReadRepository {
   async getRecentOrders(params: {
     userId: string;
     symbol?: string;
-    status?: OrderStatus;
+    status?: OrderStatus[];
     page: number;
     pageSize: number;
     sortBy?: OrderSortField;
@@ -172,8 +181,8 @@ export class OrderReadRepository {
 
     if (symbol) filters.push(eq(orders.symbol, symbol.toUpperCase()));
 
-    if (status) {
-      filters.push(eq(orders.status, status));
+    if (status?.length) {
+      filters.push(inArray(orders.status, status));
     }
 
     const where = and(...filters);
@@ -209,5 +218,25 @@ export class OrderReadRepository {
       total,
       totalPage: Math.ceil(total / pageSize),
     };
+  }
+  async getFinishedStats(userId: string, from?: Date, to?: Date) {
+    const rows = await this.db
+      .select({ status: orders.status, n: count() })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, userId),
+          inArray(orders.status, ["filled", "cancelled"]),
+          from ? gte(orders.createdAt, from) : undefined,
+          to ? lt(orders.createdAt, to) : undefined,
+        ),
+      )
+      .groupBy(orders.status);
+
+    const filled = Number(rows.find((r: any) => r.status === "filled")?.n ?? 0);
+    const cancelled = Number(
+      rows.find((r: any) => r.status === "cancelled")?.n ?? 0,
+    );
+    return { filled, total: filled + cancelled };
   }
 }

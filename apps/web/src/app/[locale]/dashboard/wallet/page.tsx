@@ -38,12 +38,12 @@ import { Input } from "@/components/ui/input";
 import { useWalletBalance } from "@/features/wallet/hooks/useWalletBalance";
 import { useWalletAsset } from "@/features/wallet/hooks/useWalletAsset";
 import { useWalletDeposit } from "@/features/wallet/hooks/useWalletDeposit";
-import { useMarketPrices } from "@/features/wallet/hooks/useMarketPrices";
 import { useWalletTrend } from "@/features/wallet/hooks/useWalletTrend";
 import { cn } from "@/lib/cn";
 import { useWalletWithdraw } from "@/features/wallet/hooks/useWalletWithdraw";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAssetPrices } from "@/hooks/useAssetPrice";
 const decimalsOf = (symbol: string) =>
   ASSET_DECIMALS[symbol] ?? DEFAULT_ASSET_DECIMALS;
 // فقط متادیتای نمایشی (نام فارسی/آیکن). همه‌ی اعداد از API می‌آیند.
@@ -91,6 +91,8 @@ const COIN_META = [
     iconText: "₮",
   },
 ] as const;
+
+const COIN_ASSETS: readonly string[] = COIN_META.map((c) => c.symbol);
 
 const PAGE_SIZE = 10;
 const RANGES: WalletTrendRange[] = ["1D", "1W", "1M", "1Y"];
@@ -142,7 +144,7 @@ export default function WalletPage() {
 
   const asset = useWalletAsset(selected, page, PAGE_SIZE, filters);
   const deposit = useWalletDeposit();
-  const prices = useMarketPrices();
+  const { priceOf } = useAssetPrices(COIN_ASSETS);
   const withdraw = useWalletWithdraw();
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -166,11 +168,6 @@ export default function WalletPage() {
     );
   }, [coins, searchQuery]);
 
-  const priceOf = (symbol: string) => {
-    const p = Number(prices.data?.[symbol]);
-    return Number.isFinite(p) && p > 0 ? p : null;
-  };
-
   const activeCoin = coins.find((c) => c.symbol === selected) ?? coins[0]!;
   const activePrice = priceOf(activeCoin.symbol);
   const activeFiat =
@@ -179,10 +176,14 @@ export default function WalletPage() {
   const portfolioValue = useMemo(
     () =>
       coins.reduce((sum, c) => {
-        const p = Number(prices.data?.[c.symbol]);
-        return Number.isFinite(p) ? sum + c.total * p : sum;
+        const p = priceOf(c.symbol);
+        return p != null ? sum + c.total * p : sum;
       }, 0),
-    [coins, prices.data],
+    [coins, priceOf],
+  );
+  // USDT همیشه قیمت دارد؛ منتظر اولین قیمت یکی از ارزهای دیگر می‌مانیم
+  const pricesReady = COIN_ASSETS.some(
+    (a) => a !== "USDT" && priceOf(a) != null,
   );
   const tradeSlug =
     SYMBOLS.find((s) => s.baseAsset === activeCoin.symbol)?.slug ??
@@ -270,7 +271,7 @@ export default function WalletPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-black text-foreground">دارایی ها</h1>
-        {prices.isSuccess && (
+        {balances.isSuccess && pricesReady && (
           <div className="text-end">
             <p className="text-xs text-muted-foreground">ارزش کل دارایی‌ها</p>
             <p className="text-xl font-mono font-black">
