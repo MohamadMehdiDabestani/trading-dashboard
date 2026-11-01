@@ -1,4 +1,3 @@
-// dashboard layout
 import { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +17,7 @@ import { authKeys } from "@/features/auth/api/auth.keys";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
+import { AssistantWidget } from "@/components/assistanceWidget";
 
 export default async function Layout({
   children,
@@ -56,6 +56,7 @@ export default async function Layout({
           <div className="p-4 pt-0">{children}</div>
           <Footer />
         </SidebarInset>
+        <AssistantWidget />
       </SidebarProvider>
     </HydrationBoundary>
   );

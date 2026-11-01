@@ -164,3 +164,7 @@ Learn more about the power of Turborepo:
 
 install locale package:
 pnpm add -D @repo/name@workspace:*
+
+<!-- apinex sk-apx5f56dc7f0c83ab95538ca5818f82f6832efe8f7e8a72f73 -->
+
+<!-- jev sk-maVGhtjx0GEx8tGdLAi1xj9qHa6nh0NkyJFcQTihmixTZDIW -->
