@@ -4,6 +4,7 @@ import { useLivePrices } from "@/hooks/useLivePrice";
 import { cn } from "@/lib/cn";
 import { SYMBOLS, SymbolValue } from "@repo/types";
 import { Edit2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const WATCHLIST = [
   { symbol: "BTCUSDT", name: "Bitcoin", icon: "B", color: "text-orange-500" },
@@ -15,6 +16,7 @@ const WATCH_SYMBOLS = WATCHLIST.map((w) => w.symbol) as SymbolValue[];
 
 export const  MarketWatchCard =  () =>{
   const { prices, status } = useLivePrices(WATCH_SYMBOLS);
+  const router = useRouter();
 
   return (
     <Card>
@@ -62,7 +64,8 @@ export const  MarketWatchCard =  () =>{
             </div>
           );
         })}
-        <Button variant="outline" size="sm" className="w-full mt-2 border-dashed border-blue-200" color="primary">
+        <Button variant="outline" size="sm" className="w-full mt-2 border-dashed border-blue-200" color="primary" 
+        onClick={() => router.push(`/dashboard/markets`)}>
           همه ی نماد ها
         </Button>
       </CardContent>
