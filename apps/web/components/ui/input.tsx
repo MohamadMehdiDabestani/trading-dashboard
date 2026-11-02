@@ -39,7 +39,6 @@ function Input({ className, type, variant, inputSize, ...props }: InputProps) {
     <input
       type={type}
       data-slot="input"
-      dir="auto"
       className={cn(inputVariants({ variant, inputSize, className }))}
       {...props}
     />
