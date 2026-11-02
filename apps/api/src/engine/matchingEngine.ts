@@ -164,15 +164,20 @@ export class MatchingEngine {
     const result: MatchResult = { trades: [], updates: [], deltas: [] };
 
     // true یعنی matching به‌خاطر self-trade متوقف شده
-    const blocked =
+    const selfTradeBlocked =
       order.side === "buy"
         ? this.matchBuy(order, book, result)
         : this.matchSell(order, book, result);
 
     const remaining = order.filled < order.quantity;
 
-    if (blocked || (order.type === "market" && remaining)) {
-      // باقی‌ماندهٔ taker هرگز وارد بوک نمی‌شود (self-trade یا market بدون نقدینگی)
+    if (selfTradeBlocked) {
+      // self-trade (wash trade): تیکر هیچ‌وقت وارد بوک نمی‌شود و
+      // معامله‌ای ثبت نمی‌شود. سرویس مسئول آزادسازی قفل سرمایه است.
+      throw new Error("SELF_TRADE_BLOCKED");
+    }
+    if (order.type === "market" && remaining) {
+      // باقی‌ماندهٔ تیکر market بدون نقدینگی کنسل می‌شود
       result.updates.push({
         orderId: order.id,
         filled: order.filled,
@@ -218,7 +223,12 @@ export class MatchingEngine {
   }
   // ─── Match logic ──────────────────────────────────────────────────────────
 
-  /** @returns true اگر به‌دلیل self-trade متوقف شد */
+  /**
+   * اگر به‌دلیل self-trade متوقف شد true برگرداند.
+   * قاعده: تیکر با مِیکر از **همان کاربر** در **همان قیمت** معامله نمی‌کند
+   * (جلوگیری از wash trade خودکار)؛ در این صورت سفارش به‌طور کامل کنسل می‌شود.
+   * کاربر مجاز نیست در یک قیمت هم سفارش خرید و هم فروش داشته باشد.
+   */
   private matchBuy(
     taker: EngineOrder,
     book: OrderBook,
@@ -228,10 +238,9 @@ export class MatchingEngine {
       const maker = book.peekBestAsk();
       if (!maker) break;
 
+      // buy تیکر فقط با مِیکر sell در قیمت **کمتر یا مساوی** قیمت حد خودش معامله می‌کند
+      // buy @70000 نباید با sell @75000 معامله شود
       if (taker.type === "limit" && maker.price > taker.price) break;
-
-      // جلوگیری از wash trade: taker کنسل می‌شود
-      if (maker.userId === taker.userId) return true;
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,
@@ -240,12 +249,11 @@ export class MatchingEngine {
 
       this.recordTrade(maker, taker, tradeQty, maker.price, result);
 
-      // اول مجموع سطح را کم کن، بعد در صورت fill کامل حذف کن
       const levelDelta = book.consumeMaker(maker, tradeQty);
 
       if (maker.filled === maker.quantity) {
-        const delta = book.removeFrontAsk();
-        if (delta) result.deltas.push(delta);
+        result.deltas.push(levelDelta);
+        book.removeFrontAsk();
       } else {
         result.deltas.push(levelDelta);
       }
@@ -262,9 +270,14 @@ export class MatchingEngine {
       const maker = book.peekBestBid();
       if (!maker) break;
 
+      // sell تیکر فقط با مِیکر buy در قیمت **بیشتر یا مساوی** قیمت حد خودش معامله می‌کند
+      // sell @75000 نباید با buy @70000 معامله شود
       if (taker.type === "limit" && maker.price < taker.price) break;
 
-      if (maker.userId === taker.userId) return true;
+      // جلوگیری از wash trade: تیکر با مِیکر همان کاربر در همان قیمت کنسل می‌شود
+      if (maker.userId === taker.userId && maker.price === taker.price) {
+        return true;
+      }
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,
@@ -276,8 +289,8 @@ export class MatchingEngine {
       const levelDelta = book.consumeMaker(maker, tradeQty);
 
       if (maker.filled === maker.quantity) {
-        const delta = book.removeFrontBid();
-        if (delta) result.deltas.push(delta);
+        result.deltas.push(levelDelta);
+        book.removeFrontBid();
       } else {
         result.deltas.push(levelDelta);
       }

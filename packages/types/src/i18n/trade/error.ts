@@ -9,7 +9,8 @@ export const TRADE_ERROR_CODES = [
   "ORDER_NOT_OPEN",
   "ORDER_NOT_FOUND",
   "ORDER_NOT_FOUND_IN_ENGINE",
-  "BALANCE_ROW_NOT_FOUND"
+  "BALANCE_ROW_NOT_FOUND",
+  "SELF_TRADE_BLOCKED"
 ] as const;
 
 export type TradeErrorCode = (typeof TRADE_ERROR_CODES)[number];

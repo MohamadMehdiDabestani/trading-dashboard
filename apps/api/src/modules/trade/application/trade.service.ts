@@ -123,8 +123,17 @@ export class TradeService {
           // Transaction ۲: persist
           await this.matchPersistence.persist(result, baseAsset, quoteAsset);
         } catch (err) {
-          // engine از DB جلو افتاده؛ DB منبع حقیقت است → بوک را به DB برگردان
-          await this.recoverFromFailedMatch(userId, symbol, orderId);
+          if (err instanceof Error && err.message === "SELF_TRADE_BLOCKED") {
+            // self-trade (wash trade): سفارش در بوک وارد نشد؛ باید هم
+            // قفل آزاد شود و هم سفارش در DB کنسل شود تا با ری‌استارت
+            // سرور دوباره در بوک ظاهر نشود.
+            await this.cancelSelfTradeLock(userId, orderId, lockAsset, lockAmount);
+            await this.cancelSelfTradeOrder(userId, symbol, orderId);
+            throw new AppError("SELF_TRADE_BLOCKED");
+          } else {
+            // persist یا submit شکست خورد: بوک را از روی DB برگردان
+            await this.recoverFromFailedMatch(userId, symbol, orderId);
+          }
           throw err;
         }
 
@@ -279,7 +288,7 @@ export class TradeService {
   }
 
   /**
-   * اگر match در engine انجام شد ولی persist (یا خود submit) شکست خورد:
+   * اگر persist یا submit شکست خورد:
    * ۱) سفارش taker در DB کنسل و lock آزاد می‌شود،
    * ۲) بوک engine از روی سفارش‌های فعال DB بازسازی می‌شود (trade های persist‌نشده برمی‌گردند).
    */
@@ -326,6 +335,87 @@ export class TradeService {
         err,
       );
     }
+  }
+
+  /**
+   * وقتی تیکر به‌دلیل self-trade (دو سفارش مخالف در یک قیمت از یک کاربر)
+   * در engine رد شد، باید هم‌زمان در DB هم کنسل شود. در غیر این صورت
+   * سفارش "کنسل‌نشده" در DB می‌ماند و با ری‌استارت سرور دوباره در بوک
+   * ظاهر می‌شود (دو سفارش مخالف در یک قیمت).
+   */
+  private async cancelSelfTradeOrder(
+    userId: string,
+    symbol: string,
+    orderId: string,
+  ): Promise<void> {
+    await this.uow.run(async ({ orders, walletLocks, balances, ledger }) => {
+      const order = await orders.getOrderOwner(orderId);
+      if (!order) return;
+      if (order.status === "filled" || order.status === "cancelled") return;
+
+      // رد کردن سفارش جدید
+      await orders.markCancelled(orderId);
+
+      const lock = await walletLocks.getByOrderIdForUpdate(orderId);
+      if (!lock || lock.releasedAt) return;
+
+      const remainingScaled = walletLocks.toScaled(lock);
+      if (remainingScaled <= 0n) {
+        await walletLocks.releaseAll(lock.id);
+        return;
+      }
+
+      const { beforeAvailable, afterAvailable } = await balances.releaseLocked({
+        userId,
+        asset: lock.asset,
+        amount: remainingScaled,
+      });
+
+      await ledger.insertUnlock({
+        userId,
+        asset: lock.asset,
+        amount: remainingScaled,
+        balanceBefore: beforeAvailable,
+        balanceAfter: afterAvailable,
+        orderId,
+      });
+
+      await walletLocks.releaseAll(lock.id);
+    });
+  }
+
+  /**
+   * آزادسازی قفل سرمایه برای سفارش self-trade.
+   * از آنجا که createOrder قفل را قبل از صدا زدن engine گرفته، باید
+   * این قفل آزاد شود در غیر این صورت سرمایه کاربر برای همیشه درگیر می‌ماند.
+   */
+  private async cancelSelfTradeLock(
+    userId: string,
+    orderId: string,
+    asset: string,
+    amount: bigint,
+  ): Promise<void> {
+    await this.uow.run(async ({ balances, walletLocks, ledger }) => {
+      const lock = await walletLocks.getByOrderIdForUpdate(orderId);
+      if (!lock || lock.releasedAt) return;
+
+      const { beforeAvailable, afterAvailable } = await balances.releaseLocked({
+        userId,
+        asset,
+        amount,
+      });
+
+      await ledger.insertUnlock({
+        userId,
+        asset,
+        amount,
+        balanceBefore: beforeAvailable,
+        balanceAfter: afterAvailable,
+        orderId,
+      });
+
+      await walletLocks.releaseAll(lock.id);
+    });
   }
 
   private emitMarketEvents(symbol: string, matchResult: MatchResult) {

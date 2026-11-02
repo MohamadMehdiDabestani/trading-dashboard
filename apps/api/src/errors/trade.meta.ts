@@ -27,4 +27,8 @@ export const ERROR_TRADE_HTTP_META: Record<
     status: 500,
     messageKey: "BALANCE_ROW_NOT_FOUND",
   },
+  SELF_TRADE_BLOCKED: {
+    status: 500,
+    messageKey: "SELF_TRADE_BLOCKED",
+  },
 };
