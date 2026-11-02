@@ -109,7 +109,10 @@ export class OrderBook {
     };
   }
 
-  // حذف کامل maker که کاملاً پر شده
+  // حذف کامل maker که کاملاً پر شده. totalQuantity دیگر کسر نمی‌شود
+  // چون consumeMaker قبلاً باقی‌مانده را کم کرده؛ اینجا فقط یک level خالی
+  // حذف می‌شود و مقدار final level.totalQuantity (0n یا مقدار باقی‌مانده)
+  // به عنوان دلتا فرستاده می‌شود تا بودک نوسان نداشته باشد.
   removeFrontAsk(): OrderBookLevelDelta | null {
     const key = this.asks.minKey();
     if (key === undefined) return null;
@@ -119,8 +122,6 @@ export class OrderBook {
     if (!removed) return null;
 
     this.orderIndex.delete(removed.id);
-
-    level.totalQuantity -= removed.quantity - removed.filled;
 
     if (level.orders.length === 0) {
       this.asks.delete(key);
@@ -143,7 +144,6 @@ export class OrderBook {
     if (!removed) return null;
 
     this.orderIndex.delete(removed.id);
-    level.totalQuantity -= removed.quantity - removed.filled;
 
     if (level.orders.length === 0) {
       this.bids.delete(key);
