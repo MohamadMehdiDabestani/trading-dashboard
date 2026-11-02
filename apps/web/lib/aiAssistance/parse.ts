@@ -1,11 +1,10 @@
 import type { Classification } from "./classifier";
-import { detectCoin, extractAmount, mentionsDollar } from "./exctract";
+import { detectCoin, extractAmount, mentionsDollar } from "./extract";
 import type { ParsedIntent } from "./schema";
 
-const MIN_INTENT = 0.5; // زیر این مقدار: نامطمئن → UNKNOWN
-const MIN_COIN = 0.7; // مدل مجبور به انتخاب است؛ حدس ضعیف قبول نیست
+const MIN_INTENT = 0.5; 
+const MIN_COIN = 0.7; 
 
-/** ترکیب تصمیم JEV + استخراج قطعی با کد → همان ParsedIntent قبلی (widget تغییری نمی‌کند) */
 export function buildIntent(text: string, c: Classification): ParsedIntent {
   const base: ParsedIntent = {
     intent: "UNKNOWN",
@@ -14,45 +13,47 @@ export function buildIntent(text: string, c: Classification): ParsedIntent {
     amount: null,
     amountUnit: null,
     price: null,
+    percent: null,
     howto: null,
   };
   if (c.intent.confidence < MIN_INTENT) return base;
 
   const side = c.side.value === "SELL" ? "SELL" : "BUY";
 
-  // کد اول، JEV برای حالت‌هایی که اسم صریح نبود
   let coin: string | null = detectCoin(text);
   if (!coin && c.coin.confidence >= MIN_COIN && c.coin.value && c.coin.value !== "NONE") {
     coin = c.coin.value;
   }
   const tradeCoin = coin && coin !== "USDT" ? coin : null;
-  const symbol = tradeCoin ? `${tradeCoin}USDT` : null;
+  const symbol = (tradeCoin ? `${tradeCoin}USDT` : null) as ParsedIntent["symbol"];
 
   switch (c.intent.value) {
     case "TRADE":
     case "QUICK_TRADE": {
       const a = extractAmount(text);
-      const prefix = c.intent.value === "QUICK_TRADE" ? "QUICK_" : "";
+      const quick = c.intent.value === "QUICK_TRADE";
       return {
         ...base,
-        intent: `${prefix}${side}` as ParsedIntent["intent"],
-        symbol: symbol as ParsedIntent["symbol"],
-        ...a,
+        intent: `${quick ? "QUICK_" : ""}${side}` as ParsedIntent["intent"],
+        symbol,
+        amount: a.amount,
         amountUnit: a.unit,
-        // قیمت فقط برای limit معنا دارد
-        price: prefix ? null : a.price,
-      } as ParsedIntent;
+        percent: a.percent,
+        price: quick ? null : a.price,
+      };
     }
     case "HOWTO": {
       const a = extractAmount(text);
-      return { ...base, intent: "HOWTO", howto: side, symbol: symbol as ParsedIntent["symbol"], amount: a.amount, amountUnit: a.unit };
+      return { ...base, intent: "HOWTO", howto: side, symbol, amount: a.amount, amountUnit: a.unit };
     }
-    case "BALANCE": {
-      const asset = coin ?? (mentionsDollar(text) ? "USDT" : null);
-      return { ...base, intent: "BALANCE", asset };
-    }
+    case "BALANCE":
+      return { ...base, intent: "BALANCE", asset: coin ?? (mentionsDollar(text) ? "USDT" : null) };
     case "OPEN_ORDERS":
-      return { ...base, intent: "OPEN_ORDERS", symbol: symbol as ParsedIntent["symbol"] };
+    case "CANCEL":
+    case "PRICE":
+      return { ...base, intent: c.intent.value, symbol };
+    case "PORTFOLIO":
+      return { ...base, intent: "PORTFOLIO" };
     default:
       return base;
   }

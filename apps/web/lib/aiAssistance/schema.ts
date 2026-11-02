@@ -13,6 +13,9 @@ export const IntentSchema = z.object({
       "BALANCE",
       "OPEN_ORDERS",
       "HOWTO",
+      "PRICE",
+      "PORTFOLIO",
+      "CANCEL",
       "UNKNOWN",
     ])
     .catch("UNKNOWN"),
@@ -21,6 +24,7 @@ export const IntentSchema = z.object({
   amount: z.number().positive().finite().nullable().catch(null),
   amountUnit: z.enum(["USDT", "BASE"]).nullable().catch(null),
   price: z.number().positive().finite().nullable().catch(null),
+  percent: z.number().positive().max(100).nullable().catch(null),
   howto: z.enum(["BUY", "SELL"]).nullable().catch(null),
 });
 

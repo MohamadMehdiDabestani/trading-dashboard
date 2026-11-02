@@ -4,7 +4,6 @@ import OpenAI from "openai";
 export type Pick = { value: string; confidence: number };
 export type Classification = { intent: Pick; side: Pick; coin: Pick };
 
-/** هر provider فقط باید همین را پیاده کند */
 export interface Classifier {
   classify(text: string): Promise<Classification>;
 }
@@ -20,12 +19,18 @@ const QUESTIONS = {
       QUICK_TRADE:
         "wants an immediate market order: words like سریع, فوری, مارکت, به قیمت بازار, تبدیل سریع",
       BALANCE:
-        "asks how much of a coin or of dollars/USDT they own: 'چقدر بیت کوین دارم', 'چند دلار دارم', 'موجودی من چقدره'",
+        "asks how much of ONE coin or of dollars/USDT they own: 'چقدر بیت کوین دارم', 'چند دلار دارم', 'موجودی من چقدره'",
       OPEN_ORDERS:
         "asks about their own open or pending orders: 'اوردر های باز من', 'سفارش باز اتریوم'",
       HOWTO:
         "asks HOW to buy or sell and wants instructions, not to place an order: 'چطوری بیت کوین بخرم', 'چطوری 100 دلار بیت کوین بخرم'",
-      UNKNOWN: "anything else: price questions, greetings, unrelated chat",
+      PRICE:
+        "asks the current price of a coin: 'قیمت بیت کوین چنده', 'اتریوم الان چنده'",
+      PORTFOLIO:
+        "asks the total value of ALL their holdings: 'ارزش کل دارایی من', 'پورتفوی من چقدره'",
+      CANCEL:
+        "wants to cancel or close an open order: 'اوردر بیت کوینم رو کنسل کن', 'لغو سفارش'",
+      UNKNOWN: "anything else: greetings, unrelated chat",
     },
   },
   side: {
@@ -47,8 +52,7 @@ const QUESTIONS = {
       SOL: "سولانا, سول, sol",
       XRP: "ریپل, xrp",
       ADA: "کاردانو, ada",
-      USDT:
-        "ONLY when asking about the user's own dollar/tether balance, e.g. 'چند دلار دارم'. NOT when 'دلار' is just the unit of an amount",
+      USDT: "ONLY when asking about the user's own dollar/tether balance, e.g. 'چند دلار دارم'. NOT when 'دلار' is just the unit of an amount",
       NONE: "no specific coin is mentioned",
     },
   },
@@ -75,7 +79,11 @@ class JevClassifier implements Classifier {
     });
 
     if (!res.ok) {
-      console.error("[assistant] JEV", res.status, (await res.text()).slice(0, 300));
+      console.error(
+        "[assistant] JEV",
+        res.status,
+        (await res.text()).slice(0, 300),
+      );
       throw new Error(`JEV ${res.status}`);
     }
 
@@ -94,7 +102,12 @@ class JevClassifier implements Classifier {
 const SYSTEM_PROMPT =
   "You classify messages from a user of a crypto spot exchange (Persian or English). " +
   "Answer every field. Never guess a coin that is not mentioned: use NONE.\n\n" +
-  Object.entries(QUESTIONS as unknown as Record<string, { instructions: string; criteria: Record<string, string> }>)
+  Object.entries(
+    QUESTIONS as unknown as Record<
+      string,
+      { instructions: string; criteria: Record<string, string> }
+    >,
+  )
     .map(
       ([k, q]) =>
         `${k}: ${q.instructions}\n` +
@@ -132,9 +145,18 @@ class OpenAIClassifier implements Classifier {
             additionalProperties: false,
             required: ["intent", "side", "coin"],
             properties: {
-              intent: { type: "string", enum: Object.keys(QUESTIONS.intent.criteria) },
-              side: { type: "string", enum: Object.keys(QUESTIONS.side.criteria) },
-              coin: { type: "string", enum: Object.keys(QUESTIONS.coin.criteria) },
+              intent: {
+                type: "string",
+                enum: Object.keys(QUESTIONS.intent.criteria),
+              },
+              side: {
+                type: "string",
+                enum: Object.keys(QUESTIONS.side.criteria),
+              },
+              coin: {
+                type: "string",
+                enum: Object.keys(QUESTIONS.coin.criteria),
+              },
             },
           },
         },
@@ -148,8 +170,15 @@ class OpenAIClassifier implements Classifier {
       /* UNKNOWN */
     }
     // مدل chat احتمال (probability) نمی‌دهد؛ اعتبارسنجی نهایی با enum و کارت تأیید است
-    const pick = (v?: string, fallback = ""): Pick => ({ value: v ?? fallback, confidence: v ? 1 : 0 });
-    return { intent: pick(o.intent, "UNKNOWN"), side: pick(o.side, "BUY"), coin: pick(o.coin, "NONE") };
+    const pick = (v?: string, fallback = ""): Pick => ({
+      value: v ?? fallback,
+      confidence: v ? 1 : 0,
+    });
+    return {
+      intent: pick(o.intent, "UNKNOWN"),
+      side: pick(o.side, "BUY"),
+      coin: pick(o.coin, "NONE"),
+    };
   }
 }
 
@@ -157,5 +186,8 @@ let instance: Classifier | null = null;
 
 /** LLM_PROVIDER=openai (پیش‌فرض) | jev */
 export function getClassifier(): Classifier {
-  return (instance ??= process.env.LLM_PROVIDER === "jev" ? new JevClassifier() : new OpenAIClassifier());
+  return (instance ??=
+    process.env.LLM_PROVIDER === "jev"
+      ? new JevClassifier()
+      : new OpenAIClassifier());
 }
