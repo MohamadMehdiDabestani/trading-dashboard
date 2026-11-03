@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+.git
+.turbo
+**/.next
+**/dist
+.vercel
+.env*
+apps/web
+apps/docs
