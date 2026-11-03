@@ -19,4 +19,4 @@ ENV NODE_ENV=production
 COPY --from=builder /app .
 WORKDIR /app/apps/api
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
+CMD ["node_modules/.bin/tsx", "src/server.ts"]
