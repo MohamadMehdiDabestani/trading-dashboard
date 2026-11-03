@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
-import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
-import { deviceLoginRequests as t, type Db } from "@repo/db";
+import {and, eq, gt, inArray, lt, sql, deviceLoginRequests as t, type Db } from "@repo/db";
 import { AppError } from "@/errors/appError";
 import { ITokenService } from "../../types/token.interface";
 import { UserRepository } from "../../types/user.repository";

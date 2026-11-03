@@ -12,7 +12,8 @@ importers:
       pnpm:
         specifier: 12.14.0
         version: 12.14.0
-
+overrides:
+  drizzle-orm: 0.45.2
 packages:
 
   '@pnpm/exe.android-arm64@12.14.0':
@@ -233,9 +234,6 @@ importers:
       big.js:
         specifier: ^7.0.1
         version: 7.0.1
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(postgres@3.4.9)
       eventemitter3:
         specifier: ^5.0.4
         version: 5.0.4

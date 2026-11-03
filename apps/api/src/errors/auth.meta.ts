@@ -10,4 +10,8 @@ export const ERROR_AUTH_HTTP_META: Record<
     status: 401,
     messageKey: "UNAUTHORIZED",
   },
+  SESSION_EXPIRED: {
+    status: 401,
+    messageKey: "SESSION_EXPIRED",
+  },
 };

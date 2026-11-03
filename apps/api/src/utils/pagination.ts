@@ -1,4 +1,4 @@
-import { PgSelect } from "drizzle-orm/pg-core";
+import { PgSelect } from "@repo/db";
 
 /**
  * این تابع فقط محدودیت‌های Pagination را به کوئری اضافه می‌کند

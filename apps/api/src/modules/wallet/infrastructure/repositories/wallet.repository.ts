@@ -1,6 +1,5 @@
-import { balances, Db, ledgerEntries } from "@repo/db";
+import { and, asc, count, desc, eq, gte, inArray, lt, balances, Db, ledgerEntries } from "@repo/db";
 import Big from "big.js";
-import { and, asc, count, desc, eq, gte, inArray, lt } from "drizzle-orm";
 import { LedgerEntryType, PaginatedResult } from "@repo/types";
 import { applyPagination } from "@/utils/pagination";
 
@@ -80,7 +79,7 @@ export class WalletRepository {
       locked: row.locked,
       available: row.available,
       history: {
-        items: historyRows.map((h) => ({
+        items: historyRows.map((h : any) => ({
           time: h.time,
           amount: h.amount,
           type: h.type,
