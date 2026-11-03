@@ -59,6 +59,57 @@ export class OrderTxRepository {
     });
   }
 
+  /** درج دسته‌ای سفارش‌ها با یک INSERT */
+  async createOpenOrders(
+    inputs: Array<{
+      id: string;
+      userId: string;
+      symbol: string;
+      side: Side;
+      type: OrderType;
+      price: bigint;
+      quantity: bigint;
+    }>,
+  ) {
+    if (inputs.length === 0) return;
+
+    await this.tx.insert(orders).values(
+      inputs.map((input) => ({
+        id: input.id,
+        userId: input.userId,
+        symbol: input.symbol,
+        side: input.side,
+        type: input.type,
+        price: sql`${toDbDecimal(input.price)}`,
+        quantity: sql`${toDbDecimal(input.quantity)}`,
+        status: "open" as const,
+      })),
+    );
+  }
+
+  async getOrderOwners(orderIds: string[]) {
+    if (orderIds.length === 0) return [];
+
+    return this.tx
+      .select({
+        id: orders.id,
+        userId: orders.userId,
+        symbol: orders.symbol,
+        status: orders.status,
+      })
+      .from(orders)
+      .where(inArray(orders.id, orderIds));
+  }
+
+  async markCancelledMany(orderIds: string[]) {
+    if (orderIds.length === 0) return;
+
+    await this.tx
+      .update(orders)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(inArray(orders.id, orderIds));
+  }
+
   async getOrderOwner(orderId: string): Promise<{
     id: string;
     userId: string;

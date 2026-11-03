@@ -217,9 +217,7 @@ export class MatchingEngine {
     return this.getBook(symbol).getSnapshot(depth);
   }
   getActiveOrdersByUser(symbol: string, userId: string): EngineOrder[] {
-    return this.getBook(symbol)
-      .getActiveOrders()
-      .filter((o) => o.userId === userId);
+    return this.getBook(symbol).getActiveOrdersByUser(userId);
   }
   // ─── Match logic ──────────────────────────────────────────────────────────
 
@@ -241,6 +239,11 @@ export class MatchingEngine {
       // buy تیکر فقط با مِیکر sell در قیمت **کمتر یا مساوی** قیمت حد خودش معامله می‌کند
       // buy @70000 نباید با sell @75000 معامله شود
       if (taker.type === "limit" && maker.price > taker.price) break;
+
+      // جلوگیری از wash trade (مثل matchSell)
+      if (maker.userId === taker.userId && maker.price === taker.price) {
+        return true;
+      }
 
       const tradeQty = minBigInt(
         taker.quantity - taker.filled,

@@ -24,10 +24,35 @@ export class OrderBook {
   private bids = new BTree<bigint, PriceLevel>(); // key = price (best bid = maxKey)
   private asks = new BTree<bigint, PriceLevel>(); // key = price
 
+  // orderId → سفارش (برای getOrder در O(1))
   private orderIndex = new Map<
     string,
-    { side: "buy" | "sell"; price: bigint }
+    { side: "buy" | "sell"; price: bigint; order: EngineOrder }
   >();
+
+  // userId → (orderId → سفارش)؛ تا getActiveOrdersByUser کل بوک را اسکن نکند
+  private byUser = new Map<string, Map<string, EngineOrder>>();
+
+  private indexUser(order: EngineOrder) {
+    let m = this.byUser.get(order.userId);
+    if (!m) {
+      m = new Map();
+      this.byUser.set(order.userId, m);
+    }
+    m.set(order.id, order);
+  }
+
+  private unindexUser(order: EngineOrder) {
+    const m = this.byUser.get(order.userId);
+    if (!m) return;
+    m.delete(order.id);
+    if (m.size === 0) this.byUser.delete(order.userId);
+  }
+
+  getActiveOrdersByUser(userId: string): EngineOrder[] {
+    const m = this.byUser.get(userId);
+    return m ? [...m.values()] : [];
+  }
 
   constructor(symbol: string) {
     this.symbol = symbol;
@@ -100,7 +125,12 @@ export class OrderBook {
     level.orders.push(order);
     level.totalQuantity += order.quantity - order.filled;
 
-    this.orderIndex.set(order.id, { side: order.side, price: order.price });
+    this.orderIndex.set(order.id, {
+      side: order.side,
+      price: order.price,
+      order,
+    });
+    this.indexUser(order);
 
     return {
       side: order.side === "buy" ? "bid" : "ask",
@@ -122,6 +152,7 @@ export class OrderBook {
     if (!removed) return null;
 
     this.orderIndex.delete(removed.id);
+    this.unindexUser(removed);
 
     if (level.orders.length === 0) {
       this.asks.delete(key);
@@ -144,6 +175,7 @@ export class OrderBook {
     if (!removed) return null;
 
     this.orderIndex.delete(removed.id);
+    this.unindexUser(removed);
 
     if (level.orders.length === 0) {
       this.bids.delete(key);
@@ -206,6 +238,7 @@ export class OrderBook {
 
     level.orders.splice(idx, 1);
     this.orderIndex.delete(order.id);
+    this.unindexUser(removed);
 
     if (level.orders.length === 0) {
       const key = order.price;
@@ -227,13 +260,7 @@ export class OrderBook {
   }
 
   getOrder(orderId: string): EngineOrder | null {
-    const meta = this.orderIndex.get(orderId);
-    if (!meta) return null;
-    const key = meta.price; // no negative
-    const tree = meta.side === "buy" ? this.bids : this.asks;
-    const level = tree.get(key);
-    if (!level) return null;
-    return level.orders.find((o: any) => o.id === orderId) || null;
+    return this.orderIndex.get(orderId)?.order ?? null;
   }
 
   // snapshot بدون reduce

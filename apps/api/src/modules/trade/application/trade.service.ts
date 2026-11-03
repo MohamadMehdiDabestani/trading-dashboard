@@ -15,11 +15,14 @@ import {
 import { MatchingEngine } from "@/engine";
 import { MarketEventBus } from "@/utils/eventBus";
 import { AppError } from "@/errors/appError";
-import { dbDecimalToScaledBigInt, fromScale } from "@/utils/scaleBigInt";
+import { dbDecimalToScaledBigInt, fromScale, toDbDecimal } from "@/utils/scaleBigInt";
 import { TradeUnitOfWork } from "../types/unitOfWork.repository";
 import { MatchPersistenceService } from "./match-persistence.service";
 import { OrderReadRepository } from "../infrastructure/repositories/order.repository";
 import { KeyedMutex } from "@/utils/keyedMutex";
+import { LedgerDraft } from "../infrastructure/repositories/ledger.repository";
+
+export type QuoteInput = { side: Side; price: bigint; quantity: bigint };
 
 export class TradeService {
   /**
@@ -115,32 +118,17 @@ export class TradeService {
         timestamp: Date.now(),
       };
 
-      const matchResult = await this.symbolLock.run(symbol, async () => {
-        let result: MatchResult;
-
-        try {
-          result = this.engine.submitOrder(engineOrder);
-          // Transaction ۲: persist
-          await this.matchPersistence.persist(result, baseAsset, quoteAsset);
-        } catch (err) {
-          if (err instanceof Error && err.message === "SELF_TRADE_BLOCKED") {
-            // self-trade (wash trade): سفارش در بوک وارد نشد؛ باید هم
-            // قفل آزاد شود و هم سفارش در DB کنسل شود تا با ری‌استارت
-            // سرور دوباره در بوک ظاهر نشود.
-            await this.cancelSelfTradeLock(userId, orderId, lockAsset, lockAmount);
-            await this.cancelSelfTradeOrder(userId, symbol, orderId);
-            throw new AppError("SELF_TRADE_BLOCKED");
-          } else {
-            // persist یا submit شکست خورد: بوک را از روی DB برگردان
-            await this.recoverFromFailedMatch(userId, symbol, orderId);
-          }
-          throw err;
-        }
-
-        // event ها فقط بعد از persist موفق ارسال می‌شوند (trade فانتوم پخش نمی‌شود)
-        this.emitMarketEvents(symbol, result);
-        return result;
-      });
+      const matchResult = await this.symbolLock.run(symbol, () =>
+        this.submitAndPersist(
+          userId,
+          symbol,
+          baseAsset,
+          quoteAsset,
+          engineOrder,
+          lockAsset,
+          lockAmount,
+        ),
+      );
 
       return { orderId, matchResult };
     } catch (error) {
@@ -306,35 +294,7 @@ export class TradeService {
       );
     }
 
-    try {
-      const rows =
-        await this.orderReadRepository.getActiveOrdersBySymbol(symbol);
-
-      const active: EngineOrder[] = rows.map((o: any) => ({
-        id: o.id,
-        userId: o.userId,
-        symbol: o.symbol,
-        side: o.side,
-        type: o.type,
-        price: dbDecimalToScaledBigInt(o.price ?? 0),
-        quantity: dbDecimalToScaledBigInt(o.quantity),
-        filled: dbDecimalToScaledBigInt(o.filledQuantity),
-        timestamp: o.createdAt.getTime(),
-      }));
-
-      this.engine.replaceSymbolOrders(symbol, active);
-
-      // ws هر event غیر ticker را «بوک عوض شد» می‌گیرد و snapshot کامل می‌فرستد
-      this.eventBus.emit({
-        type: "orderbook_delta",
-        data: { symbol, deltas: [] },
-      });
-    } catch (err) {
-      console.error(
-        `[RECOVERY][${symbol}] CRITICAL: engine resync from DB failed:`,
-        err,
-      );
-    }
+    await this.resyncEngineFromDb(symbol);
   }
 
   /**
@@ -416,6 +376,350 @@ export class TradeService {
 
       await walletLocks.releaseAll(lock.id);
     });
+  }
+
+  /**
+   * submit به engine + persist + emit؛ باید داخل symbolLock صدا زده شود.
+   */
+  private async submitAndPersist(
+    userId: string,
+    symbol: string,
+    baseAsset: string,
+    quoteAsset: string,
+    engineOrder: EngineOrder,
+    lockAsset: string,
+    lockAmount: bigint,
+  ): Promise<MatchResult> {
+    let result: MatchResult;
+
+    try {
+      result = this.engine.submitOrder(engineOrder);
+      // Transaction ۲: persist
+      await this.matchPersistence.persist(result, baseAsset, quoteAsset);
+    } catch (err) {
+      if (err instanceof Error && err.message === "SELF_TRADE_BLOCKED") {
+        // self-trade: قفل آزاد و سفارش در DB کنسل می‌شود
+        await this.cancelSelfTradeLock(
+          userId,
+          engineOrder.id,
+          lockAsset,
+          lockAmount,
+        );
+        await this.cancelSelfTradeOrder(userId, symbol, engineOrder.id);
+        // ممکن است قبل از رسیدن به سفارش خودی، چند maker بهتر در حافظه fill شده باشند
+        // (و چون persist نشده‌اند فقط در حافظه‌اند) → بوک را از DB برگردان
+        await this.resyncEngineFromDb(symbol);
+        throw new AppError("SELF_TRADE_BLOCKED");
+      }
+      // persist یا submit شکست خورد: بوک را از روی DB برگردان
+      await this.recoverFromFailedMatch(userId, symbol, engineOrder.id);
+      throw err;
+    }
+
+    // event ها فقط بعد از persist موفق ارسال می‌شوند (trade فانتوم پخش نمی‌شود)
+    this.emitMarketEvents(symbol, result);
+    return result;
+  }
+
+  /**
+   * ثبت دسته‌ای سفارش‌های limit یک کاربر (مخصوص market maker).
+   * quotes به ترتیب اولویت داده شود (نزدیک‌ترین به mid اول).
+   * اگر موجودی همهٔ سطح‌ها را نپوشاند، فقط پیشوندی که جا می‌شود ثبت می‌شود.
+   *
+   * ۱ transaction برای reserve + lock + order + ledger همهٔ سفارش‌ها،
+   * بعد یک‌بار گرفتن symbolLock برای submit همه در حافظه.
+   */
+  async createLimitOrdersBatch(
+    userId: string,
+    symbol: string,
+    baseAsset: string,
+    quoteAsset: string,
+    quotes: QuoteInput[],
+  ): Promise<{ placed: number; skippedBySide: Record<Side, number> }> {
+    const skippedBySide: Record<Side, number> = { buy: 0, sell: 0 };
+    if (quotes.length === 0) return { placed: 0, skippedBySide };
+
+    try {
+      const prepared = quotes.map((q) => {
+        if (q.quantity <= 0n) throw new AppError("INVALID_QUANTITY");
+        if (q.price <= 0n) throw new AppError("INVALID_PRICE");
+
+        const lockAsset = q.side === "buy" ? quoteAsset : baseAsset;
+        const lockAmount =
+          q.side === "buy" ? (q.price * q.quantity) / SCALE : q.quantity;
+        if (lockAmount <= 0n) throw new AppError("INVALID_LOCK_AMOUNT");
+
+        return { ...q, orderId: randomUUID(), lockAsset, lockAmount };
+      });
+      type Prepared = (typeof prepared)[number];
+
+      // Transaction ۱ (خارج از mutex؛ مستقل از بوک)
+      const accepted = await this.uow.run(
+        async ({ balances, walletLocks, orders, ledger }) => {
+          const byAsset = new Map<string, Prepared[]>();
+          for (const p of prepared) {
+            const arr = byAsset.get(p.lockAsset) ?? [];
+            arr.push(p);
+            byAsset.set(p.lockAsset, arr);
+          }
+
+          const accepted: Prepared[] = [];
+          const ledgerRows: LedgerDraft[] = [];
+
+          // ترتیب ثابت روی asset → جلوگیری از deadlock روی balance rowها
+          for (const asset of [...byAsset.keys()].sort()) {
+            const list = byAsset.get(asset)!;
+            const available = await balances.getAvailableForUpdate(
+              userId,
+              asset,
+            );
+
+            const fits: Prepared[] = [];
+            let total = 0n;
+            for (const p of list) {
+              if (total + p.lockAmount > available) break;
+              total += p.lockAmount;
+              fits.push(p);
+            }
+
+            for (const p of list.slice(fits.length)) skippedBySide[p.side]++;
+            if (fits.length === 0) continue;
+
+            const { beforeAvailable } = await balances.reserve({
+              userId,
+              asset,
+              amountDecimal: new Big(toDbDecimal(total)),
+            });
+
+            let running = beforeAvailable;
+            for (const p of fits) {
+              ledgerRows.push({
+                userId,
+                asset,
+                amount: -p.lockAmount,
+                type: "lock",
+                refType: "order",
+                refId: p.orderId,
+                balanceBefore: running,
+                balanceAfter: running - p.lockAmount,
+              });
+              running -= p.lockAmount;
+            }
+            accepted.push(...fits);
+          }
+
+          if (accepted.length === 0) return accepted;
+
+          await walletLocks.createOpenOrderLocks(
+            accepted.map((p) => ({
+              userId,
+              asset: p.lockAsset,
+              amountDecimal: new Big(toDbDecimal(p.lockAmount)),
+              orderId: p.orderId,
+            })),
+          );
+          await orders.createOpenOrders(
+            accepted.map((p) => ({
+              id: p.orderId,
+              userId,
+              symbol,
+              side: p.side,
+              type: "limit" as OrderType,
+              price: p.price,
+              quantity: p.quantity,
+            })),
+          );
+          await ledger.insertMany(ledgerRows);
+
+          return accepted;
+        },
+      );
+
+      if (accepted.length === 0) return { placed: 0, skippedBySide };
+
+      // ترتیب اولویت اصلی حفظ شود (accepted بر اساس asset گروه‌بندی شده)
+      const order = new Map(prepared.map((p, i) => [p.orderId, i]));
+      accepted.sort((a, b) => order.get(a.orderId)! - order.get(b.orderId)!);
+
+      let placed = 0;
+      await this.symbolLock.run(symbol, async () => {
+        for (const p of accepted) {
+          const engineOrder: EngineOrder = {
+            id: p.orderId,
+            userId,
+            symbol,
+            side: p.side,
+            type: "limit",
+            price: p.price,
+            quantity: p.quantity,
+            filled: 0n,
+            timestamp: Date.now(),
+          };
+          try {
+            await this.submitAndPersist(
+              userId,
+              symbol,
+              baseAsset,
+              quoteAsset,
+              engineOrder,
+              p.lockAsset,
+              p.lockAmount,
+            );
+            placed++;
+          } catch (err) {
+            console.error(
+              `[batch][${symbol}] order ${p.orderId} (${p.side}) failed:`,
+              err,
+            );
+          }
+        }
+      });
+
+      return { placed, skippedBySide };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error("createLimitOrdersBatch error:", error);
+      throw new AppError("INTERNAL_SERVER_ERROR");
+    }
+  }
+
+  /**
+   * کنسل دسته‌ای: ۱ transaction برای کل سفارش‌ها + یک symbolLock.
+   * سفارش‌هایی که وجود ندارند / مال کاربر نیستند / بسته شده‌اند بی‌صدا رد می‌شوند.
+   * تعداد کنسل‌شده‌ها را برمی‌گرداند.
+   */
+  async cancelOrdersBatch(
+    userId: string,
+    symbol: string,
+    orderIds: string[],
+  ): Promise<number> {
+    if (orderIds.length === 0) return 0;
+
+    try {
+      return await this.symbolLock.run(symbol, async () => {
+        const cancelled = await this.cancelManyInDb(userId, symbol, orderIds);
+
+        const merged: MatchResult = { trades: [], updates: [], deltas: [] };
+        for (const id of cancelled) {
+          const r = this.engine.cancelOrder(symbol, id);
+          if (r) merged.deltas.push(...r.deltas);
+        }
+
+        this.emitOrderBookDeltas(symbol, merged);
+        return cancelled.length;
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error("cancelOrdersBatch error:", error);
+      throw new AppError("INTERNAL_SERVER_ERROR");
+    }
+  }
+
+  private async cancelManyInDb(
+    userId: string,
+    symbol: string,
+    orderIds: string[],
+  ): Promise<string[]> {
+    return this.uow.run(async ({ orders, walletLocks, balances, ledger }) => {
+      const rows = await orders.getOrderOwners(orderIds);
+      const cancellable = rows
+        .filter(
+          (o) =>
+            o.userId === userId &&
+            o.symbol === symbol &&
+            (o.status === "open" || o.status === "partial"),
+        )
+        .map((o) => o.id);
+
+      if (cancellable.length === 0) return [];
+
+      await orders.markCancelledMany(cancellable);
+
+      const locks = (await walletLocks.getByOrderIdsForUpdate(cancellable))
+        .filter((l) => !l.releasedAt);
+
+      const byAsset = new Map<
+        string,
+        Array<{ orderId: string; amount: bigint }>
+      >();
+      const lockIdsToRelease: string[] = [];
+
+      for (const l of locks) {
+        lockIdsToRelease.push(l.id);
+        const amount = walletLocks.toScaled(l);
+        if (amount <= 0n) continue;
+
+        const arr = byAsset.get(l.asset) ?? [];
+        arr.push({ orderId: l.refId, amount });
+        byAsset.set(l.asset, arr);
+      }
+
+      const ledgerRows: LedgerDraft[] = [];
+
+      for (const asset of [...byAsset.keys()].sort()) {
+        const items = byAsset.get(asset)!;
+        const total = items.reduce((sum, it) => sum + it.amount, 0n);
+
+        const { beforeAvailable } = await balances.releaseLocked({
+          userId,
+          asset,
+          amount: total,
+        });
+
+        let running = beforeAvailable;
+        for (const it of items) {
+          ledgerRows.push({
+            userId,
+            asset,
+            amount: it.amount,
+            type: "unlock",
+            refType: "order",
+            refId: it.orderId,
+            balanceBefore: running,
+            balanceAfter: running + it.amount,
+          });
+          running += it.amount;
+        }
+      }
+
+      await ledger.insertMany(ledgerRows);
+      await walletLocks.releaseMany(lockIdsToRelease);
+
+      return cancellable;
+    });
+  }
+
+  /** بوک engine را از سفارش‌های فعال DB بازسازی می‌کند */
+  private async resyncEngineFromDb(symbol: string) {
+    try {
+      const rows =
+        await this.orderReadRepository.getActiveOrdersBySymbol(symbol);
+
+      const active: EngineOrder[] = rows.map((o: any) => ({
+        id: o.id,
+        userId: o.userId,
+        symbol: o.symbol,
+        side: o.side,
+        type: o.type,
+        price: dbDecimalToScaledBigInt(o.price ?? 0),
+        quantity: dbDecimalToScaledBigInt(o.quantity),
+        filled: dbDecimalToScaledBigInt(o.filledQuantity),
+        timestamp: o.createdAt.getTime(),
+      }));
+
+      this.engine.replaceSymbolOrders(symbol, active);
+
+      // ws هر event غیر ticker را «بوک عوض شد» می‌گیرد و snapshot کامل می‌فرستد
+      this.eventBus.emit({
+        type: "orderbook_delta",
+        data: { symbol, deltas: [] },
+      });
+    } catch (err) {
+      console.error(
+        `[RECOVERY][${symbol}] CRITICAL: engine resync from DB failed:`,
+        err,
+      );
+    }
   }
 
   private emitMarketEvents(symbol: string, matchResult: MatchResult) {
