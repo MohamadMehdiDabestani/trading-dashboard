@@ -1,6 +1,5 @@
-import { users , type Db } from "@repo/db";
+import { eq, users , type Db } from "@repo/db";
 import { UserRepository } from "../../types/user.repository";
-import { eq } from "drizzle-orm";
 import { EditProfileDto } from "@repo/types";
 
 export class DrizzleUserRepository implements UserRepository {

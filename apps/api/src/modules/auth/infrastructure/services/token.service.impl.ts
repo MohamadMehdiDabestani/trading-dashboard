@@ -1,6 +1,14 @@
 import crypto from "node:crypto";
-import { eq, and, gt, or, lt, isNotNull } from "drizzle-orm";
-import { refreshTokens, type Db } from "@repo/db";
+import {
+  eq,
+  and,
+  gt,
+  or,
+  lt,
+  isNotNull,
+  refreshTokens,
+  type Db,
+} from "@repo/db";
 import { JwtPayload } from "@repo/types";
 import { ITokenService } from "../../types/token.interface";
 
@@ -85,19 +93,21 @@ export class TokenServiceImpl implements ITokenService {
     });
   }
   async purgeStale(graceMs = 10_000): Promise<void> {
-  const now = new Date();
-  const replacedBefore = new Date(Date.now() - graceMs);
+    const now = new Date();
+    const replacedBefore = new Date(Date.now() - graceMs);
 
-  await this.db.delete(refreshTokens).where(
-    or(
-      lt(refreshTokens.expiresAt, now),
-      and(
-        isNotNull(refreshTokens.replacedAt),
-        lt(refreshTokens.replacedAt, replacedBefore),
-      ),
-    ),
-  );
-}
+    await this.db
+      .delete(refreshTokens)
+      .where(
+        or(
+          lt(refreshTokens.expiresAt, now),
+          and(
+            isNotNull(refreshTokens.replacedAt),
+            lt(refreshTokens.replacedAt, replacedBefore),
+          ),
+        ),
+      );
+  }
   async revokeAllForUser(userId: string): Promise<void> {
     await this.db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
   }

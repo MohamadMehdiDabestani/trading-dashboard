@@ -7,7 +7,9 @@ export * from "./schema/ledger";
 export * from "./schema/orders";
 export * from "./schema/trades";
 export * from "./schema/walletLock";
-export * from './schema/permission'
-export * from './schema/rolePermission'
-export * from './schema/userPermission'
-export * from './schema/deviceLoginRequest'
+export * from "./schema/permission";
+export * from "./schema/rolePermission";
+export * from "./schema/userPermission";
+export * from "./schema/deviceLoginRequest";
+export * from "drizzle-orm";
+export { PgColumn, type PgSelect, type PgDatabase } from "drizzle-orm/pg-core";

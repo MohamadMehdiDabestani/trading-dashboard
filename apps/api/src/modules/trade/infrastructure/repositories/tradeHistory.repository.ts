@@ -1,5 +1,4 @@
-import { DbTransaction, trades } from "@repo/db";
-import { sql } from "drizzle-orm";
+import { sql, DbTransaction, trades } from "@repo/db";
 import { toDbDecimal } from "@/utils/scaleBigInt";
 
 export class TradeHistoryTxRepository {

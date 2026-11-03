@@ -1,6 +1,5 @@
-import crypto from 'crypto'
-import { type Db, otpCodes } from "@repo/db";
-import { eq, and, gt, desc } from "drizzle-orm";
+import crypto from "crypto";
+import { eq, and, gt, desc, type Db, otpCodes } from "@repo/db";
 import { AppError } from "@/errors/appError";
 import { IOtpService } from "../../types/otp.interface";
 
@@ -18,7 +17,7 @@ export interface SmsGateway {
 export class OtpServiceImpl implements IOtpService {
   constructor(
     private db: Db,
-    private sms: SmsGateway
+    private sms: SmsGateway,
   ) {}
 
   async send(phone: string): Promise<void> {
@@ -29,8 +28,8 @@ export class OtpServiceImpl implements IOtpService {
         and(
           eq(otpCodes.phone, phone),
           eq(otpCodes.used, false),
-          gt(otpCodes.expiresAt, new Date())
-        )
+          gt(otpCodes.expiresAt, new Date()),
+        ),
       )
       .orderBy(desc(otpCodes.createdAt))
       .limit(1);
@@ -72,8 +71,8 @@ export class OtpServiceImpl implements IOtpService {
         and(
           eq(otpCodes.phone, phone),
           eq(otpCodes.used, false),
-          gt(otpCodes.expiresAt, new Date())
-        )
+          gt(otpCodes.expiresAt, new Date()),
+        ),
       )
       .orderBy(desc(otpCodes.createdAt))
       .limit(1);

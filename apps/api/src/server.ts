@@ -13,8 +13,7 @@ import { walletPlugin } from "./modules/wallet/plugin";
 import engine from "./modules/trade/plugin/enginePlugin";
 import eventBus from "./modules/trade/plugin/eventBus";
 import ws from "./modules/trade/plugin/ws";
-import { orders } from "@repo/db";
-import { and, asc, inArray } from "drizzle-orm";
+import { and, asc, inArray, orders } from "@repo/db";
 import { EngineOrder } from "@repo/types";
 import { dbDecimalToScaledBigInt } from "./utils/scaleBigInt";
 import { tradePlugin } from "./modules/trade/plugin";
@@ -119,7 +118,7 @@ app.post("/admin/engine/log-active-orders", async (req, reply) => {
 });
 const start = async () => {
   try {
-    await app.listen({ port: 5000, host: "0.0.0.0" });
+    await app.listen({ port: Number(process.env.PORT), host: "0.0.0.0" });
   } catch (err) {
     app.log.error(err);
     process.exit(1);
