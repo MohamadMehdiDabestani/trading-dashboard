@@ -47,6 +47,21 @@ export class BalanceTxRepository {
     return { beforeAvailable, afterAvailable };
   }
 
+  /**
+   * موجودی available را با قفل ردیف می‌خواند (ردیف ناموجود = 0).
+   * برای batch reserve: اول بدانیم چند سطح جا می‌شود، بعد یک‌جا reserve کنیم.
+   */
+  async getAvailableForUpdate(userId: string, asset: string): Promise<bigint> {
+    const row = await this.tx
+      .select({ available: balances.available })
+      .from(balances)
+      .where(and(eq(balances.userId, userId), eq(balances.asset, asset)))
+      .for("update")
+      .then((res) => res[0]);
+
+    return row ? dbDecimalToScaledBigInt(row.available) : 0n;
+  }
+
   async releaseLocked(input: {
     userId: string;
     asset: string;

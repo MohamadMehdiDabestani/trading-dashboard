@@ -21,6 +21,37 @@ export class WalletLockTxRepository {
     });
   }
 
+  async createOpenOrderLocks(
+    inputs: Array<{
+      userId: string;
+      asset: string;
+      amountDecimal: Big;
+      orderId: string;
+    }>,
+  ) {
+    if (inputs.length === 0) return;
+
+    await this.tx.insert(walletLocks).values(
+      inputs.map((input) => ({
+        userId: input.userId,
+        asset: input.asset.toUpperCase(),
+        amount: input.amountDecimal,
+        remainingAmount: input.amountDecimal,
+        reason: "open_order",
+        refId: input.orderId,
+      })),
+    );
+  }
+
+  async releaseMany(ids: string[]) {
+    if (ids.length === 0) return;
+
+    await this.tx
+      .update(walletLocks)
+      .set({ remainingAmount: sql`0`, releasedAt: new Date() })
+      .where(inArray(walletLocks.id, ids));
+  }
+
   async getByOrderIdForUpdate(orderId: string) {
     const lock = await this.tx
       .select({
