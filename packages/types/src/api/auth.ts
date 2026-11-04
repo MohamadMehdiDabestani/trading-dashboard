@@ -29,3 +29,18 @@ export type MeReply = {
   user: MeUser;
   rules: AppRawRule[];
 };
+
+export type LoginMethod = "otp" | "password" | "qr";
+export type LoginStatus = "success" | "failed";
+
+export interface LoginHistoryItem {
+  id: string;
+  method: LoginMethod;
+  status: LoginStatus;
+  isNewUser: boolean;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string; // ISO
+}
+
+export type LoginHistoryReply = LoginHistoryItem[];

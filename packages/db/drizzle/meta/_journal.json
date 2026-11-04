@@ -71,6 +71,13 @@
       "when": 1793086867172,
       "tag": "0009_slippery_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793700737083,
+      "tag": "0010_crazy_fat_cobra",
+      "breakpoints": true
     }
   ]
 }
