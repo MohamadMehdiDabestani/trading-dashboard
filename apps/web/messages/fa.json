@@ -71,6 +71,8 @@
     "OTP_WRONG": "کد نامعتبر است",
     "VALIDATION_INVALID_VALUE": "{field} نامعتبر است",
     "INSUFFICIENT_BALANCE": "موجودی ناکافی است",
-    "RATE_LIMIT": "کمی صبر کنید و مجدد تلاش کنید"
+    "RATE_LIMIT": "کمی صبر کنید و مجدد تلاش کنید",
+    "USER_EXISTS" : "کاربری با این مشخصات موجود میباشد",
+    "LOGIN_LOCKED" : "حساب کاربری شما قفل شده است"
   }
 }

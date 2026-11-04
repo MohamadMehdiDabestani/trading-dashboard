@@ -1,8 +1,14 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import type { OtpSendDto, OtpVerifyDto, EditProfileDto } from "@repo/types";
+import type {
+  OtpSendDto,
+  OtpVerifyDto,
+  EditProfileDto,
+  PasswordLoginDto,
+  RegisterDto,
+} from "@repo/types";
 import { authApi } from "../api/auth.api";
 import { authKeys } from "../api/auth.keys";
 
@@ -22,6 +28,42 @@ export function useVerifyOtp() {
       await qc.invalidateQueries({ queryKey: authKeys.me() });
       router.replace(data.isNew ? "/profile/complete" : "/dashboard");
     },
+  });
+}
+
+export function useLoginWithPassword() {
+  const qc = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (body: PasswordLoginDto) => authApi.loginWithPassword(body),
+    onSuccess: async () => {
+         console.log("first =====");
+
+      await qc.invalidateQueries({ queryKey: authKeys.me() });
+      router.replace("/dashboard");
+    },
+  });
+}
+
+export function useRegister() {
+  const qc = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (body: RegisterDto) => authApi.register(body),
+    onSuccess: async () => {
+     
+      await qc.invalidateQueries({ queryKey: authKeys.me() });
+      router.replace("/dashboard");
+    },
+  });
+}
+
+export function useLoginHistory() {
+  return useQuery({
+    queryKey: authKeys.history(),
+    queryFn: () => authApi.loginHistory(),
   });
 }
 

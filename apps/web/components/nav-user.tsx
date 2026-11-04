@@ -4,6 +4,7 @@ import React from "react";
 import { Sun, Moon, Settings, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "./ui/button";
+import { useLogout } from "@/features/auth/hooks/useAuthMutations";
 
 export function SidebarSettingsMenu() {
   const { theme, setTheme } = useTheme();
@@ -11,7 +12,7 @@ export function SidebarSettingsMenu() {
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
+  const logout = useLogout();
   return (
     <div className="w-full border-t border-border/60 pt-4 px-2 select-none">
       <div className="flex flex-col gap-1.5">
@@ -38,6 +39,7 @@ export function SidebarSettingsMenu() {
         <Button
           className="justify-start bg-transparent rounded-lg text-sm font-medium text-red-600 hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/15 transition-all duration-200"
           size="lg"
+          onClick={() => logout.mutate()}
         >
           <LogOut className="size-5 flip-h" />
           <span className="text-[13px] sm:text-sm">خروج</span>
