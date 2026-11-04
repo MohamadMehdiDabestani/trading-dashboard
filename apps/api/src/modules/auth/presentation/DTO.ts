@@ -14,8 +14,34 @@ export const otpVerifySchema = {
     type: "object",
     required: ["phone", "code"],
     properties: {
-      phone: { type: "string", minLength: 10 , pattern: "^09\\d{9}$"},
-      code: { type: "string",pattern: "^\\d{6}$", minLength: 4, maxLength: 6 },
+      phone: { type: "string", minLength: 10, pattern: "^09\\d{9}$" },
+      code: { type: "string", pattern: "^\\d{6}$", minLength: 4, maxLength: 6 },
+    },
+    additionalProperties: false,
+  },
+} as const;
+
+// maxLength on password bounds scrypt cost (DoS protection)
+export const passwordLoginSchema = {
+  body: {
+    type: "object",
+    required: ["phone", "password"],
+    properties: {
+      phone: { type: "string", pattern: "^09\\d{9}$" },
+      password: { type: "string", minLength: 1, maxLength: 128 },
+    },
+    additionalProperties: false,
+  },
+} as const;
+
+export const registerSchema = {
+  body: {
+    type: "object",
+    required: ["phone", "userName", "password"],
+    properties: {
+      phone: { type: "string", pattern: "^09\\d{9}$" },
+      userName: { type: "string", minLength: 2, maxLength: 100 },
+      password: { type: "string", minLength: 8, maxLength: 128 },
     },
     additionalProperties: false,
   },

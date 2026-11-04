@@ -4,13 +4,24 @@ import { EditProfileDto, Role } from "@repo/types";
 export interface UserRepository {
   findByPhone(phone: string): Promise<User | null>;
 
-  findById(id: string): Promise<User |  null>;
+  findById(id: string): Promise<User | null>;
 
   create(phone: string): Promise<{
     id: string;
     phone: string;
-    role : Role
+    role: Role;
   }>;
 
-  simpleUpdate(userId : string , data : EditProfileDto) : Promise<void>
+  simpleUpdate(userId: string, data: EditProfileDto): Promise<void>;
+
+  createWithPassword(d: {
+    phone: string;
+    userName: string;
+    passwordHash: string;
+  }): Promise<User>;
+
+  setPassword(
+    userId: string,
+    d: { passwordHash: string; userName: string },
+  ): Promise<void>;
 }

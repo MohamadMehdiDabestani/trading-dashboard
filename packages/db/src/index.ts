@@ -1,4 +1,6 @@
 export { createDb, type Db, type DbTransaction } from "./client";
+export * from "drizzle-orm";
+export { PgColumn, type PgSelect, type PgDatabase } from "drizzle-orm/pg-core";
 export * from "./schema/users";
 export * from "./schema/otp";
 export * from "./schema/refresh";
@@ -11,5 +13,4 @@ export * from "./schema/permission";
 export * from "./schema/rolePermission";
 export * from "./schema/userPermission";
 export * from "./schema/deviceLoginRequest";
-export * from "drizzle-orm";
-export { PgColumn, type PgSelect, type PgDatabase } from "drizzle-orm/pg-core";
+export * from './schema/loginEvents'

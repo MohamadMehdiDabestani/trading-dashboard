@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { otpStepSchema } from "@/features/auth/schema/schema";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,6 +27,8 @@ import {
   fieldValidators,
   validationLogic,
 } from "@/lib/validation/fieldValidator";
+import { applyApiFieldErrors } from "@/lib/validation/applyFieldErrors";
+import { useLoginWithPassword, useRegister } from "@/features/auth/hooks/useAuthMutations";
 
 const loginPhone = fieldValidators(mobileSchema);
 const loginPassword = fieldValidators(loginPasswordSchema);
@@ -37,22 +40,37 @@ export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const t = useTranslations();
 
+  const loginMutation = useLoginWithPassword();
+  const register = useRegister();
+
   const loginForm = useAppForm({
     defaultValues: { phone: "", password: "" },
     validationLogic,
     onSubmit: async ({ value }) => {
-      // TODO: loginApi.mutate(value)
+      if (loginMutation.isPending) return;
+      try {
+        await loginMutation.mutateAsync(value);
+      } catch (err) {
+        const applied = applyApiFieldErrors(err, loginForm);
+        if (!applied) loginForm.setFieldValue("password", "");
+      }
     },
   });
-
   const registerForm = useAppForm({
-    defaultValues: { fullName: "", phone: "", password: "" },
     validationLogic,
+    defaultValues: { userName: "", phone: "", password: "" },
     onSubmit: async ({ value }) => {
-      // TODO: registerApi.mutate(value)
+      try {
+        await register.mutateAsync({
+          phone: value.phone,
+          userName: value.userName.trim(),
+          password: value.password,
+        });
+      } catch (err) {
+        applyApiFieldErrors(err, registerForm);
+      }
     },
   });
-
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-background">
@@ -153,7 +171,7 @@ export default function AuthPage() {
                   <CardContent className="space-y-4">
                     <FieldGroup>
                       <registerForm.AppField
-                        name="fullName"
+                        name="userName"
                         validators={registerName}
                       >
                         {(field) => (
@@ -202,7 +220,7 @@ export default function AuthPage() {
                     <registerForm.AppForm>
                       <registerForm.SubmitButton
                         className="w-full"
-                        label="ثبت نام"
+                        label="ارسال"
                       />
                     </registerForm.AppForm>
                     <Link href="/auth/otp" className="block w-full">

@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { ok, fail } from "@/utils/apiResponse";
 import {
   APIResult,
@@ -8,15 +8,30 @@ import {
   EditProfileDto,
   OtpSendDto,
   OtpVerifyDto,
+  PasswordLoginDto,
+  RegisterDto,
+  LoginHistoryReply,
 } from "@repo/types";
-import { editProfileSchema, otpSendSchema, otpVerifySchema } from "./DTO";
+import {
+  editProfileSchema,
+  otpSendSchema,
+  otpVerifySchema,
+  passwordLoginSchema,
+  registerSchema,
+} from "./DTO";
 import {
   REFRESH_COOKIE,
   clearAuthCookies,
   setAuthCookies,
 } from "../plugin/cookies";
+
 const rl = (max: number, timeWindow = "1 minute") => ({
   config: { rateLimit: { max, timeWindow } },
+});
+
+const meta = (req: FastifyRequest) => ({
+  ip: req.ip,
+  userAgent: String(req.headers["user-agent"] ?? "unknown"),
 });
 
 export async function authRoutes(fastify: FastifyInstance) {
@@ -27,48 +42,71 @@ export async function authRoutes(fastify: FastifyInstance) {
     { schema: otpSendSchema, ...rl(3) },
     async (req, reply) => {
       await authService.sendOtp(req.body.phone);
-
-      return reply
-        .code(200)
-        .send(ok(undefined, { message: { key: "OTP_SENT" } }));
+      return reply.code(200).send(ok(undefined, { message: { key: "OTP_SENT" } }));
     },
   );
 
-  fastify.post<{
-    Body: OtpVerifyDto;
-    Reply: APIResult<OtpVerifyReply>;
-  }>(
+  fastify.post<{ Body: OtpVerifyDto; Reply: APIResult<OtpVerifyReply> }>(
     "/otp/verify",
     { schema: otpVerifySchema, ...rl(10) },
     async (req, reply) => {
-      const { accessToken, refreshToken, isNew } =
-        await authService.loginWithOtp(req.body.phone, req.body.code);
-
+      const { accessToken, refreshToken, isNew } = await authService.loginWithOtp(
+        req.body.phone,
+        req.body.code,
+        meta(req),
+      );
       setAuthCookies(reply, accessToken, refreshToken);
-
-      return reply
-        .code(200)
-        .send(ok({ isNew }, { message: { key: "LOGIN_SUCCESS" } }));
+      return reply.code(200).send(ok({ isNew }, { message: { key: "LOGIN_SUCCESS" } }));
     },
   );
 
-  fastify.post<{ Reply: APIResult<null> }>(
-    "/refresh",
-    { ...rl(30) },
+  // phone + password
+  fastify.post<{ Body: PasswordLoginDto; Reply: APIResult<OtpVerifyReply> }>(
+    "/login",
+    { schema: passwordLoginSchema, ...rl(10) },
     async (req, reply) => {
-      const raw = req.cookies?.[REFRESH_COOKIE];
-      const count = (req.headers.cookie ?? "")
-        .split(";")
-        .filter((c) => c.trim().startsWith(`${REFRESH_COOKIE}=`)).length;
-      req.log.info(
-        { refreshCookieCount: count, prefix: raw?.slice(0, 8) },
-        "refresh cookie",
+      const { accessToken, refreshToken } = await authService.loginWithPassword(
+        req.body.phone,
+        req.body.password,
+        meta(req),
       );
-      if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
-
-      const { accessToken, refreshToken } = await authService.refresh(raw);
       setAuthCookies(reply, accessToken, refreshToken);
-      return reply.send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
+      return reply
+        .code(200)
+        .send(ok({ isNew: false }, { message: { key: "LOGIN_SUCCESS" } }));
+    },
+  );
+
+  // OTP-verified registration (sets password)
+  fastify.post<{ Body: RegisterDto; Reply: APIResult<OtpVerifyReply> }>(
+    "/register",
+    { schema: registerSchema, ...rl(5) },
+    async (req, reply) => {
+      const { accessToken, refreshToken, isNew } = await authService.register(
+        req.body,
+        meta(req),
+      );
+      setAuthCookies(reply, accessToken, refreshToken);
+      return reply.code(200).send(ok({ isNew }, { message: { key: "REGISTER_SUCCESS" } }));
+    },
+  );
+
+  fastify.post<{ Reply: APIResult<null> }>("/refresh", { ...rl(30) }, async (req, reply) => {
+    const raw = req.cookies?.[REFRESH_COOKIE];
+    if (!raw) return reply.code(401).send(fail("INVALID_REFRESH"));
+
+    const { accessToken, refreshToken } = await authService.refresh(raw);
+    setAuthCookies(reply, accessToken, refreshToken);
+    return reply.send(ok(null, { message: { key: "REFRESH_SUCCESS" } }));
+  });
+
+  fastify.get<{ Reply: APIResult<LoginHistoryReply> }>(
+    "/login-history",
+    { preHandler: [fastify.authenticate], ...rl(30) },
+    async (req, reply) => {
+      const data = await authService.loginHistory(req.user.sub);
+      reply.header("Cache-Control", "private, no-store");
+      return reply.send(ok(data));
     },
   );
 
@@ -77,10 +115,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate], schema: editProfileSchema },
     async (req, reply) => {
       await authService.editProfile(req.user.sub, req.body);
-
-      return reply
-        .code(200)
-        .send(ok(null, { message: { key: "PROFILE_UPDATED" } }));
+      return reply.code(200).send(ok(null, { message: { key: "PROFILE_UPDATED" } }));
     },
   );
 
@@ -89,12 +124,8 @@ export async function authRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate] },
     async (req, reply) => {
       await authService.logout(req.user.sub);
-
       clearAuthCookies(reply);
-
-      return reply
-        .code(200)
-        .send(ok(undefined, { message: { key: "LOGOUT_SUCCESS" } }));
+      return reply.code(200).send(ok(undefined, { message: { key: "LOGOUT_SUCCESS" } }));
     },
   );
 }

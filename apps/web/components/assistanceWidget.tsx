@@ -482,7 +482,7 @@ export function AssistantWidget() {
       {open && (
         <div
           onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-          className="fixed bottom-24 end-6 z-50 flex origin-bottom animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-200 h-[32rem] max-h-[calc(100dvh-8rem)] w-88 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl border bg-blue-50 text-card-foreground shadow-lg"
+          className="fixed bottom-24 end-6 z-50 flex origin-bottom animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-200 h-[32rem] max-h-[calc(100dvh-8rem)] w-88 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl border bg-blue-50 dark:bg-card text-card-foreground shadow-lg"
         >
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div className="flex items-center gap-2 font-medium">

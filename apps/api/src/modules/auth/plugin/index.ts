@@ -7,22 +7,23 @@ import { authRoutes } from "../presentation/auth.route";
 import { DeviceLinkServiceImpl } from "../infrastructure/services/device.service.impl";
 import { deviceLinkRoutes } from "../presentation/deviceLink.route";
 import { meRoutes } from "../presentation/me.route";
+import { LoginHistoryService } from "../infrastructure/services/loginHistory.service.impl";
 
 export const authPlugin = fp(async (fastify) => {
   const userRepo = new DrizzleUserRepository(fastify.db);
-
   const otpService = new OtpServiceImpl(fastify.db, fastify.sms);
-
   const tokenService = new TokenServiceImpl(fastify.db, fastify.jwt);
+  const historyService = new LoginHistoryService(fastify.db, fastify.log);
+
   const deviceLinkService = new DeviceLinkServiceImpl(
     fastify.db,
     tokenService,
     userRepo,
+    historyService,
   );
-
   fastify.decorate("deviceLinkService", deviceLinkService);
-  const authService = new AuthService(userRepo, otpService, tokenService);
 
+  const authService = new AuthService(userRepo, otpService, tokenService, historyService);
   fastify.decorate("authService", authService);
 
   await fastify.register(authRoutes, { prefix: "/auth" });
@@ -30,22 +31,20 @@ export const authPlugin = fp(async (fastify) => {
   await fastify.register(deviceLinkRoutes, {
     prefix: "/auth/device-link",
     onOpened: (e) => {
-      // اینجا اعلان realtime به دستگاه ۱ بفرست (بخش ۴ را ببین)
+      // realtime notification to device 1
     },
   });
-  const purge = setInterval(
-    () => deviceLinkService.purgeExpired().catch(() => {}),
-    10 * 60_000,
-  );
-  fastify.addHook("onClose", async () => clearInterval(purge));
 
-  const tokenPurge = setInterval(
-    () =>
-      tokenService
-        .purgeStale()
-        .catch((err) => fastify.log.error({ err }, "token purge failed")),
-    10 * 60_000,
-  );
-  tokenPurge.unref();
-  fastify.addHook("onClose", async () => clearInterval(tokenPurge));
+  const every10min = (name: string, fn: () => Promise<unknown>) => {
+    const id = setInterval(
+      () => fn().catch((err) => fastify.log.error({ err }, `${name} purge failed`)),
+      10 * 60_000,
+    );
+    id.unref();
+    fastify.addHook("onClose", async () => clearInterval(id));
+  };
+
+  every10min("device-link", () => deviceLinkService.purgeExpired());
+  every10min("token", () => tokenService.purgeStale());
+  every10min("login-history", () => historyService.purgeOld(180));
 });

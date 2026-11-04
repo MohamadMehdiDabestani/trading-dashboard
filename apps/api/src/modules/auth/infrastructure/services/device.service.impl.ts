@@ -1,8 +1,18 @@
 import crypto from "node:crypto";
-import {and, eq, gt, inArray, lt, sql, deviceLoginRequests as t, type Db } from "@repo/db";
+import {
+  and,
+  eq,
+  gt,
+  inArray,
+  lt,
+  sql,
+  deviceLoginRequests as t,
+  type Db,
+} from "@repo/db";
 import { AppError } from "@/errors/appError";
 import { ITokenService } from "../../types/token.interface";
 import { UserRepository } from "../../types/user.repository";
+import { LoginHistoryService } from "./loginHistory.service.impl";
 
 const LINK_TTL_MS = 2 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 3;
@@ -35,6 +45,7 @@ export class DeviceLinkServiceImpl {
     private db: Db,
     private tokens: ITokenService,
     private users: UserRepository,
+    private history: LoginHistoryService,
   ) {}
 
   /** Device 1 (authenticated): create a one-time link. */
@@ -133,7 +144,8 @@ export class DeviceLinkServiceImpl {
       )
       .limit(1);
 
-    if (!row || !row.verificationCode) throw new AppError("DEVICE_LINK_INVALID");
+    if (!row || !row.verificationCode)
+      throw new AppError("DEVICE_LINK_INVALID");
 
     if (!safeEqual(row.verificationCode, code)) {
       const [u] = await this.db
@@ -184,7 +196,11 @@ export class DeviceLinkServiceImpl {
    * saw the QR/link cannot claim the session.
    * Tokens are issued exactly once (approved -> consumed is atomic).
    */
-  async claim(id: string, pollSecret: string): Promise<ClaimResult> {
+  async claim(
+    id: string,
+    pollSecret: string,
+    meta: ClientMeta,
+  ): Promise<ClaimResult> {
     const [row] = await this.db.select().from(t).where(eq(t.id, id)).limit(1);
 
     if (
@@ -219,10 +235,17 @@ export class DeviceLinkServiceImpl {
     const accessToken = this.tokens.signAccessToken({
       sub: user.id,
       phone: user.phone,
-      role : user.role
+      role: user.role,
     });
     const refreshToken = await this.tokens.createRefreshToken(user.id);
-
+    await this.history.record({
+      userId: user.id,
+      method: "qr",
+      status: "success",
+      deviceLinkRequestId: id,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
     return { status: "approved", accessToken, refreshToken };
   }
 

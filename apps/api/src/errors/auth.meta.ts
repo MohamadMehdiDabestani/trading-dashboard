@@ -14,4 +14,16 @@ export const ERROR_AUTH_HTTP_META: Record<
     status: 401,
     messageKey: "SESSION_EXPIRED",
   },
+  INVALID_CREDENTIALS: {
+    status: 404,
+    messageKey: "INVALID_CREDENTIALS",
+  },
+  LOGIN_LOCKED: {
+    status: 423,
+    messageKey: "LOGIN_LOCKED",
+  },
+  USER_EXISTS: {
+    status: 409,
+    messageKey: "USER_EXISTS",
+  },
 };
