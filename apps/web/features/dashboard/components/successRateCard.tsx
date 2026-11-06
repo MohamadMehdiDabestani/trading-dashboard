@@ -7,7 +7,6 @@ import { Target } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Pulse } from "@/components/pulse";
 
-const fa = (n: number) => n.toLocaleString("fa-IR");
 
 export const SuccessRateCard = () => {
   const { data, isLoading } = useTradeStats();
@@ -26,7 +25,7 @@ export const SuccessRateCard = () => {
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold tracking-tight">
-                {data?.successRate == null ? "—" : `${fa(data.successRate)}٪`}
+                {data?.successRate == null ? "—" : `${data.successRate}٪`}
               </span>
               {delta !== null && (
                 <span
@@ -38,7 +37,7 @@ export const SuccessRateCard = () => {
                   )}
                 >
                   {delta > 0 ? "+" : ""}
-                  {fa(delta)}
+                  {delta}
                   {t("deltaSuffix")}
                 </span>
               )}
@@ -46,8 +45,8 @@ export const SuccessRateCard = () => {
           )}
           <span className="text-xs text-muted-foreground">
             {t("summary", {
-              filled: fa(data?.filled ?? 0),
-              total: fa(data?.total ?? 0),
+              filled: data?.filled ?? 0,
+              total: data?.total ?? 0
             })}
           </span>
         </div>

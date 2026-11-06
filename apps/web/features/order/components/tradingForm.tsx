@@ -129,18 +129,18 @@ export const TradingForm = ({
   const emptyText = status === "all" ? t("emptyAll") : t("emptyFiltered");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 min-w-0 w-full">
       <DraggableLayout
         items={order}
         onChange={setOrder}
-        className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[384px_1fr_288px] gap-4"
+        className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[384px_minmax(0,1fr)_288px] min-w-0 w-full gap-4"
       >
         {order.map((id) => (
           <SortablePanel
             key={id}
             id={id}
             className={cn(
-              "min-h-0",
+              "min-h-0 min-w-0",
               id === "chart" && "md:col-span-2 xl:col-span-1",
               id === "form" && "md:col-span-1 xl:col-span-1",
               id === "orderbook" && "md:col-span-1 xl:col-span-1",

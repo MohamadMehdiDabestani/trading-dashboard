@@ -41,7 +41,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWalletBalance } from "@/features/wallet/hooks/useWalletBalance";
 import { useWalletAsset } from "@/features/wallet/hooks/useWalletAsset";
-import { useWalletDeposit } from "@/features/wallet/hooks/useWalletDeposit";
+import { DepositDialog } from "@/components/dashboard-navbar/depositDialog";
 import { useWalletTrend } from "@/features/wallet/hooks/useWalletTrend";
 import { cn } from "@/lib/cn";
 import { useWalletWithdraw } from "@/features/wallet/hooks/useWalletWithdraw";
@@ -103,7 +103,6 @@ export function WalletView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [showDeposit, setShowDeposit] = useState(false);
-  const [depositAmount, setDepositAmount] = useState("");
 
   const balances = useWalletBalance();
   const [period, setPeriod] = useState<PeriodId>("all");
@@ -120,7 +119,6 @@ export function WalletView() {
   const hasFilters = period !== "all" || typeGroup !== "all";
 
   const asset = useWalletAsset(selected, page, PAGE_SIZE, filters);
-  const deposit = useWalletDeposit();
   const { priceOf } = useAssetPrices(COIN_ASSETS);
   const withdraw = useWalletWithdraw();
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -216,7 +214,6 @@ export function WalletView() {
     setShowDeposit(false);
     setShowWithdraw(false);
     setWithdrawAmount("");
-    deposit.reset();
     withdraw.reset();
   };
 
@@ -234,22 +231,6 @@ export function WalletView() {
     setPage(1);
   };
 
-  const amountValid =
-    /^[0-9]*\.?[0-9]+$/.test(depositAmount) && Number(depositAmount) > 0;
-
-  const submitDeposit = () => {
-    if (!amountValid) return;
-    deposit.mutate(
-      { asset: activeCoin.symbol, amount: depositAmount },
-      {
-        onSuccess: () => {
-          setDepositAmount("");
-          setShowDeposit(false);
-        },
-      },
-    );
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between flex-wrap gap-2">
@@ -264,9 +245,9 @@ export function WalletView() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start min-w-0 w-full">
         {/* لیست دارایی‌ها */}
-        <section className="lg:col-span-1 bg-card border border-border rounded-2xl p-6 flex flex-col gap-5 shadow-sm">
+        <section className="lg:col-span-1 min-w-0 bg-card border border-border rounded-2xl p-6 flex flex-col gap-5 shadow-sm">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-bold">{t("assets.title")}</h2>
             <div className="relative w-full">
@@ -346,7 +327,7 @@ export function WalletView() {
           </div>
         </section>
 
-        <main className="lg:col-span-2 flex flex-col gap-6">
+        <main className="lg:col-span-2 min-w-0 flex flex-col gap-6">
           {/* کارت موجودی */}
           <section className="bg-card border border-border rounded-2xl p-6 flex flex-col gap-4 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -409,7 +390,7 @@ export function WalletView() {
                 <Button
                   size="xl"
                   onClick={() => {
-                    setShowDeposit((s) => !s);
+                    setShowDeposit(true);
                     setShowWithdraw(false);
                   }}
                 >
@@ -440,35 +421,11 @@ export function WalletView() {
               </div>
             </div>
 
-            {showDeposit && (
-              <div className="flex flex-col gap-2 border-t border-border pt-4">
-                <div className="flex items-center gap-3">
-                  <Input
-                    dir="ltr"
-                    inputMode="decimal"
-                    placeholder={t("deposit.amountPlaceholder", {
-                      symbol: activeCoin.symbol,
-                    })}
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    className={cn(Number(depositAmount) > 0 ? "font-mono" : "")}
-                  />
-                  <Button
-                    onClick={submitDeposit}
-                    disabled={!amountValid || deposit.isPending}
-                  >
-                    {deposit.isPending
-                      ? t("deposit.submitting")
-                      : t("deposit.confirm")}
-                  </Button>
-                </div>
-                {deposit.isError && (
-                  <p className="text-xs text-destructive">
-                    {t("deposit.error")}
-                  </p>
-                )}
-              </div>
-            )}
+            <DepositDialog
+              open={showDeposit}
+              onOpenChange={setShowDeposit}
+              asset={activeCoin.symbol}
+            />
             {showWithdraw && (
               <div className="flex flex-col gap-2 border-t border-border pt-4">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -572,7 +529,7 @@ export function WalletView() {
             </div>
 
             <div
-              className="h-72 w-full relative border border-border rounded-xl bg-background/30 p-4 overflow-hidden"
+              className="h-72 w-full min-w-0 relative border border-border rounded-xl bg-background/30 p-4 overflow-hidden"
               dir="ltr"
             >
               {trend.isError ? (

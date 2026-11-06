@@ -106,8 +106,8 @@ export function MarketsView() {
   const pricesReady = rows.some((r) => r.price != null);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
-      <section className="bg-card border border-border rounded-2xl p-6 flex flex-col gap-4 shadow-sm">
+    <div className="flex flex-col gap-6 w-full min-w-0">
+      <section className="bg-card border border-border rounded-2xl p-6 flex flex-col gap-4 shadow-sm min-w-0">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-foreground">{t("title")}</h2>

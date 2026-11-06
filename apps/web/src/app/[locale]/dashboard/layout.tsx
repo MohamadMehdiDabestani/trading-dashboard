@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
+import { DashboardNavbar } from "@/components/dashboard-navbar";
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Footer } from "@/features/components/footer";
 import {
@@ -42,18 +41,9 @@ export default async function Layout({
     <HydrationBoundary state={dehydrate(qc)}>
       <SidebarProvider>
         <AppSidebar side={locale === "fa" ? "right" : "left"} />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-              />
-              {breadcrumb}
-            </div>
-          </header>
-          <div className="p-4 pt-0">{children}</div>
+        <SidebarInset className="min-w-0">
+          <DashboardNavbar breadcrumb={breadcrumb} />
+          <div className="p-4 flex-1 min-w-0 w-full">{children}</div>
           <Footer />
         </SidebarInset>
         <AssistantWidget />

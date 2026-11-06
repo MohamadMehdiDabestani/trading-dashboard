@@ -20,12 +20,12 @@ export function DashboardView() {
         <BalanceCard />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
-        <div className="lg:col-span-4 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4 min-w-0 w-full">
+        <div className="lg:col-span-4 min-w-0 space-y-6">
           <MarketWatchCard />
         </div>
 
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 min-w-0">
           <Card>
             <Tabs defaultValue="history" className="w-full">
               <CardHeader className="p-0 border-b">
