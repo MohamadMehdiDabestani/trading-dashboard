@@ -2,8 +2,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { WalletHistoryFilters } from "@repo/types";
-import { walletKeys } from "../api/wallet.keys";
-import { walletApi } from "../api";
+import { walletQueries } from "../api/wallet.queries";
 
 export function useWalletAsset(
   asset: string,
@@ -12,9 +11,7 @@ export function useWalletAsset(
   filters: WalletHistoryFilters = {},
 ) {
   return useQuery({
-    queryKey: walletKeys.asset(asset, page, pageSize, filters),
-    queryFn: () => walletApi.getAsset(asset, page, pageSize, filters),
-    staleTime: 10_000,
+    ...walletQueries.asset(asset, page, pageSize, filters),
     placeholderData: keepPreviousData,
   });
 }

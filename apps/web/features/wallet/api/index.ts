@@ -10,10 +10,11 @@ import type {
   WalletWithdrawDto,
 } from "@repo/types";
 
-export const walletApi = {
-  getBalance: () => apiFetch<WalletGetReply[]>("wallet/get"),
+/** Endpoint paths shared by the browser client and the server prefetch. */
+export const walletPaths = {
+  balance: () => "wallet/get",
 
-  getAsset: (
+  asset: (
     asset: string,
     page = 1,
     pageSize = 10,
@@ -25,15 +26,30 @@ export const walletApi = {
     });
     if (filters.period) qs.set("period", filters.period);
     filters.types?.forEach((t) => qs.append("type", t));
-    return apiFetch<WalletAssetReply>(
-      `wallet/asset/${encodeURIComponent(asset)}?${qs.toString()}`,
-    );
+    return `wallet/asset/${encodeURIComponent(asset)}?${qs.toString()}`;
   },
 
-  getTrend: (asset: string, range: WalletTrendRange) =>
-    apiFetch<WalletTrendReply>(
-      `wallet/asset/${encodeURIComponent(asset)}/trend?range=${range}`,
+  trend: (asset: string, range: WalletTrendRange) =>
+    `wallet/asset/${encodeURIComponent(asset)}/trend?range=${range}`,
+
+  marketPrices: () => "market/prices",
+};
+
+export const walletApi = {
+  getBalance: () => apiFetch<WalletGetReply[]>(walletPaths.balance()),
+
+  getAsset: (
+    asset: string,
+    page = 1,
+    pageSize = 10,
+    filters: WalletHistoryFilters = {},
+  ) =>
+    apiFetch<WalletAssetReply>(
+      walletPaths.asset(asset, page, pageSize, filters),
     ),
+
+  getTrend: (asset: string, range: WalletTrendRange) =>
+    apiFetch<WalletTrendReply>(walletPaths.trend(asset, range)),
 
   deposit: (body: WalletDepositDto) =>
     apiFetch<void>("wallet/deposit", {
@@ -49,5 +65,5 @@ export const walletApi = {
 };
 
 export const marketApi = {
-  getPrices: () => apiFetch<MarketPricesReply>("market/prices"),
+  getPrices: () => apiFetch<MarketPricesReply>(walletPaths.marketPrices()),
 };

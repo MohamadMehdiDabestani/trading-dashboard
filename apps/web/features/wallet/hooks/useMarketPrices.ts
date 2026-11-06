@@ -1,14 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { marketKeys } from "../api/wallet.keys";
-import { marketApi } from "../api";
+import { walletQueries } from "../api/wallet.queries";
 
 // قیمت‌ها هر ۵ ثانیه تازه می‌شوند تا ارزش دلاری زنده بماند
 export function useMarketPrices() {
   return useQuery({
-    queryKey: marketKeys.prices,
-    queryFn: marketApi.getPrices,
+    ...walletQueries.marketPrices(),
     refetchInterval: 5_000,
     staleTime: 4_000,
   });
