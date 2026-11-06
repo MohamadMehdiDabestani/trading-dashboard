@@ -27,6 +27,7 @@ export function useDeposit() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: walletKeys.balance() });
+      qc.invalidateQueries({ queryKey: [...walletKeys.all, "notifications"] });
       toast.success("واریز انجام شد");
     },
     onError: (e: any) => toast.error(e?.code ?? "خطا در واریز"),
