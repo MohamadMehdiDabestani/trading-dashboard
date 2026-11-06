@@ -58,9 +58,12 @@ type ScenarioData = {
     side?: "BUY" | "SELL";
     orderType?: "MARKET" | "LIMIT";
     pair?: string;
-    qtyText?: string;
-    priceText?: string;
-    totalText?: string;
+    qtyTextFa?: string;
+    qtyTextEn?: string;
+    priceTextFa?: string;
+    priceTextEn?: string;
+    totalTextFa?: string;
+    totalTextEn?: string;
   };
 };
 
@@ -69,9 +72,9 @@ const SCENARIOS: readonly ScenarioData[] = [
     id: "quickBuy",
     badge: "QUICK_BUY",
     rawFa: "سریع ۲۰۰ دلار بیت‌کوین بخر",
-    rawEn: "سریع ۲۰۰ دلار بیت‌کوین بخر (Quick buy $200 BTC)",
+    rawEn: "Quick buy $200 worth of Bitcoin",
     normalizedFa: "سریع 200 دلار بیت کوین بخر",
-    normalizedEn: "سریع 200 دلار بیت کوین بخر",
+    normalizedEn: "quick buy 200 usd btc",
     jevOutput: {
       intent: { choice: "QUICK_TRADE", confidence: 0.98 },
       side: { choice: "BUY", confidence: 0.99 },
@@ -93,18 +96,21 @@ const SCENARIOS: readonly ScenarioData[] = [
       side: "BUY",
       orderType: "MARKET",
       pair: "BTC / USDT",
-      qtyText: "0.00212134 BTC",
-      priceText: "~$94,280.00 (Live WS)",
-      totalText: "200.00 USDT",
+      qtyTextFa: "۰.۰۰۲۱۲۱۳۴ BTC",
+      qtyTextEn: "0.00212134 BTC",
+      priceTextFa: "~$94,280.00 (لحظه‌ای WS)",
+      priceTextEn: "~$94,280.00 (Live WS)",
+      totalTextFa: "۲۰۰.۰۰ USDT",
+      totalTextEn: "200.00 USDT",
     },
   },
   {
     id: "percentSell",
     badge: "SELL + %",
     rawFa: "نصف اتریومم رو به قیمت ۲۸۰۰ بفروش",
-    rawEn: "نصف اتریومم رو به قیمت ۲۸۰۰ بفروش (Sell 50% ETH @ 2800)",
+    rawEn: "Sell 50% of my Ethereum at $2,800",
     normalizedFa: "نصف اتریومم رو به قیمت 2800 بفروش",
-    normalizedEn: "نصف اتریومم رو به قیمت 2800 بفروش",
+    normalizedEn: "sell 50 percent eth at 2800",
     jevOutput: {
       intent: { choice: "TRADE", confidence: 0.96 },
       side: { choice: "SELL", confidence: 0.99 },
@@ -126,18 +132,21 @@ const SCENARIOS: readonly ScenarioData[] = [
       side: "SELL",
       orderType: "LIMIT",
       pair: "ETH / USDT",
-      qtyText: "0.75000000 ETH (50% Avail)",
-      priceText: "$2,800.00 (Limit)",
-      totalText: "2,100.00 USDT",
+      qtyTextFa: "۰.۷۵۰۰۰۰۰۰ ETH (۵۰٪ موجود)",
+      qtyTextEn: "0.75000000 ETH (50% Avail)",
+      priceTextFa: "$2,800.00 (لیمیت)",
+      priceTextEn: "$2,800.00 (Limit)",
+      totalTextFa: "۲,۱۰۰.۰۰ USDT",
+      totalTextEn: "2,100.00 USDT",
     },
   },
   {
     id: "slotFill",
     badge: "SLOT FILLING",
     rawFa: "میخوام سولانا بخرم",
-    rawEn: "میخوام سولانا بخرم (I want to buy Solana)",
+    rawEn: "I want to buy Solana",
     normalizedFa: "میخوام سولانا بخرم",
-    normalizedEn: "میخوام سولانا بخرم",
+    normalizedEn: "i want to buy solana",
     jevOutput: {
       intent: { choice: "TRADE", confidence: 0.95 },
       side: { choice: "BUY", confidence: 0.98 },
@@ -163,9 +172,9 @@ const SCENARIOS: readonly ScenarioData[] = [
     id: "balance",
     badge: "BALANCE",
     rawFa: "چقدر بیت کوین دارم؟",
-    rawEn: "چقدر بیت کوین دارم؟ (How much BTC do I own?)",
+    rawEn: "How much Bitcoin do I have?",
     normalizedFa: "چقدر بیت کوین دارم؟",
-    normalizedEn: "چقدر بیت کوین دارم؟",
+    normalizedEn: "how much btc do i have",
     jevOutput: {
       intent: { choice: "BALANCE", confidence: 0.99 },
       side: { choice: "BUY", confidence: 0.52 },
@@ -185,17 +194,19 @@ const SCENARIOS: readonly ScenarioData[] = [
     widgetPreview: {
       kind: "balance",
       pair: "BTC",
-      qtyText: "0.42500000 BTC",
-      totalText: "≈ $40,069.21",
+      qtyTextFa: "۰.۴۲۵۰۰۰۰۰ BTC",
+      qtyTextEn: "0.42500000 BTC",
+      totalTextFa: "≈ ۴۰,۰۶۹.۲۱ دلار",
+      totalTextEn: "≈ $40,069.21",
     },
   },
   {
     id: "cancelOrder",
     badge: "CANCEL",
     rawFa: "سفارش بیت کوینم رو لغو کن",
-    rawEn: "سفارش بیت کوینم رو لغو کن (Cancel my BTC order)",
+    rawEn: "Cancel my Bitcoin order",
     normalizedFa: "سفارش بیت کوینم رو لغو کن",
-    normalizedEn: "سفارش بیت کوینم رو لغو کن",
+    normalizedEn: "cancel my btc order",
     jevOutput: {
       intent: { choice: "CANCEL", confidence: 0.97 },
       side: { choice: "BUY", confidence: 0.55 },
@@ -215,16 +226,17 @@ const SCENARIOS: readonly ScenarioData[] = [
     widgetPreview: {
       kind: "cancel",
       pair: "BTCUSDT",
-      qtyText: "0.05 BTC @ $92,500",
+      qtyTextFa: "۰.۰۵ BTC با قیمت $۹۲,۵۰۰",
+      qtyTextEn: "0.05 BTC @ $92,500",
     },
   },
   {
     id: "howto",
     badge: "HOWTO",
     rawFa: "چطوری ۱۰۰ دلار بیت کوین بخرم؟",
-    rawEn: "چطوری ۱۰۰ دلار بیت کوین بخرم؟ (How to buy $100 BTC?)",
+    rawEn: "How do I buy $100 worth of Bitcoin?",
     normalizedFa: "چطوری 100 دلار بیت کوین بخرم؟",
-    normalizedEn: "چطوری 100 دلار بیت کوین بخرم؟",
+    normalizedEn: "how to buy 100 usd btc",
     jevOutput: {
       intent: { choice: "HOWTO", confidence: 0.97 },
       side: { choice: "BUY", confidence: 0.99 },
@@ -244,7 +256,8 @@ const SCENARIOS: readonly ScenarioData[] = [
     widgetPreview: {
       kind: "howto",
       pair: "BTC / USDT",
-      totalText: "100 USDT",
+      totalTextFa: "۱۰۰ USDT",
+      totalTextEn: "100 USDT",
     },
   },
 ];
@@ -252,6 +265,7 @@ const SCENARIOS: readonly ScenarioData[] = [
 export function JevAiWorkflowShowcase() {
   const t = useTranslations("landing.aiSection");
   const locale = useLocale();
+  const isFa = locale === "fa";
   const [activeId, setActiveId] = useState<ScenarioId>("quickBuy");
 
   const active =
@@ -270,7 +284,7 @@ export function JevAiWorkflowShowcase() {
             dir="ltr"
             className="font-mono text-[11px] text-muted-foreground"
           >
-            LLM_PROVIDER=jev • model: free/jev-1.13
+            LLM_PROVIDER=jev • model: jev-1.13
           </span>
         </div>
 
@@ -301,7 +315,7 @@ export function JevAiWorkflowShowcase() {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium truncate">
-                  «{sc.rawFa}»
+                  {isFa ? `«${sc.rawFa}»` : `"${sc.rawEn}"`}
                 </p>
               </button>
             );
@@ -336,22 +350,22 @@ export function JevAiWorkflowShowcase() {
                 {t("userInputLabel")}
               </div>
               <div className="text-sm font-bold text-foreground">
-                {locale === "fa" ? active.rawFa : active.rawEn}
+                {isFa ? active.rawFa : active.rawEn}
               </div>
               <div
                 dir="ltr"
                 className="pt-1.5 border-t border-border/50 font-mono text-[11px] text-emerald-500 flex items-center justify-between"
               >
                 <span>normalizeText()</span>
-                <span>"{active.normalizedFa}"</span>
+                <span>"{isFa ? active.normalizedFa : active.normalizedEn}"</span>
               </div>
             </div>
 
             {/* JEV Multi-Head Choice + Confidence Bars */}
             <div className="space-y-2.5" dir="ltr">
               <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
-                <span>JEV Decision Engine</span>
-                <span>choice + confidence</span>
+                <span>{t("decisionEngine")}</span>
+                <span>{t("choiceConfidence")}</span>
               </div>
 
               {(["intent", "side", "coin"] as const).map((field) => {
@@ -413,7 +427,7 @@ export function JevAiWorkflowShowcase() {
             >
               <div className="text-[10px] text-muted-foreground pb-1 border-b border-border/50 flex items-center justify-between">
                 <span>IntentSchema.parse(buildIntent())</span>
-                <span className="text-emerald-500 font-bold">Zod Valid ✓</span>
+                <span className="text-emerald-500 font-bold">{t("badges.zodValid")}</span>
               </div>
               <pre className="text-[11px] leading-relaxed text-foreground/95 pt-1 text-start" dir="ltr">
                 {JSON.stringify(active.parsedIntent, null, 2)}
@@ -422,13 +436,13 @@ export function JevAiWorkflowShowcase() {
 
             <div className="flex flex-wrap gap-1.5" dir="ltr">
               <span className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-                NEVER invents numbers
+                {t("badges.neverInvents")}
               </span>
               <span className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-                Supports %, USDT & BASE
+                {t("badges.supportsUnits")}
               </span>
               <span className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
-                15 req/min Rate Limit
+                {t("badges.rateLimit")}
               </span>
             </div>
           </div>
@@ -484,25 +498,25 @@ export function JevAiWorkflowShowcase() {
                     className="space-y-1.5 rounded-xl bg-card p-3 border border-border/60 font-mono text-xs"
                   >
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Pair:</span>
+                      <span className="text-muted-foreground">{t("widget.fields.pair")}:</span>
                       <span className="font-bold">
                         {active.widgetPreview.pair}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Quantity:</span>
+                      <span className="text-muted-foreground">{t("widget.fields.quantity")}:</span>
                       <span className="font-bold">
-                        {active.widgetPreview.qtyText}
+                        {isFa ? active.widgetPreview.qtyTextFa : active.widgetPreview.qtyTextEn}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Price:</span>
-                      <span>{active.widgetPreview.priceText}</span>
+                      <span className="text-muted-foreground">{t("widget.fields.price")}:</span>
+                      <span>{isFa ? active.widgetPreview.priceTextFa : active.widgetPreview.priceTextEn}</span>
                     </div>
                     <div className="flex justify-between pt-1 border-t border-border/50">
-                      <span className="text-muted-foreground">Total:</span>
+                      <span className="text-muted-foreground">{t("widget.fields.total")}:</span>
                       <span className="font-bold text-primary">
-                        {active.widgetPreview.totalText}
+                        {isFa ? active.widgetPreview.totalTextFa : active.widgetPreview.totalTextEn}
                       </span>
                     </div>
                   </div>
@@ -524,7 +538,7 @@ export function JevAiWorkflowShowcase() {
                       variant="secondary"
                       className="font-mono text-[10px] bg-amber-500/15 text-amber-500"
                     >
-                      missing: amount → price
+                      {t("widget.missingSlotBadge")}
                     </Badge>
                   </div>
 
@@ -533,16 +547,17 @@ export function JevAiWorkflowShowcase() {
                   </p>
 
                   <div className="flex flex-wrap gap-1.5" dir="ltr">
-                    {["$50 USDT", "$100 USDT", "50% Balance", "1 SOL"].map(
-                      (chip) => (
-                        <span
-                          key={chip}
-                          className="rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-xs font-semibold text-primary"
-                        >
-                          {chip}
-                        </span>
-                      ),
-                    )}
+                    {(isFa
+                      ? ["۵۰ تتر", "۱۰۰ تتر", "۵۰٪ موجودی", "۱ SOL"]
+                      : ["$50 USDT", "$100 USDT", "50% Balance", "1 SOL"]
+                    ).map((chip) => (
+                      <span
+                        key={chip}
+                        className="rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-xs font-semibold text-primary"
+                      >
+                        {chip}
+                      </span>
+                    ))}
                   </div>
                 </>
               )}
@@ -564,10 +579,11 @@ export function JevAiWorkflowShowcase() {
                     className="rounded-xl bg-card p-3 border border-border/60 font-mono space-y-1"
                   >
                     <div className="text-sm font-black text-foreground">
-                      {active.widgetPreview.qtyText}
+                      {isFa ? active.widgetPreview.qtyTextFa : active.widgetPreview.qtyTextEn}
                     </div>
                     <div className="text-xs text-emerald-500 font-bold">
-                      {active.widgetPreview.totalText} (Live WS Valuation)
+                      {isFa ? active.widgetPreview.totalTextFa : active.widgetPreview.totalTextEn}{" "}
+                      {t("widget.liveWsValuation")}
                     </div>
                   </div>
                 </>
@@ -594,11 +610,11 @@ export function JevAiWorkflowShowcase() {
                         {active.widgetPreview.pair} • BUY
                       </div>
                       <div className="text-muted-foreground text-[11px]">
-                        {active.widgetPreview.qtyText}
+                        {isFa ? active.widgetPreview.qtyTextFa : active.widgetPreview.qtyTextEn}
                       </div>
                     </div>
                     <span className="rounded-lg bg-destructive/15 text-destructive px-2.5 py-1 font-bold text-[11px]">
-                      Cancel Order
+                      {t("widget.cancelBtn")}
                     </span>
                   </div>
                 </>
@@ -612,7 +628,7 @@ export function JevAiWorkflowShowcase() {
                       {t("widget.howtoTitle")}
                     </span>
                     <Badge variant="outline" className="font-mono text-[10px]">
-                      Guided Step-by-Step
+                      {t("widget.guidedBadge")}
                     </Badge>
                   </div>
 

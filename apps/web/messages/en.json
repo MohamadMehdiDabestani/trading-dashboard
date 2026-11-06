@@ -10,7 +10,8 @@
       "phone": "Mobile number",
       "code": "Verification code",
       "email": "Email",
-      "otp": "One-time password"
+      "otp": "One-time password",
+      "amount": "Amount"
     },
     "validation": {
       "VALIDATION_REQUIRED": "{field} is required",
@@ -55,7 +56,8 @@
     "footer": {
       "themeToggle": "Toggle Dark/Light",
       "logout": "Logout"
-    }
+    },
+    "markets": "Markets"
   },
   "dataTable": {
     "pagination": {
@@ -116,6 +118,33 @@
       "statStreamLabel": "WebSocket L2",
       "statSecurity": "OTP & QR",
       "statSecurityLabel": "Cross-Device Auth"
+    },
+    "qrDialog": {
+      "trigger": "Login other device with QR",
+      "title": "Login Other Device",
+      "description": "Scan the QR code with the device you want to log in.",
+      "waitingScan": "Waiting for scan... Valid for {seconds} seconds.",
+      "qrAlt": "Login QR code",
+      "incomingTitle": "A new device wants to access your account",
+      "codePrompt": "Enter the 4-digit code shown on the new device:",
+      "otpAriaLabel": "New device verification code",
+      "submitButton": "Approve Login",
+      "rejectButton": "This isn't me",
+      "countdown": "{seconds} seconds remaining to decide.",
+      "successTitle": "New device successfully logged in.",
+      "closeButton": "Close",
+      "denied": "Request was cancelled.",
+      "expired": "This QR code has expired.",
+      "error": "Failed to generate QR code.",
+      "retryButton": "Generate New QR",
+      "toastSuccess": "New device has logged into your account",
+      "toastFailed": "Approval failed",
+      "ua": {
+        "unknownDevice": "Unknown device",
+        "unknownBrowser": "Unknown browser",
+        "unknownOs": "Unknown OS",
+        "deviceOnOs": "{browser} on {os}"
+      }
     }
   },
   "trade": {
@@ -305,7 +334,9 @@
     "connectedAccounts": {
       "title": "Institutions and connected accounts",
       "addNew": "Add new account",
-      "verified": "Verified"
+      "verified": "Verified",
+      "connectedBank": "Melat bank",
+      "metaMask": "Meta mask wallet"
     },
     "kyc": {
       "title": "Identity verification",
@@ -713,7 +744,7 @@
     "aiSection": {
       "eyebrow": "Neuro-Symbolic AI Workflow • Powered by JEV Agent",
       "title": "Bilingual Trading Assistant with Zero-Hallucination Execution",
-      "subtitle": "Instead of letting a raw LLM guess numbers or execute unchecked trades, this exchange pairs the JEV decision agent (free/jev-1.13) with a deterministic slot extractor, Zod schema validation, interactive slot-filling, and a human-in-the-loop confirmation card.",
+      "subtitle": "Instead of letting a raw LLM guess numbers or execute unchecked trades, this exchange pairs the JEV decision agent (jev-1.13) with a deterministic slot extractor, Zod schema validation, interactive slot-filling, and a human-in-the-loop confirmation card.",
       "tryPrompts": "Click a real user prompt to inspect the 4-stage JEV AI pipeline",
       "userInputLabel": "Raw User Message (FA / EN)",
       "stage1Title": "1. JEV Multi-Head Classifier",
@@ -723,6 +754,14 @@
       "stage3Title": "3. Slot-Filling & Safe Execution",
       "stage3Desc": "Code determines which fields are missing (symbol, amount, or limit price), checks live wallet balances & WebSocket prices, and renders an explicit confirmation card.",
       "openLiveAssistant": "Test JEV Assistant in Dashboard",
+      "decisionEngine": "JEV Decision Engine",
+      "choiceConfidence": "choice + confidence",
+      "badges": {
+        "neverInvents": "NEVER invents numbers",
+        "supportsUnits": "Supports %, USDT & BASE",
+        "rateLimit": "15 req/min Rate Limit",
+        "zodValid": "Zod Valid ✓"
+      },
       "scenarios": {
         "quickBuy": {
           "title": "Instant Market Buy"
@@ -748,10 +787,20 @@
         "humanInLoop": "Verified against live USDT balance & WS price before POST /trade/new",
         "slotTitle": "Deterministic Missing-Slot Prompt",
         "slotPrompt": "Symbol SOLUSDT detected. Assistant asks for the missing amount & limit price via quick chips:",
+        "missingSlotBadge": "missing: amount → price",
         "balanceTitle": "Instant Asset & USD Valuation",
+        "liveWsValuation": "(Live WS Valuation)",
         "cancelTitle": "Active Order Lookup & One-Click Cancel",
+        "cancelBtn": "Cancel Order",
         "howtoTitle": "Step-by-Step Interactive Walkthrough",
-        "howtoBody": "Explains how to place a $100 BTC order and offers a one-click button to pre-fill the order draft."
+        "howtoBody": "Explains how to place a $100 BTC order and offers a one-click button to pre-fill the order draft.",
+        "guidedBadge": "Guided Step-by-Step",
+        "fields": {
+          "pair": "Pair",
+          "quantity": "Quantity",
+          "price": "Price",
+          "total": "Total"
+        }
       },
       "capabilities": {
         "capTrade": "Limit & Market Orders",
@@ -886,6 +935,80 @@
       "sellInfinitive": "sell",
       "limit": "Limit",
       "market": "Market"
+    }
+  },
+  "navbar": {
+    "search": {
+      "placeholder": "Search markets, coins (Ctrl+K)...",
+      "shortPlaceholder": "Search (Ctrl+K)",
+      "dialogTitle": "Search & Quick Jump",
+      "dialogDescription": "Quickly jump to markets, coins, or sections.",
+      "inputPlaceholder": "Type a coin symbol or section name...",
+      "marketsSection": "Trading Pairs",
+      "navigationSection": "Quick Navigation",
+      "noResults": "No results found for",
+      "trade": "Trade",
+      "nav": {
+        "overview": "Overview",
+        "markets": "Markets",
+        "wallet": "Wallet & Assets",
+        "account": "Account Settings",
+        "security": "Security & 2FA"
+      }
+    },
+    "live": {
+      "status": "Live",
+      "connecting": "Connecting",
+      "reconnecting": "Reconnecting"
+    },
+    "actions": {
+      "deposit": "Deposit",
+      "quickTrade": "Quick Trade"
+    },
+    "balance": {
+      "title": "Total Balance",
+      "available": "Available USDT",
+      "hide": "Hide balance",
+      "show": "Show balance",
+      "viewWallet": "Go to Wallet"
+    },
+    "depositDialog": {
+      "title": "Deposit {asset}",
+      "description": "Enter the amount of {asset} to deposit into your trading wallet.",
+      "amount": "Deposit Amount",
+      "placeholder": "0.00",
+      "confirm": "Confirm Deposit",
+      "submitting": "Processing...",
+      "success": "Deposit completed successfully!",
+      "quickAdd": "Quick Select",
+      "balance": "{asset} Balance:",
+      "asset": "Asset"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Mark all read",
+      "empty": "No transactions recorded yet",
+      "viewAll": "View Wallet Ledger",
+      "types": {
+        "deposit": "Deposit Confirmed",
+        "withdraw": "Withdrawal Processed",
+        "trade_buy": "Trade Executed (Buy)",
+        "trade_sell": "Trade Executed (Sell)",
+        "lock": "Order Lock",
+        "unlock": "Order Unlock",
+        "fee": "Trading Fee",
+        "transfer_in": "Transfer Received",
+        "transfer_out": "Transfer Sent"
+      }
+    },
+    "user": {
+      "trader": "Verified Trader",
+      "level": "Level 3",
+      "account": "Account & KYC",
+      "wallet": "Wallet & Assets",
+      "security": "Security & 2FA",
+      "logout": "Logout",
+      "verified": "Verified"
     }
   }
 }
