@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircleHelp, RotateCcw, Send, Sparkles, X } from "lucide-react";
 import { SYMBOLS, type CreateOrderDTO, type CancelOrderDTO } from "@repo/types";
@@ -41,58 +42,10 @@ type Msg = {
   lines?: string[];
   orders?: OrderRow[];
   groups?: ChipGroup[];
-  chips?: string[]; // پیشنهاد بعدی؛ فقط زیر آخرین پیام نمایش داده می‌شود
+  chips?: string[];
 };
 
 const ASSETS = ["USDT", ...SYMBOLS.map((s) => s.baseAsset)];
-const SUGGESTIONS = [
-  "موجودی من",
-  "اوردرهای باز من",
-  "قیمت بیت کوین",
-  "ارزش دارایی‌های من",
-];
-const WELCOME =
-  "سلام! بنویس چه کاری می‌خوای: مثلاً «۱۰۰ دلار بیت‌کوین بخرم»، «نصف اتریومم رو بفروش» یا «موجودی بیت‌کوینم چقدره».";
-
-const HELP_LINES = [
-  "هر چیزی که ناقص باشد (ارز، مقدار، قیمت) را همین‌جا می‌پرسم.",
-  "قبل از ثبت هر سفارش، کارت تأیید می‌بینی.",
-  "«سریع / فوری / مارکت» = سفارش مارکت؛ بدون آن = لیمیت با قیمت دلخواه.",
-  "مقدار را می‌توانی به دلار، به کوین یا به درصد بگویی.",
-  "ارزهای پشتیبانی‌شده: BTC، ETH، BNB، SOL، XRP، ADA.",
-];
-const HELP_GROUPS: ChipGroup[] = [
-  {
-    title: "خرید و فروش",
-    chips: [
-      "۱۰۰ دلار بیت کوین بخرم",
-      "۰.۰۰۲۵ بیت کوین بخرم",
-      "اتریوم بفروشم",
-      "سریع ۲۰۰ دلار سولانا بخر",
-      "نصف بیت کوینم رو بفروش",
-      "همه ریپل رو بفروش",
-    ],
-  },
-  {
-    title: "موجودی و دارایی",
-    chips: [
-      "موجودی من",
-      "چقدر بیت کوین دارم",
-      "چند دلار دارم",
-      "ارزش دارایی‌های من",
-    ],
-  },
-  { title: "قیمت", chips: ["قیمت بیت کوین", "قیمت همه ارزها"] },
-  {
-    title: "سفارش‌ها",
-    chips: [
-      "اوردرهای باز من",
-      "اوردرهای باز من توی بیت کوین",
-      "سفارش بیت کوینم رو لغو کن",
-    ],
-  },
-  { title: "آموزش", chips: ["چطوری بیت کوین بخرم", "چطوری اتریوم بفروشم"] },
-];
 const floor8 = (n: number) => Math.floor(n * 1e8) / 1e8;
 
 let uid = 0;
@@ -115,13 +68,17 @@ async function fetchOpenOrders(symbol: string | null) {
 }
 
 export function AssistantWidget() {
+  const t = useTranslations("assistant");
+  const locale = useLocale();
+  const isRtl = locale === "fa";
+
   const qc = useQueryClient();
   const balances = useWalletBalance();
   const createOrder = useCreateOrder();
   const cancelOrder = useCancelOrder();
 
   const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>(() => [bot(WELCOME)]);
+  const [msgs, setMsgs] = useState<Msg[]>(() => [bot(t("welcome"))]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,6 +86,62 @@ export function AssistantWidget() {
   const [slotUnit, setSlotUnit] = useState<"USDT" | "BASE">("USDT");
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const prevLocaleRef = useRef(locale);
+  useEffect(() => {
+    if (prevLocaleRef.current !== locale) {
+      prevLocaleRef.current = locale;
+      setMsgs([bot(t("welcome"))]);
+      setDraft(null);
+    }
+  }, [locale, t]);
+
+  const suggestions = useMemo(
+    () => [
+      t("suggestions.balance"),
+      t("suggestions.openOrders"),
+      t("suggestions.btcPrice"),
+      t("suggestions.portfolio"),
+    ],
+    [t],
+  );
+
+  const helpLines = useMemo(
+    () => [
+      t("helpLines.line1"),
+      t("helpLines.line2"),
+      t("helpLines.line3"),
+      t("helpLines.line4"),
+      t("helpLines.line5"),
+    ],
+    [t],
+  );
+
+  const helpGroups: ChipGroup[] = useMemo(
+    () => [
+      {
+        title: t("helpGroups.tradeTitle"),
+        chips: t.raw("helpGroups.tradeChips") as string[],
+      },
+      {
+        title: t("helpGroups.balanceTitle"),
+        chips: t.raw("helpGroups.balanceChips") as string[],
+      },
+      {
+        title: t("helpGroups.priceTitle"),
+        chips: t.raw("helpGroups.priceChips") as string[],
+      },
+      {
+        title: t("helpGroups.ordersTitle"),
+        chips: t.raw("helpGroups.ordersChips") as string[],
+      },
+      {
+        title: t("helpGroups.howtoTitle"),
+        chips: t.raw("helpGroups.howtoChips") as string[],
+      },
+    ],
+    [t],
+  );
 
   const push = (...m: Msg[]) => setMsgs((p) => [...p, ...m]);
   const lastId = msgs[msgs.length - 1]?.id;
@@ -245,12 +258,12 @@ export function AssistantWidget() {
           const b = rows.find((x) => x.asset === a);
           push(
             bot(
-              `موجودی ${a}`,
+              t("intents.balanceSingle", { asset: a }),
               [
-                `قابل‌استفاده: ${toPlain(Number(b?.available ?? 0))}`,
-                `قفل‌شده: ${toPlain(Number(b?.locked ?? 0))}`,
+                t("intents.available", { amount: toPlain(Number(b?.available ?? 0)) }),
+                t("intents.locked", { amount: toPlain(Number(b?.locked ?? 0)) }),
               ],
-              ["ارزش دارایی‌های من", "اوردرهای باز من"],
+              [t("suggestions.portfolio"), t("suggestions.openOrders")],
             ),
           );
         } else {
@@ -258,13 +271,14 @@ export function AssistantWidget() {
             .filter((b) => Number(b.available) + Number(b.locked ?? 0) > 0)
             .map(
               (b) =>
-                `${b.asset}: ${toPlain(Number(b.available))} (قفل‌شده ${toPlain(Number(b.locked ?? 0))})`,
+                `${b.asset}: ${toPlain(Number(b.available))} (${t("intents.locked", { amount: toPlain(Number(b.locked ?? 0)) })})`,
             );
           push(
-            bot("موجودی شما", lines.length ? lines : ["کیف پول خالی است."], [
-              "ارزش دارایی‌های من",
-              "اوردرهای باز من",
-            ]),
+            bot(
+              t("intents.balanceAll"),
+              lines.length ? lines : [t("intents.emptyWallet")],
+              [t("suggestions.portfolio"), t("suggestions.openOrders")],
+            ),
           );
         }
         return;
@@ -277,7 +291,9 @@ export function AssistantWidget() {
           : SYMBOLS;
         push(
           bot(
-            p.symbol ? `قیمت ${name(p.symbol)}` : "قیمت لحظه‌ای",
+            p.symbol
+              ? t("intents.priceSingle", { name: name(p.symbol) ?? p.symbol })
+              : t("intents.priceLive"),
             list.map((s) => {
               const v = Number(prices[s.baseAsset]);
               return `${s.baseAsset}: ${v > 0 ? toPlain(v, 6) : "—"} USDT`;
@@ -305,10 +321,10 @@ export function AssistantWidget() {
         }
         rows.sort((x, y) => y.v - x.v);
         push(
-          bot(`ارزش کل دارایی: ${toPlain(total, 2)} USDT`, [
+          bot(t("intents.portfolioTotal", { total: toPlain(total, 2) }), [
             ...rows.map((r) => `${r.a}: ${toPlain(r.v, 2)} USDT`),
             ...(missingPrice.length
-              ? [`بدون قیمت: ${missingPrice.join("، ")}`]
+              ? [t("intents.missingPrice", { assets: missingPrice.join(", ") })]
               : []),
           ]),
         );
@@ -322,7 +338,6 @@ export function AssistantWidget() {
           queryFn: () => fetchOpenOrders(p.symbol),
           staleTime: 0,
         });
-        // ساختار پاسخ GetRecentTradesReply و نام فیلدها (id, symbol, side, quantity, price) را تأیید کن
         const items: any[] =
           res?.items ?? res?.orders ?? (Array.isArray(res) ? res : []);
         const orders: OrderRow[] = items.map((o) => ({
@@ -334,26 +349,31 @@ export function AssistantWidget() {
         }));
         const title =
           p.intent === "CANCEL"
-            ? "کدام سفارش را لغو کنم؟"
+            ? t("intents.whichOrderCancel")
             : p.symbol
-              ? `سفارش‌های باز ${name(p.symbol)}`
-              : "سفارش‌های باز شما";
+              ? t("intents.openOrdersSingle", { name: name(p.symbol) ?? p.symbol })
+              : t("intents.openOrdersAll");
         push(
           orders.length
             ? { ...bot(title), orders }
-            : bot(title, ["سفارش بازی ندارید."]),
+            : bot(title, [t("intents.noOpenOrders")]),
         );
         return;
       }
 
       case "HOWTO": {
-        const verb = p.howto === "SELL" ? "فروش" : "خرید";
+        const verb = p.howto === "SELL" ? t("actions.sell") : t("actions.buy");
+        const infinitive =
+          p.howto === "SELL"
+            ? t("actions.sellInfinitive")
+            : t("actions.buyInfinitive");
+        const target = p.symbol ? " " + (name(p.symbol) ?? p.symbol) : "";
         push(
-          bot(`برای ${verb}${p.symbol ? " " + name(p.symbol) : ""}:`, [
-            "۱) از صفحه‌ی معامله، جفت‌ارز را انتخاب کنید.",
-            "۲) نوع سفارش را انتخاب کنید: لیمیت (قیمت دلخواه) یا مارکت (فوری).",
-            "۳) مقدار را وارد و ثبت کنید.",
-            `یا همین‌جا بنویس «می‌خوام ... ${p.howto === "SELL" ? "بفروشم" : "بخرم"}» تا انجام بدم.`,
+          bot(t("intents.howtoTitle", { verb, target }), [
+            t("intents.step1"),
+            t("intents.step2"),
+            t("intents.step3"),
+            t("intents.step4", { verb: infinitive }),
           ]),
         );
         return;
@@ -362,9 +382,9 @@ export function AssistantWidget() {
       default:
         push(
           bot(
-            "متوجه نشدم. می‌تونم خرید، فروش، قیمت، موجودی، ارزش دارایی و سفارش‌های باز رو انجام بدم.",
+            t("intents.unknown"),
             undefined,
-            SUGGESTIONS,
+            suggestions,
           ),
         );
     }
@@ -384,13 +404,13 @@ export function AssistantWidget() {
         body: JSON.stringify({ text: raw }),
       });
       if (res.status === 429) {
-        push(bot("تعداد درخواست‌ها زیاد است؛ چند لحظه صبر کنید."));
+        push(bot(t("intents.rateLimit")));
         return;
       }
       if (!res.ok) throw new Error();
       await handleIntent(IntentSchema.parse(await res.json()));
     } catch {
-      push(bot("خطا در ارتباط با دستیار. دوباره تلاش کنید."));
+      push(bot(t("intents.error")));
     } finally {
       setBusy(false);
     }
@@ -400,10 +420,10 @@ export function AssistantWidget() {
     if (busy) return;
     push({
       ...bot(
-        "راهنما — روی هر نمونه بزن تا اجرا شود:",
-        HELP_LINES.map((l) => `• ${l}`),
+        t("helpGroups.header"),
+        helpLines.map((l) => `• ${l}`),
       ),
-      groups: HELP_GROUPS,
+      groups: helpGroups,
     });
   }
 
@@ -414,10 +434,10 @@ export function AssistantWidget() {
     push(
       me(
         missing === "price"
-          ? `قیمت: ${shown}`
+          ? t("slots.priceMsg", { price: shown })
           : slotUnit === "USDT"
-            ? `${shown} دلار`
-            : `${shown} ${meta?.baseAsset ?? ""}`,
+            ? t("slots.dollarMsg", { amount: shown })
+            : t("slots.baseMsg", { amount: shown, asset: meta?.baseAsset ?? "" }),
       ),
     );
     setDraft((d) =>
@@ -443,21 +463,19 @@ export function AssistantWidget() {
 
     createOrder.mutate(body, {
       onSuccess: () => {
+        const side = draft.side === "buy" ? t("actions.buy") : t("actions.sell");
         push(
           bot(
-            `✅ سفارش ${draft.side === "buy" ? "خرید" : "فروش"} ${meta.label} ثبت شد.`,
+            t("confirm.success", { side, symbol: meta.label }),
             undefined,
-            ["اوردرهای باز من", "موجودی من"],
+            [t("suggestions.openOrders"), t("suggestions.balance")],
           ),
         );
         setDraft(null);
       },
       onError: (e) => {
-        push(
-          bot(
-            `❌ ثبت سفارش ناموفق بود${e instanceof Error && e.message ? ` (${e.message})` : ""}.`,
-          ),
-        );
+        const err = e instanceof Error && e.message ? ` (${e.message})` : "";
+        push(bot(t("confirm.failed", { error: err })));
         setDraft(null);
       },
     });
@@ -473,7 +491,7 @@ export function AssistantWidget() {
               : m,
           ),
         ),
-      onError: () => push(bot("❌ لغو سفارش ناموفق بود.")),
+      onError: () => push(bot(t("orderCard.cancelFailed"))),
     });
   }
 
@@ -481,24 +499,25 @@ export function AssistantWidget() {
     <>
       {open && (
         <div
+          dir={isRtl ? "rtl" : "ltr"}
           onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
           className="fixed bottom-24 end-6 z-50 flex origin-bottom animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-200 h-[32rem] max-h-[calc(100dvh-8rem)] w-88 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl border bg-blue-50 dark:bg-card text-card-foreground shadow-lg"
         >
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div className="flex items-center gap-2 font-medium">
               <Sparkles className="size-4 text-primary" />
-              دستیار معامله
+              {t("name")}
             </div>
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => {
-                  setMsgs([bot(WELCOME)]);
+                  setMsgs([bot(t("welcome"))]);
                   setDraft(null);
                 }}
-                aria-label="گفتگوی جدید"
-                title="گفتگوی جدید"
+                aria-label={t("newChat")}
+                title={t("newChat")}
               >
                 <RotateCcw />
               </Button>
@@ -506,7 +525,7 @@ export function AssistantWidget() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setOpen(false)}
-                aria-label="بستن"
+                aria-label={t("close")}
               >
                 <X />
               </Button>
@@ -572,7 +591,7 @@ export function AssistantWidget() {
                               : "text-destructive"
                           }
                         >
-                          {o.side === "buy" ? "خرید" : "فروش"}
+                          {o.side === "buy" ? t("actions.buy") : t("actions.sell")}
                         </span>
                         <span dir="ltr">
                           {SYMBOLS.find((x) => x.value === o.symbol)?.label ??
@@ -585,15 +604,15 @@ export function AssistantWidget() {
                         disabled={cancelOrder.isPending}
                         onClick={() => cancel(m.id, o)}
                       >
-                        لغو
+                        {t("orderCard.cancel")}
                       </Button>
                     </div>
                     <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                      <dt>مقدار</dt>
+                      <dt>{t("orderCard.qty")}</dt>
                       <dd dir="ltr" className="text-end tabular-nums">
                         {o.quantity}
                       </dd>
-                      <dt>قیمت</dt>
+                      <dt>{t("orderCard.price")}</dt>
                       <dd dir="ltr" className="text-end tabular-nums">
                         {o.price} USDT
                       </dd>
@@ -620,7 +639,7 @@ export function AssistantWidget() {
 
             {msgs.length === 1 && !busy && (
               <div className="flex flex-wrap gap-2">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <Button
                     key={s}
                     size="sm"
@@ -636,7 +655,7 @@ export function AssistantWidget() {
             {/* اسلات ناقص: input داخل چت */}
             {draft && missing === "symbol" && (
               <div className="self-start animate-in fade-in-0 slide-in-from-bottom-2 rounded-xl bg-muted p-3">
-                <p className="mb-2">کدام ارز؟</p>
+                <p className="mb-2">{t("slots.whichCoin")}</p>
                 <div className="flex flex-wrap gap-2">
                   {SYMBOLS.map((s) => (
                     <Button
@@ -660,9 +679,17 @@ export function AssistantWidget() {
                 <p className="mb-2">
                   {missing === "amount"
                     ? draft.percent
-                      ? `موجودی ${draft.side === "sell" ? meta.baseAsset : "USDT"} کافی نیست. چه مقدار ${meta.baseAsset} ${draft.side === "buy" ? "بخری" : "بفروشی"}؟`
-                      : `چه مقدار ${meta.baseAsset} ${draft.side === "buy" ? "بخری" : "بفروشی"}؟`
-                    : `قیمت سفارش (${meta.quoteAsset})؟${live ? ` قیمت لحظه‌ای: ${toPlain(live, 6)}` : ""}`}
+                      ? t("slots.insufficient", {
+                          sourceAsset: draft.side === "sell" ? meta.baseAsset : "USDT",
+                          asset: meta.baseAsset,
+                          action: draft.side === "buy" ? t("actions.buyVerb") : t("actions.sellVerb"),
+                        })
+                      : t("slots.howMuch", {
+                          asset: meta.baseAsset,
+                          action: draft.side === "buy" ? t("actions.buyVerb") : t("actions.sellVerb"),
+                        })
+                    : t("slots.orderPrice", { quote: meta.quoteAsset }) +
+                      (live ? t("slots.livePrice", { price: toPlain(live, 6) }) : "")}
                 </p>
                 {missing === "amount" && (
                   <div className="mb-2 flex gap-2">
@@ -673,7 +700,7 @@ export function AssistantWidget() {
                         variant={slotUnit === u ? "default" : "outline"}
                         onClick={() => setSlotUnit(u)}
                       >
-                        {u === "USDT" ? "دلار (USDT)" : meta.baseAsset}
+                        {u === "USDT" ? t("slots.dollarUnit") : meta.baseAsset}
                       </Button>
                     ))}
                   </div>
@@ -692,7 +719,7 @@ export function AssistantWidget() {
                     onClick={submitSlot}
                     disabled={!parsePositive(slotVal)}
                   >
-                    ثبت
+                    {t("slots.submit")}
                   </Button>
                 </div>
               </div>
@@ -708,24 +735,28 @@ export function AssistantWidget() {
                 }`}
               >
                 <p className="mb-2 font-medium">
-                  تأیید {draft.side === "buy" ? "خرید" : "فروش"} {meta.label} (
-                  {draft.type === "limit" ? "لیمیت" : "مارکت"})
-                  {draft.percent ? ` — ${draft.percent}٪ موجودی` : ""}
+                  {t("confirm.title", {
+                    side: draft.side === "buy" ? t("actions.buy") : t("actions.sell"),
+                    symbol: meta.label,
+                    type: draft.type === "limit" ? t("actions.limit") : t("actions.market"),
+                  })}
+                  {draft.percent ? t("confirm.percentSuffix", { percent: draft.percent }) : ""}
                 </p>
                 <ul className="space-y-1 text-muted-foreground tabular-nums">
                   <li>
-                    مقدار: {qty ? toPlain(qty) : "—"} {meta.baseAsset}
+                    {t("confirm.qty", { qty: qty ? toPlain(qty) : "—", asset: meta.baseAsset })}
                   </li>
                   <li>
-                    قیمت:{" "}
-                    {execPrice
-                      ? toPlain(execPrice, 6)
-                      : "قیمت زنده در دسترس نیست"}
+                    {t("confirm.price", {
+                      price: execPrice
+                        ? toPlain(execPrice, 6)
+                        : t("confirm.livePriceUnavailable"),
+                    })}
                   </li>
-                  <li>مجموع: {total ? toPlain(total, 2) : "—"} USDT</li>
+                  <li>{t("confirm.total", { total: total ? toPlain(total, 2) : "—" })}</li>
                 </ul>
                 {insufficient && (
-                  <p className="mt-2 text-destructive">موجودی کافی نیست.</p>
+                  <p className="mt-2 text-destructive">{t("confirm.insufficient")}</p>
                 )}
                 <div className="mt-3 flex gap-2">
                   <Button
@@ -734,14 +765,14 @@ export function AssistantWidget() {
                     onClick={confirm}
                     disabled={!canConfirm || createOrder.isPending}
                   >
-                    تأیید و ثبت
+                    {t("confirm.submit")}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => setDraft(null)}
                   >
-                    لغو
+                    {t("confirm.cancel")}
                   </Button>
                 </div>
               </div>
@@ -749,7 +780,7 @@ export function AssistantWidget() {
 
             {busy && (
               <div
-                aria-label="در حال پردازش"
+                aria-label={t("processing")}
                 className="flex items-center gap-1 self-start rounded-2xl rounded-es-sm bg-muted px-3 py-3"
               >
                 {[0, 150, 300].map((d) => (
@@ -777,8 +808,8 @@ export function AssistantWidget() {
               size="icon"
               onClick={showHelp}
               disabled={busy}
-              aria-label="راهنما"
-              title="راهنما و نمونه دستورها"
+              aria-label={t("help")}
+              title={t("helpTitle")}
             >
               <CircleHelp />
             </Button>
@@ -786,23 +817,22 @@ export function AssistantWidget() {
               ref={inputRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="پیام خود را بنویسید"
+              placeholder={t("inputPlaceholder")}
               maxLength={300}
             />
             <Button
               type="submit"
               size="icon"
               disabled={busy || !text.trim()}
-              aria-label="ارسال"
+              aria-label={t("send")}
             >
-              <Send className="rtl:-scale-x-100" />
+              <Send className={isRtl ? "rtl:-scale-x-100" : ""} />
             </Button>
           </form>
         </div>
       )}
 
       <div className="fixed bottom-6 end-6 z-50">
-        {/* حلقه‌ی pulse؛ وقتی چت باز است یا کاربر motion کم خواسته، خاموش است */}
         {!open && (
           <span
             aria-hidden
@@ -812,7 +842,7 @@ export function AssistantWidget() {
         <Button
           size="icon-lg"
           onClick={() => setOpen((o) => !o)}
-          aria-label="دستیار هوشمند"
+          aria-label={t("title")}
           className="relative size-14 rounded-full border-0 bg-linear-to-br from-violet-500 via-primary to-fuchsia-500 text-white shadow-[0_0_28px_-4px] shadow-violet-500/60 ring-1 ring-white/25 transition-transform duration-200 hover:scale-110 hover:shadow-fuchsia-500/60 active:scale-95 [&_svg]:size-6"
         >
           {open ? <X /> : <Sparkles className="fill-white/25" />}

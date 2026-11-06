@@ -762,5 +762,130 @@
         "capHowto": "Interactive How-To Guides"
       }
     }
+  },
+  "assistant": {
+    "title": "Smart Assistant",
+    "name": "Trading Assistant",
+    "newChat": "New conversation",
+    "close": "Close",
+    "help": "Help",
+    "helpTitle": "Help & example commands",
+    "send": "Send",
+    "inputPlaceholder": "Type your message...",
+    "processing": "Processing...",
+    "welcome": "Hello! Tell me what you'd like to do: e.g. \"Buy $100 Bitcoin\", \"Sell half my Ethereum\", or \"What is my Bitcoin balance?\".",
+    "suggestions": {
+      "balance": "My balance",
+      "openOrders": "My open orders",
+      "btcPrice": "Bitcoin price",
+      "portfolio": "My portfolio value"
+    },
+    "helpLines": {
+      "line1": "Any missing parameter (coin, amount, price) will be asked right here.",
+      "line2": "You will see a confirmation card before any order is submitted.",
+      "line3": "\"Quick / instant / market\" = market order; otherwise = limit order.",
+      "line4": "You can specify amounts in USD, coins, or percentage.",
+      "line5": "Supported coins: BTC, ETH, BNB, SOL, XRP, ADA."
+    },
+    "helpGroups": {
+      "header": "Help — click any example to execute:",
+      "tradeTitle": "Buy & Sell",
+      "tradeChips": [
+        "Buy $100 Bitcoin",
+        "Buy 0.0025 BTC",
+        "Sell Ethereum",
+        "Quickly buy $200 Solana",
+        "Sell half my Bitcoin",
+        "Sell all XRP"
+      ],
+      "balanceTitle": "Balances & Assets",
+      "balanceChips": [
+        "My balance",
+        "How much BTC do I have",
+        "How many dollars do I have",
+        "My portfolio value"
+      ],
+      "priceTitle": "Prices",
+      "priceChips": [
+        "Bitcoin price",
+        "All coin prices"
+      ],
+      "ordersTitle": "Orders",
+      "ordersChips": [
+        "My open orders",
+        "My open BTC orders",
+        "Cancel my Bitcoin order"
+      ],
+      "howtoTitle": "Tutorials",
+      "howtoChips": [
+        "How to buy Bitcoin",
+        "How to sell Ethereum"
+      ]
+    },
+    "intents": {
+      "balanceSingle": "{asset} Balance",
+      "available": "Available: {amount}",
+      "locked": "Locked: {amount}",
+      "balanceAll": "Your Balances",
+      "emptyWallet": "Wallet is empty.",
+      "priceSingle": "{name} Price",
+      "priceLive": "Live Prices",
+      "portfolioTotal": "Total portfolio valuation: {total} USDT",
+      "missingPrice": "No price: {assets}",
+      "whichOrderCancel": "Which order should I cancel?",
+      "openOrdersSingle": "Open orders for {name}",
+      "openOrdersAll": "Your open orders",
+      "noOpenOrders": "You have no open orders.",
+      "howtoTitle": "To {verb}{target}:",
+      "step1": "1) From Trade page, select the trading pair.",
+      "step2": "2) Choose order type: Limit (custom price) or Market (instant).",
+      "step3": "3) Enter the quantity and submit.",
+      "step4": "Or simply type here \"I want to {verb}...\" and I'll do it for you.",
+      "unknown": "I didn't understand. I can assist with buying, selling, prices, balances, portfolio value, and open orders.",
+      "rateLimit": "Too many requests. Please wait a moment.",
+      "error": "Error communicating with assistant. Please try again."
+    },
+    "slots": {
+      "whichCoin": "Which coin?",
+      "howMuch": "How much {asset} to {action}?",
+      "insufficient": "Insufficient {sourceAsset} balance. How much {asset} to {action}?",
+      "orderPrice": "Order price ({quote})?",
+      "livePrice": " Current price: {price}",
+      "dollarUnit": "Dollar (USDT)",
+      "submit": "Submit",
+      "priceMsg": "Price: {price}",
+      "dollarMsg": "${amount}",
+      "baseMsg": "{amount} {asset}"
+    },
+    "confirm": {
+      "title": "Confirm {side} {symbol} ({type})",
+      "percentSuffix": " — {percent}% of balance",
+      "qty": "Amount: {qty} {asset}",
+      "price": "Price: {price}",
+      "livePriceUnavailable": "Live price unavailable",
+      "total": "Total: {total} USDT",
+      "insufficient": "Insufficient balance.",
+      "submit": "Confirm & Place",
+      "cancel": "Cancel",
+      "success": "✅ {side} order for {symbol} placed successfully.",
+      "failed": "❌ Failed to place order{error}."
+    },
+    "orderCard": {
+      "cancel": "Cancel",
+      "qty": "Amount",
+      "price": "Price",
+      "cancelSuccess": "Order cancelled successfully.",
+      "cancelFailed": "❌ Failed to cancel order."
+    },
+    "actions": {
+      "buy": "Buy",
+      "sell": "Sell",
+      "buyVerb": "buy",
+      "sellVerb": "sell",
+      "buyInfinitive": "buy",
+      "sellInfinitive": "sell",
+      "limit": "Limit",
+      "market": "Market"
+    }
   }
 }

@@ -3,7 +3,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { SYMBOLS } from "@repo/types";
 import { getQueryClient } from "@/lib/getQueryClient";
 import { prefetchTradePage } from "@/features/order/api/trade.server";
-import { parseTradeTableParams } from "@/features/order/hooks/useTradeTableParams";
+import { parseTradeTableParams } from "@/features/order/utils/tradeTableParams";
 import { TradingForm } from "@/features/order/components/tradingForm";
 
 type Props = {

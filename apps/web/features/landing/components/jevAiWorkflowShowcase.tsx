@@ -415,7 +415,7 @@ export function JevAiWorkflowShowcase() {
                 <span>IntentSchema.parse(buildIntent())</span>
                 <span className="text-emerald-500 font-bold">Zod Valid ✓</span>
               </div>
-              <pre className="text-[11px] leading-relaxed text-foreground/95 pt-1">
+              <pre className="text-[11px] leading-relaxed text-foreground/95 pt-1 text-start" dir="ltr">
                 {JSON.stringify(active.parsedIntent, null, 2)}
               </pre>
             </div>
