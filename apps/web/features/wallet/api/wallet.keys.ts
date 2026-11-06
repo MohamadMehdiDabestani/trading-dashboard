@@ -3,6 +3,8 @@ import type { WalletHistoryFilters, WalletTrendRange } from "@repo/types";
 export const walletKeys = {
   all: ["wallet"] as const,
   balance: () => [...walletKeys.all, "balance"] as const,
+  notifications: (limit = 20) =>
+    [...walletKeys.all, "notifications", limit] as const,
   asset: (
     asset: string,
     page: number,

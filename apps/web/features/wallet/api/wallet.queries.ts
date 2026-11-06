@@ -16,6 +16,14 @@ export const walletQueries = {
       staleTime: 10_000,
     }),
 
+  notifications: (limit = 20) =>
+    queryOptions({
+      queryKey: walletKeys.notifications(limit),
+      queryFn: () => walletApi.getNotifications(limit),
+      staleTime: 10_000,
+      refetchInterval: 15_000,
+    }),
+
   asset: (
     asset: string,
     page: number,

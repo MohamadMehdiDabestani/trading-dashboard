@@ -8,6 +8,7 @@ import {
   WalletTrendRange,
   WalletTrendReply,
   WalletWithdrawDto,
+  WalletNotificationItem,
 } from "@repo/types";
 import Big from "big.js";
 import { FastifyInstance } from "fastify";
@@ -16,6 +17,7 @@ import {
   walletDepositSchema,
   walletTrendSchema,
   walletWithdrawSchema,
+  walletNotificationsSchema,
 } from "./DTO";
 import { AppError } from "@/errors/appError";
 
@@ -28,6 +30,24 @@ export async function walletRoutes(fastify: FastifyInstance) {
       const user = req.user;
 
       const res = await walletService.getBalance(user.sub);
+
+      return reply.code(200).send(ok(res));
+    },
+  );
+
+  fastify.get<{
+    Querystring: { limit?: string };
+    Reply: APIResult<WalletNotificationItem[]>;
+  }>(
+    "/notifications",
+    { schema: walletNotificationsSchema },
+    async (req, reply) => {
+      const limit = Math.min(
+        Math.max(Number(req.query.limit ?? 20), 1),
+        50,
+      );
+
+      const res = await walletService.getNotifications(req.user.sub, limit);
 
       return reply.code(200).send(ok(res));
     },

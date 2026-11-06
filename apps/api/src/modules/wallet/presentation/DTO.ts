@@ -52,3 +52,12 @@ export const walletWithdrawSchema = {
     },
   },
 } as const;
+
+export const walletNotificationsSchema = {
+  querystring: {
+    type: "object",
+    properties: {
+      limit: { type: "string" },
+    },
+  },
+} as const;

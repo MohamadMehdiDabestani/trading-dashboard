@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, inArray, lt, balances, Db, ledgerEntries } from "@repo/db";
 import Big from "big.js";
-import { LedgerEntryType, PaginatedResult } from "@repo/types";
+import { LedgerEntryType, PaginatedResult, WalletNotificationItem } from "@repo/types";
 import { applyPagination } from "@/utils/pagination";
 
 const balanceRowMap = {
@@ -79,7 +79,7 @@ export class WalletRepository {
       locked: row.locked,
       available: row.available,
       history: {
-        items: historyRows.map((h : any) => ({
+        items: historyRows.map((h: any) => ({
           time: h.time,
           amount: h.amount,
           type: h.type,
@@ -139,5 +139,41 @@ export class WalletRepository {
     ]);
 
     return { rows, openingBalance: prev[0]?.after ?? null };
+  }
+
+  async getNotifications(
+    userId: string,
+    limit = 20,
+  ): Promise<WalletNotificationItem[]> {
+    const rows = await this.db
+      .select({
+        id: ledgerEntries.id,
+        type: ledgerEntries.type,
+        asset: ledgerEntries.asset,
+        amount: ledgerEntries.amount,
+        balanceBefore: ledgerEntries.balanceBefore,
+        balanceAfter: ledgerEntries.balanceAfter,
+        refId: ledgerEntries.refId,
+        refType: ledgerEntries.refType,
+        meta: ledgerEntries.meta,
+        createdAt: ledgerEntries.createdAt,
+      })
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.userId, userId))
+      .orderBy(desc(ledgerEntries.createdAt))
+      .limit(limit);
+
+    return rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      asset: r.asset,
+      amount: r.amount.toString(),
+      balanceBefore: r.balanceBefore.toString(),
+      balanceAfter: r.balanceAfter.toString(),
+      refId: r.refId ?? null,
+      refType: r.refType ?? null,
+      meta: (r.meta as Record<string, unknown> | null) ?? null,
+      createdAt: r.createdAt.toISOString(),
+    }));
   }
 }

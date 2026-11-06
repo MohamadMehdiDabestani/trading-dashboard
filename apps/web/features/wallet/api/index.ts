@@ -5,6 +5,7 @@ import type {
   WalletDepositDto,
   WalletGetReply,
   WalletHistoryFilters,
+  WalletNotificationItem,
   WalletTrendRange,
   WalletTrendReply,
   WalletWithdrawDto,
@@ -13,6 +14,8 @@ import type {
 /** Endpoint paths shared by the browser client and the server prefetch. */
 export const walletPaths = {
   balance: () => "wallet/get",
+
+  notifications: (limit = 20) => `wallet/notifications?limit=${limit}`,
 
   asset: (
     asset: string,
@@ -37,6 +40,9 @@ export const walletPaths = {
 
 export const walletApi = {
   getBalance: () => apiFetch<WalletGetReply[]>(walletPaths.balance()),
+
+  getNotifications: (limit = 20) =>
+    apiFetch<WalletNotificationItem[]>(walletPaths.notifications(limit)),
 
   getAsset: (
     asset: string,
