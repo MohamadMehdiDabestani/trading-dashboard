@@ -2,18 +2,23 @@
 
 import { useCallback, useMemo } from "react";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
-import { ValueOrderSortField, ValueOrderStatus, type OrderSortField, type OrderStatus } from "@repo/types";
+import {
+  ValueOrderSortField,
+  ValueOrderStatus,
+  type OrderSortField,
+  type OrderStatus,
+  type SortDirection,
+} from "@repo/types";
 import { usePathname, useRouter } from "@/lib/i18nNavigation";
 import { useSearchParams } from "next/navigation";
 
 export type StatusFilter = OrderStatus | "all";
 
+export const PAGE_SIZES = [10, 20, 50];
+export const DEFAULT_PAGE_SIZE = 10;
+export const DEFAULT_SORT = { id: "createdAt", desc: true };
 
-const PAGE_SIZES = [10, 20, 50];
-const DEFAULT_PAGE_SIZE = 10;
-const DEFAULT_SORT = { id: "createdAt", desc: true };
-
-function parseSort(raw: string | null): SortingState {
+export function parseSort(raw?: string | null): SortingState {
   if (raw) {
     const [id = "", dir] = raw.split(".");
     if (
@@ -26,23 +31,78 @@ function parseSort(raw: string | null): SortingState {
   return [DEFAULT_SORT];
 }
 
-export function useTradeTableParams() {
+export type RawSearchParams =
+  | { [key: string]: string | string[] | undefined }
+  | URLSearchParams
+  | { get(key: string): string | null };
+
+export type ParsedTradeTableParams = {
+  status: StatusFilter;
+  page: number;
+  pageSize: number;
+  sorting: SortingState;
+  sortBy?: OrderSortField;
+  sortOrder?: SortDirection;
+};
+
+/**
+ * Pure parser for trade table query parameters.
+ * Works symmetrically on the server (from Next.js searchParams page prop)
+ * and on the client (from useSearchParams).
+ */
+export function parseTradeTableParams(
+  sp?: RawSearchParams,
+): ParsedTradeTableParams {
+  const get = (key: string): string | null => {
+    if (!sp) return null;
+    if ("get" in sp && typeof sp.get === "function") {
+      return sp.get(key);
+    }
+    const val = (sp as Record<string, string | string[] | undefined>)[key];
+    if (Array.isArray(val)) return val[0] ?? null;
+    return val ?? null;
+  };
+
+  const statusRaw = get("status");
+  const status: StatusFilter = ValueOrderStatus.includes(
+    statusRaw as OrderStatus,
+  )
+    ? (statusRaw as OrderStatus)
+    : "all";
+
+  const page = Math.max(1, parseInt(get("page") ?? "1", 10) || 1);
+
+  const sizeRaw = Number(get("pageSize"));
+  const pageSize = PAGE_SIZES.includes(sizeRaw) ? sizeRaw : DEFAULT_PAGE_SIZE;
+
+  const sortRaw = get("sort");
+  const sorting = parseSort(sortRaw);
+  const sort = sorting[0];
+
+  return {
+    status,
+    page,
+    pageSize,
+    sorting,
+    sortBy: sort ? (sort.id as OrderSortField) : undefined,
+    sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
+  };
+}
+
+export function useTradeTableParams(initial?: Partial<ParsedTradeTableParams>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const statusRaw = searchParams.get("status");
-  const status: StatusFilter = ValueOrderStatus.includes(statusRaw as OrderStatus)
-    ? (statusRaw as OrderStatus)
-    : "all";
+  const parsed = useMemo(
+    () => parseTradeTableParams(searchParams),
+    [searchParams],
+  );
 
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-
-  const sizeRaw = Number(searchParams.get("pageSize"));
-  const pageSize = PAGE_SIZES.includes(sizeRaw) ? sizeRaw : DEFAULT_PAGE_SIZE;
-
-  const sortRaw = searchParams.get("sort");
-  const sorting = useMemo(() => parseSort(sortRaw), [sortRaw]);
+  const status = parsed.status ?? initial?.status ?? "all";
+  const page = parsed.page ?? initial?.page ?? 1;
+  const pageSize = parsed.pageSize ?? initial?.pageSize ?? DEFAULT_PAGE_SIZE;
+  const sorting = parsed.sorting ?? initial?.sorting ?? [DEFAULT_SORT];
 
   // one router.replace per user action (several keys can change together)
   const update = useCallback(

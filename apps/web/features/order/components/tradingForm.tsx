@@ -23,6 +23,7 @@ import {
 import {
   useTradeTableParams,
   type StatusFilter,
+  type ParsedTradeTableParams,
 } from "../hooks/useTradeTableParams";
 import { OrderCards, OrderSortBar } from "./orderCards";
 import { OpenOrderForm } from "@/features/order/components/openOrderForm";
@@ -33,9 +34,13 @@ import { useRecentTrades } from "../hooks/useRecentTrades";
 import { useCancelOrder } from "../hooks/useTradeMutations";
 import { buildOrderColumns, Order } from "../utils/columns";
 import { cn } from "@/lib/cn";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "@/lib/i18nNavigation";
+import { useSearchParams } from "next/navigation";
 
-type TradingFormProps = { initialSymbol: SymbolValue };
+type TradingFormProps = {
+  initialSymbol: SymbolValue;
+  initialParams?: ParsedTradeTableParams;
+};
 
 const STATUS_FILTER_IDS: StatusFilter[] = [
   "all",
@@ -45,7 +50,10 @@ const STATUS_FILTER_IDS: StatusFilter[] = [
   "cancelled",
 ];
 
-export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
+export const TradingForm = ({
+  initialSymbol,
+  initialParams,
+}: TradingFormProps) => {
   const t = useTranslations("trade.tradingForm");
   const tStatus = useTranslations("trade.statusFilters");
   const [order, setOrder] = useState(["form", "chart", "orderbook"]);
@@ -83,7 +91,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
     setPage,
     setPageSize,
     setSorting,
-  } = useTradeTableParams();
+  } = useTradeTableParams(initialParams);
   const sort = sorting[0];
   const recentTrades = useRecentTrades({
     symbol,

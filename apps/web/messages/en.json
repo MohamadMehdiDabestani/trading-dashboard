@@ -700,7 +700,7 @@
       "primary": "Open Trading Terminal",
       "secondary": "Try Auth & OTP Flow",
       "markets": "Browse Markets",
-      "wallet": "Explore SSR Wallet"
+      "wallet": "Explore Wallet"
     },
     "footer": {
       "builtAs": "Engineered as a Full-Stack TypeScript Portfolio Project.",
