@@ -3,10 +3,19 @@
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { QrLoginDialog } from "../../auth/components/qrLoginDialog";
+import { useMe } from "@/hooks/useMe";
 
 export const ProfileCard = () => {
   const t = useTranslations("account.profile");
+  const { data: me } = useMe();
 
+  
+    const initials =
+    me?.user?.username
+      ? me.user.username.slice(0, 2).toUpperCase()
+      : me?.user?.phone
+        ? me.user.phone.slice(-2)
+        : "TR";
   return (
     <Card className="bg-card text-center overflow-hidden border-border/60">
       <div className="h-20 bg-gradient-to-r from-primary/20 to-primary/5" />
@@ -14,7 +23,7 @@ export const ProfileCard = () => {
         <div className="flex justify-center">
           <div className="w-20 h-20 rounded-full border-4 border-card bg-secondary overflow-hidden -mt-10">
             <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-              DB
+              {initials}
             </div>
           </div>
         </div>

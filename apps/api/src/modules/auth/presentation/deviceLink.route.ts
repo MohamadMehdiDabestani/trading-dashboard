@@ -146,7 +146,11 @@ export async function deviceLinkRoutes(
       const secret = req.cookies?.[POLL_COOKIE];
       if (!secret) return reply.code(401).send(fail("DEVICE_LINK_INVALID"));
 
-      const result = await svc.claim(req.params.id, secret);
+      const meta = {
+        ip: req.ip,
+        userAgent: req.headers["user-agent"] ?? "unknown",
+      };
+      const result = await svc.claim(req.params.id, secret, meta);
 
       reply.header("Cache-Control", "no-store");
 

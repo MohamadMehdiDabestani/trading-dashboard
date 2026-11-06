@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -26,6 +27,7 @@ import { fieldValidators, validationLogic } from "@/lib/validation/fieldValidato
 import { fourDigitCode } from "@/lib/validation/primitivesValidations";
 import { useAppForm } from "@/components/form";
 import { setFieldError } from "@/lib/validation/applyFieldErrors";
+import { useLocale, useTranslations } from "next-intl";
 
 const codeValidators = fieldValidators(fourDigitCode);
 
@@ -41,8 +43,11 @@ type Phase =
 
 const TERMINAL = ["approved", "consumed", "denied"];
 
-function describeUA(ua?: string | null) {
-  if (!ua) return "دستگاه ناشناس";
+function describeUA(
+  ua: string | null | undefined,
+  t: (key: string, values?: Record<string, string | number>) => string,
+) {
+  if (!ua) return t("ua.unknownDevice");
   const browser = /Edg\//.test(ua)
     ? "Edge"
     : /OPR\//.test(ua)
@@ -53,7 +58,7 @@ function describeUA(ua?: string | null) {
           ? "Firefox"
           : /Safari\//.test(ua)
             ? "Safari"
-            : "مرورگر ناشناس";
+            : t("ua.unknownBrowser");
   const os = /Windows/.test(ua)
     ? "Windows"
     : /Android/.test(ua)
@@ -64,11 +69,15 @@ function describeUA(ua?: string | null) {
           ? "macOS"
           : /Linux/.test(ua)
             ? "Linux"
-            : "سیستمعامل ناشناس";
-  return `${browser} روی ${os}`;
+            : t("ua.unknownOs");
+  return t("ua.deviceOnOs", { browser, os });
 }
 
 export function QrLoginDialog() {
+  const t = useTranslations("auth.qrDialog");
+  const locale = useLocale();
+  const isRtl = locale === "fa";
+
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [rejected, setRejected] = useState(false);
@@ -76,7 +85,7 @@ export function QrLoginDialog() {
 
   const create = useMutation({ mutationFn: deviceLinkApi.create });
   const link = create.data ?? null;
-  console.log(link);
+
   const owner = useQuery({
     queryKey: ["device-link", link?.id],
     queryFn: () => deviceLinkApi.get(link!.id),
@@ -104,17 +113,15 @@ export function QrLoginDialog() {
 
   const approve = useMutation({
     mutationFn: (c: string) => deviceLinkApi.approve(link!.id, c),
-    onSuccess: () => toast.success("دستگاه جدید وارد حساب شما شد"),
+    onSuccess: () => toast.success(t("toastSuccess")),
     onError: (e) => {
       void qc.invalidateQueries({ queryKey: ["device-link", link?.id] });
 
       if (e instanceof ApiError && String(e.code) === "DEVICE_LINK_CODE_INVALID") {
-        // کد را پاک کن (بدون validate)، و خطا را روی خود فیلد بنشان.
-        // با اولین تایپ جدید، خودکار پاک می‌شود.
         codeForm.setFieldValue("code", "", { dontValidate: true });
         setFieldError(codeForm, "code", { key: "deviceLinkCodeInvalid" });
       } else {
-        toast.error("تایید ناموفق بود");
+        toast.error(t("toastFailed"));
       }
     },
   });
@@ -127,8 +134,8 @@ export function QrLoginDialog() {
   useEffect(() => {
     if (!open || !link) return;
     setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, [open, link]);
 
   const status = owner.data?.status;
@@ -175,16 +182,17 @@ export function QrLoginDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" className="mt-6 w-full gap-2">
           <QrCode className="size-4" />
-          ورود دستگاه دیگر با QR
+          {t("trigger")}
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-sm [&>button]:inset-e-4 rtl:[&>button]:right-[unset]">
+      <DialogContent
+        dir={isRtl ? "rtl" : "ltr"}
+        className="sm:max-w-sm [&>button]:inset-e-4 rtl:[&>button]:right-[unset]"
+      >
         <DialogHeader>
-          <DialogTitle>ورود دستگاه دیگر</DialogTitle>
-          <DialogDescription>
-            با دستگاهی که وارد حساب نشده، QR را اسکن کنید.
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-2 text-center">
@@ -196,16 +204,12 @@ export function QrLoginDialog() {
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                alt="QR code ورود"
+                alt={t("qrAlt")}
                 className="size-52 rounded-lg border border-border/50 bg-white p-2"
                 src={`data:image/svg+xml;utf8,${encodeURIComponent(link.qrSvg)}`}
               />
               <p className="text-sm text-muted-foreground">
-                منتظر اسکن... این کد تا{" "}
-                <span className="font-medium text-foreground tabular-nums">
-                  {secondsLeft}
-                </span>{" "}
-                ثانیه دیگر معتبر است.
+                {t("waitingScan", { seconds: secondsLeft })}
               </p>
             </>
           )}
@@ -216,12 +220,10 @@ export function QrLoginDialog() {
                 <ShieldAlert className="size-6" />
               </div>
               <div className="space-y-1">
-                <p className="font-medium">
-                  یک دستگاه جدید میخواهد وارد حساب شما شود
-                </p>
+                <p className="font-medium">{t("incomingTitle")}</p>
                 <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
                   <Smartphone className="size-4" />
-                  {describeUA(owner.data?.openerUserAgent)}
+                  {describeUA(owner.data?.openerUserAgent, t)}
                 </p>
                 <p
                   className="text-xs text-muted-foreground tabular-nums"
@@ -240,16 +242,14 @@ export function QrLoginDialog() {
                   codeForm.handleSubmit();
                 }}
               >
-                <p className="text-sm">
-                  کد ۴ رقمی نمایشدادهشده روی دستگاه جدید را وارد کنید:
-                </p>
+                <p className="text-sm">{t("codePrompt")}</p>
 
                 <FieldGroup>
                   <codeForm.AppField name="code" validators={codeValidators}>
                     {(field) => (
                       <field.OtpField
                         length={4}
-                        ariaLabel="کد تایید دستگاه جدید"
+                        ariaLabel={t("otpAriaLabel")}
                       />
                     )}
                   </codeForm.AppField>
@@ -261,7 +261,7 @@ export function QrLoginDialog() {
                       <codeForm.SubmitButton
                         form="device-code-form"
                         className="w-full"
-                        label="تایید ورود"
+                        label={t("submitButton")}
                         disabled={!isComplete}
                       />
                     )}
@@ -276,10 +276,10 @@ export function QrLoginDialog() {
                 disabled={phase === "approving" || reject.isPending}
                 onClick={() => reject.mutate()}
               >
-                این من نیستم
+                {t("rejectButton")}
               </Button>
               <p className="text-xs text-muted-foreground">
-                {secondsLeft} ثانیه برای تصمیم باقی مانده است.
+                {t("countdown", { seconds: secondsLeft })}
               </p>
             </>
           )}
@@ -287,9 +287,9 @@ export function QrLoginDialog() {
           {phase === "done" && (
             <>
               <CheckCircle2 className="size-12 text-success" />
-              <p className="font-medium">دستگاه جدید وارد شد.</p>
+              <p className="font-medium">{t("successTitle")}</p>
               <Button variant="outline" onClick={() => handleOpenChange(false)}>
-                بستن
+                {t("closeButton")}
               </Button>
             </>
           )}
@@ -298,11 +298,11 @@ export function QrLoginDialog() {
             <>
               <XCircle className="size-12 text-destructive" />
               <p className="font-medium">
-                {phase === "denied" && "درخواست لغو شد."}
-                {phase === "expired" && "زمان این QR تمام شد."}
-                {phase === "error" && "ساخت QR ناموفق بود."}
+                {phase === "denied" && t("denied")}
+                {phase === "expired" && t("expired")}
+                {phase === "error" && t("error")}
               </p>
-              <Button onClick={start}>ساخت QR جدید</Button>
+              <Button onClick={start}>{t("retryButton")}</Button>
             </>
           )}
         </div>

@@ -31,7 +31,7 @@ export const ConnectedAccounts = () => {
                 <Landmark className="h-5 w-5" />
               </div>
               <div className="text-start">
-                <p className="font-bold text-sm">بانک ملت</p>
+                <p className="font-bold text-sm">{t("connectedBank")}</p>
                 <p
                   className="text-xs text-muted-foreground font-mono mt-0.5"
                   dir="ltr"
@@ -60,7 +60,7 @@ export const ConnectedAccounts = () => {
                 <Wallet className="h-5 w-5" />
               </div>
               <div className="text-start">
-                <p className="font-bold text-sm">کیف پول متامسک</p>
+                <p className="font-bold text-sm">{t("metaMask")}</p>
                 <p
                   className="text-xs text-muted-foreground font-mono mt-0.5"
                   dir="ltr"
