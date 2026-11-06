@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 import type { SymbolValue } from "@repo/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useLivePrices } from "@/hooks/useLivePrice";
+import { useLivePrices } from "@/features/markets/hooks/useLivePrice";
 import { cn } from "@/lib/cn";
 import { Link } from "@/lib/i18nNavigation";
 

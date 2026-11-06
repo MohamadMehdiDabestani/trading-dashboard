@@ -10,6 +10,7 @@ import type {
 } from "@repo/types";
 import { authApi } from "../api/auth.api";
 import { authKeys } from "../api/auth.keys";
+import { authQueries } from "../api/auth.queries";
 import { useRouter } from "@/lib/i18nNavigation";
 
 export function useSendOtp() {
@@ -38,7 +39,6 @@ export function useLoginWithPassword() {
   return useMutation({
     mutationFn: (body: PasswordLoginDto) => authApi.loginWithPassword(body),
     onSuccess: async () => {
-
       await qc.invalidateQueries({ queryKey: authKeys.me() });
       router.replace("/dashboard");
     },
@@ -52,7 +52,6 @@ export function useRegister() {
   return useMutation({
     mutationFn: (body: RegisterDto) => authApi.register(body),
     onSuccess: async () => {
-     
       await qc.invalidateQueries({ queryKey: authKeys.me() });
       router.replace("/dashboard");
     },
@@ -60,10 +59,7 @@ export function useRegister() {
 }
 
 export function useLoginHistory() {
-  return useQuery({
-    queryKey: authKeys.history(),
-    queryFn: () => authApi.loginHistory(),
-  });
+  return useQuery(authQueries.loginHistory());
 }
 
 export function useLogout() {

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLivePrices } from "@/hooks/useLivePrice";
+import { useLivePrices } from "@/features/markets/hooks/useLivePrice";
 import { cn } from "@/lib/cn";
 import { useRouter } from "@/lib/i18nNavigation";
 import { SYMBOLS, SymbolValue } from "@repo/types";

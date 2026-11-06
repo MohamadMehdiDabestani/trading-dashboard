@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useWalletBalance } from "@/features/wallet/hooks/useWalletBalance";
-import { useAssetPrices } from "@/hooks/useAssetPrice";
+import { useAssetPrices } from "@/features/markets/hooks/useAssetPrice";
 
 export type PortfolioRow = {
   asset: string;

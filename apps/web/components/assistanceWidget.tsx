@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/apiClient";
 import { useWalletBalance } from "@/features/wallet/hooks/useWalletBalance";
-import { useAssetPrices } from "@/hooks/useAssetPrice";
+import { useAssetPrices } from "@/features/markets/hooks/useAssetPrice";
 import {
   useCancelOrder,
   useCreateOrder,

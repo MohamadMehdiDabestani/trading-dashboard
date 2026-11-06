@@ -2,23 +2,21 @@
 
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { MarketPricesReply, SymbolValue } from "@repo/types";
-import { apiFetch } from "@/lib/apiClient";
+import type { SymbolValue } from "@repo/types";
 import {
   baseToSymbol,
   marketSocket,
   type LivePrice,
   type SocketStatus,
 } from "@/lib/marketSocket";
+import { marketsQueries } from "../api";
 
 const EMPTY: Record<string, LivePrice> = {};
 
 /** قیمت اولیه از REST تا اولین tick برسد */
 function useSeedPrices(enabled: boolean) {
   const q = useQuery({
-    queryKey: ["market", "prices"],
-    queryFn: () => apiFetch<MarketPricesReply>("market/prices"),
-    staleTime: 60_000,
+    ...marketsQueries.prices(),
     enabled,
   });
 

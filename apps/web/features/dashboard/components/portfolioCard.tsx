@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useWalletBalances } from "../hooks/useDashboard";
 import { SymbolValue } from "@repo/types";
 import { baseToSymbol } from "@/lib/marketSocket";
-import { useLivePrices } from "@/hooks/useLivePrice";
+import { useLivePrices } from "@/features/markets/hooks/useLivePrice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pulse } from "@/components/pulse";
 import { Wallet } from "lucide-react";

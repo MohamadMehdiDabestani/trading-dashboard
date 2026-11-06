@@ -45,7 +45,7 @@ import { useWalletDeposit } from "@/features/wallet/hooks/useWalletDeposit";
 import { useWalletTrend } from "@/features/wallet/hooks/useWalletTrend";
 import { cn } from "@/lib/cn";
 import { useWalletWithdraw } from "@/features/wallet/hooks/useWalletWithdraw";
-import { useAssetPrices } from "@/hooks/useAssetPrice";
+import { useAssetPrices } from "@/features/markets/hooks/useAssetPrice";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18nNavigation";
 
