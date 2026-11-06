@@ -1,6 +1,6 @@
 "use client";
-import Image from "next/image";
-import Link from "next/link";
+import { AuthVisualPanel } from "@/features/auth/components/authVisualPanel";
+import { LandingHeaderControls } from "@/features/landing/components/landingHeaderControls";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { otpStepSchema } from "@/features/auth/schema/schema";
@@ -28,7 +28,11 @@ import {
   validationLogic,
 } from "@/lib/validation/fieldValidator";
 import { applyApiFieldErrors } from "@/lib/validation/applyFieldErrors";
-import { useLoginWithPassword, useRegister } from "@/features/auth/hooks/useAuthMutations";
+import {
+  useLoginWithPassword,
+  useRegister,
+} from "@/features/auth/hooks/useAuthMutations";
+import { Link } from "@/lib/i18nNavigation";
 
 const loginPhone = fieldValidators(mobileSchema);
 const loginPassword = fieldValidators(loginPasswordSchema);
@@ -38,7 +42,8 @@ const registerPassword = fieldValidators(passwordSchema);
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const t = useTranslations();
+  const t = useTranslations("auth");
+  const buttons = useTranslations("common.buttons");
 
   const loginMutation = useLoginWithPassword();
   const register = useRegister();
@@ -75,19 +80,22 @@ export default function AuthPage() {
     <div className="min-h-screen w-full flex flex-col md:flex-row">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-background">
         <div className="w-full max-w-md">
+          <div className="mb-4 flex items-center justify-end">
+            <LandingHeaderControls />
+          </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">ورود</TabsTrigger>
-              <TabsTrigger value="register">ثبت نام</TabsTrigger>
+              <TabsTrigger value="login">{t("tabs.login")}</TabsTrigger>
+              <TabsTrigger value="register">{t("tabs.register")}</TabsTrigger>
             </TabsList>
 
             {/* ───── ورود ───── */}
             <TabsContent value="login">
               <Card>
                 <CardHeader>
-                  <CardTitle>خوش آمدید</CardTitle>
+                  <CardTitle>{t("classic.login.title")}</CardTitle>
                   <CardDescription>
-                    برای ورود، اطلاعات حساب خود را وارد کنید.
+                    {t("classic.login.description")}
                   </CardDescription>
                 </CardHeader>
 
@@ -103,7 +111,7 @@ export default function AuthPage() {
                       <loginForm.AppField name="phone" validators={loginPhone}>
                         {(field) => (
                           <field.TextField
-                            label="شماره همراه"
+                            label={t("classic.login.phoneLabel")}
                             type="tel"
                             inputMode="numeric"
                             autoComplete="tel"
@@ -120,7 +128,7 @@ export default function AuthPage() {
                       >
                         {(field) => (
                           <field.TextField
-                            label="رمز عبور"
+                            label={t("classic.login.passwordLabel")}
                             type="password"
                             autoComplete="current-password"
                             dir="ltr"
@@ -134,7 +142,7 @@ export default function AuthPage() {
                     <loginForm.AppForm>
                       <loginForm.SubmitButton
                         className="w-full"
-                        label={t("common.buttons.submit")}
+                        label={buttons("submit")}
                       />
                     </loginForm.AppForm>
                     <Link href="/auth/otp" className="block w-full">
@@ -143,7 +151,7 @@ export default function AuthPage() {
                         variant="outline"
                         className="w-full"
                       >
-                        ورود آسان
+                        {t("classic.login.easyLogin")}
                       </Button>
                     </Link>
                   </CardFooter>
@@ -155,9 +163,9 @@ export default function AuthPage() {
             <TabsContent value="register">
               <Card>
                 <CardHeader>
-                  <CardTitle>ساخت حساب جدید</CardTitle>
+                  <CardTitle>{t("classic.register.title")}</CardTitle>
                   <CardDescription>
-                    اطلاعات خود را برای ایجاد حساب وارد کنید.
+                    {t("classic.register.description")}
                   </CardDescription>
                 </CardHeader>
 
@@ -176,8 +184,8 @@ export default function AuthPage() {
                       >
                         {(field) => (
                           <field.TextField
-                            label="نام و نام خانوادگی"
-                            placeholder="علی احمدی"
+                            label={t("classic.register.nameLabel")}
+                            placeholder={t("classic.register.namePlaceholder")}
                             autoComplete="name"
                           />
                         )}
@@ -189,7 +197,7 @@ export default function AuthPage() {
                       >
                         {(field) => (
                           <field.TextField
-                            label="شماره تماس"
+                            label={t("classic.register.phoneLabel")}
                             type="tel"
                             inputMode="numeric"
                             autoComplete="tel"
@@ -206,7 +214,7 @@ export default function AuthPage() {
                       >
                         {(field) => (
                           <field.TextField
-                            label="رمز عبور"
+                            label={t("classic.register.passwordLabel")}
                             type="password"
                             autoComplete="new-password"
                             dir="ltr"
@@ -220,7 +228,7 @@ export default function AuthPage() {
                     <registerForm.AppForm>
                       <registerForm.SubmitButton
                         className="w-full"
-                        label="ارسال"
+                        label={buttons("submit")}
                       />
                     </registerForm.AppForm>
                     <Link href="/auth/otp" className="block w-full">
@@ -229,7 +237,7 @@ export default function AuthPage() {
                         variant="outline"
                         className="w-full"
                       >
-                        ثبت نام آسان
+                        {t("classic.register.easyRegister")}
                       </Button>
                     </Link>
                   </CardFooter>
@@ -240,16 +248,7 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <div className="hidden md:flex flex-1 relative bg-muted items-center justify-center overflow-hidden">
-        <Image
-          src="/images/auth.png"
-          alt=""
-          fill
-          priority
-          sizes="50vw"
-          className="absolute inset-0 object-cover"
-        />
-      </div>
+      <AuthVisualPanel />
     </div>
   );
 }

@@ -1,0 +1,235 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#4F46E5" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#06B6D4" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0B0E17" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#10B981" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Coin Gradients -->
+    <linearGradient id="btcGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="40%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+
+    <linearGradient id="ethGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5B4FC"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#312E81"/>
+    </linearGradient>
+
+    <linearGradient id="solGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+
+    <linearGradient id="emeraldBar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <linearGradient id="roseBar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F43F5E" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#E11D48" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E2235" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0F121E" stop-opacity="0.95"/>
+    </linearGradient>
+
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Deep Backdrop Space -->
+  <rect width="800" height="800" fill="#0B0E17"/>
+  <circle cx="400" cy="400" r="380" fill="url(#bgGlow)"/>
+
+  <!-- Perspective Cyber Grid Floor -->
+  <g opacity="0.28" stroke="#4F46E5" stroke-width="1">
+    <line x1="100" y1="560" x2="700" y2="560" opacity="0.4"/>
+    <line x1="60" y1="620" x2="740" y2="620" opacity="0.6"/>
+    <line x1="20" y1="690" x2="780" y2="690" opacity="0.8"/>
+    <line x1="0" y1="770" x2="800" y2="770"/>
+
+    <!-- Perspective grid rays converging to horizon (400, 480) -->
+    <line x1="400" y1="480" x2="20" y2="800"/>
+    <line x1="400" y1="480" x2="140" y2="800"/>
+    <line x1="400" y1="480" x2="260" y2="800"/>
+    <line x1="400" y1="480" x2="360" y2="800"/>
+    <line x1="400" y1="480" x2="440" y2="800"/>
+    <line x1="400" y1="480" x2="540" y2="800"/>
+    <line x1="400" y1="480" x2="660" y2="800"/>
+    <line x1="400" y1="480" x2="780" y2="800"/>
+  </g>
+
+  <!-- Background Candlestick Chart Curve -->
+  <g opacity="0.45" filter="url(#glowEffect)">
+    <!-- Bullish Candles -->
+    <line x1="120" y1="260" x2="120" y2="340" stroke="#10B981" stroke-width="2"/>
+    <rect x="112" y="280" width="16" height="40" rx="3" fill="#10B981"/>
+
+    <line x1="180" y1="220" x2="180" y2="310" stroke="#10B981" stroke-width="2"/>
+    <rect x="172" y="240" width="16" height="50" rx="3" fill="#10B981"/>
+
+    <line x1="240" y1="250" x2="240" y2="330" stroke="#F43F5E" stroke-width="2"/>
+    <rect x="232" y="265" width="16" height="45" rx="3" fill="#F43F5E"/>
+
+    <line x1="300" y1="190" x2="300" y2="280" stroke="#10B981" stroke-width="2"/>
+    <rect x="292" y="210" width="16" height="55" rx="3" fill="#10B981"/>
+
+    <line x1="500" y1="210" x2="500" y2="300" stroke="#10B981" stroke-width="2"/>
+    <rect x="492" y="225" width="16" height="60" rx="3" fill="#10B981"/>
+
+    <line x1="560" y1="170" x2="560" y2="260" stroke="#10B981" stroke-width="2"/>
+    <rect x="552" y="185" width="16" height="55" rx="3" fill="#10B981"/>
+
+    <line x1="620" y1="150" x2="620" y2="240" stroke="#10B981" stroke-width="2"/>
+    <rect x="612" y="165" width="16" height="50" rx="3" fill="#10B981"/>
+
+    <line x1="680" y1="130" x2="680" y2="220" stroke="#10B981" stroke-width="2"/>
+    <rect x="672" y="140" width="16" height="60" rx="3" fill="#10B981"/>
+
+    <!-- Dynamic Neon Price Curve -->
+    <path d="M 80 320 Q 200 290 300 230 T 480 230 T 600 170 T 720 130" 
+          fill="none" stroke="#06B6D4" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Central Engine Core Halo -->
+  <circle cx="400" cy="410" r="190" fill="url(#coreGlow)"/>
+
+  <!-- Isometric Matching Engine / Orderbook Depth Pedestal -->
+  <g filter="url(#softShadow)">
+    <!-- Base Plate 3 (Asks / Bids Depth) -->
+    <path d="M 400 480 L 590 390 L 400 300 L 210 390 Z" fill="#151928" stroke="#312E81" stroke-width="2"/>
+    
+    <!-- Depth Step 1 -->
+    <path d="M 400 500 L 590 410 L 590 425 L 400 515 Z" fill="#0C0E17"/>
+    <path d="M 400 500 L 210 410 L 210 425 L 400 515 Z" fill="#10131F"/>
+
+    <!-- Depth Bars (Bids Left - Emerald, Asks Right - Crimson) -->
+    <g opacity="0.9">
+      <!-- Bid Isometric Volume Bars -->
+      <path d="M 370 415 L 250 360 L 280 345 L 400 400 Z" fill="url(#emeraldBar)"/>
+      <path d="M 360 435 L 260 390 L 285 377 L 385 422 Z" fill="url(#emeraldBar)"/>
+      <path d="M 350 455 L 280 420 L 300 410 L 370 445 Z" fill="url(#emeraldBar)"/>
+
+      <!-- Ask Isometric Volume Bars -->
+      <path d="M 430 415 L 550 360 L 520 345 L 400 400 Z" fill="url(#roseBar)"/>
+      <path d="M 440 435 L 540 390 L 515 377 L 415 422 Z" fill="url(#roseBar)"/>
+      <path d="M 450 455 L 520 420 L 500 410 L 430 445 Z" fill="url(#roseBar)"/>
+    </g>
+
+    <!-- Center Matching Spine -->
+    <line x1="400" y1="315" x2="400" y2="475" stroke="#06B6D4" stroke-width="2" stroke-dasharray="4 3"/>
+  </g>
+
+  <!-- Central Cryptographic Shield / Vault -->
+  <g filter="url(#softShadow)">
+    <!-- Glowing Hexagonal Shield Behind Core -->
+    <path d="M 400 270 L 465 310 L 465 390 L 400 430 L 335 390 L 335 310 Z" 
+          fill="url(#cardBg)" stroke="url(#shieldGrad)" stroke-width="3"/>
+
+    <!-- Inner Circuit Ring -->
+    <circle cx="400" cy="350" r="42" fill="#0B0E17" stroke="#6366F1" stroke-width="2"/>
+    <circle cx="400" cy="350" r="32" fill="#1E1B4B" stroke="#06B6D4" stroke-width="1.5" stroke-dasharray="6 3"/>
+
+    <!-- High-Tech Security Lock / Keyhole Icon -->
+    <path d="M 393 342 C 393 338 396 335 400 335 C 404 335 407 338 407 342 L 407 347 L 393 347 Z" 
+          fill="none" stroke="#E0E7FF" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="390" y="347" width="20" height="15" rx="3" fill="#6366F1" stroke="#E0E7FF" stroke-width="1.5"/>
+    <circle cx="400" cy="353" r="2" fill="#FFFFFF"/>
+    <line x1="400" y1="355" x2="400" y2="359" stroke="#FFFFFF" stroke-width="1.5"/>
+  </g>
+
+  <!-- Floating 3D Token: Bitcoin (Top Left) -->
+  <g transform="translate(160, 200)" filter="url(#glowEffect)">
+    <!-- Outer Glow Orbit -->
+    <ellipse cx="40" cy="40" rx="48" ry="48" fill="none" stroke="#F59E0B" stroke-width="1" stroke-opacity="0.3" stroke-dasharray="6 4"/>
+    <circle cx="40" cy="40" r="38" fill="url(#btcGlow)" stroke="#FDE047" stroke-width="2.5"/>
+    <circle cx="40" cy="40" r="32" fill="#D97706" opacity="0.35"/>
+    <!-- BTC Symbol -->
+    <text x="40" y="49" font-family="system-ui, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" text-anchor="middle">₿</text>
+  </g>
+
+  <!-- Floating 3D Token: Ethereum (Top Right) -->
+  <g transform="translate(580, 220)" filter="url(#glowEffect)">
+    <ellipse cx="36" cy="36" rx="44" ry="44" fill="none" stroke="#6366F1" stroke-width="1" stroke-opacity="0.35" stroke-dasharray="4 3"/>
+    <circle cx="36" cy="36" r="34" fill="url(#ethGlow)" stroke="#A5B4FC" stroke-width="2"/>
+    <!-- ETH Diamond Crystal Glyphs -->
+    <polygon points="36,16 48,34 36,42 24,34" fill="#FFFFFF" fill-opacity="0.95"/>
+    <polygon points="36,44 48,37 36,54 24,37" fill="#E0E7FF" fill-opacity="0.8"/>
+  </g>
+
+  <!-- Floating 3D Token: Solana (Bottom Right) -->
+  <g transform="translate(560, 480)" filter="url(#glowEffect)">
+    <circle cx="32" cy="32" r="30" fill="url(#solGlow)" stroke="#C084FC" stroke-width="2"/>
+    <!-- SOL 3 Bars -->
+    <path d="M 22 24 L 38 24 L 42 21 L 26 21 Z" fill="#FFFFFF"/>
+    <path d="M 26 31 L 42 31 L 38 34 L 22 34 Z" fill="#FFFFFF"/>
+    <path d="M 22 41 L 38 41 L 42 38 L 26 38 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Floating Telemetry HUD Card 1: B-Tree Latency (Left) -->
+  <g transform="translate(100, 390)" filter="url(#softShadow)">
+    <rect width="180" height="66" rx="14" fill="url(#cardBg)" stroke="#312E81" stroke-width="1.5"/>
+    <circle cx="26" cy="33" r="10" fill="#10B981" fill-opacity="0.2"/>
+    <circle cx="26" cy="33" r="4" fill="#10B981"/>
+    
+    <text x="46" y="27" font-family="system-ui, monospace" font-size="10" font-weight="700" fill="#94A3B8" letter-spacing="0.5">MATCHING ENGINE</text>
+    <text x="46" y="47" font-family="system-ui, monospace" font-size="16" font-weight="900" fill="#F8FAFC">0.38 ms</text>
+    <text x="126" y="47" font-family="system-ui, monospace" font-size="10" font-weight="700" fill="#10B981">O(log n)</text>
+  </g>
+
+  <!-- Floating Telemetry HUD Card 2: L2 Live Depth (Right) -->
+  <g transform="translate(530, 340)" filter="url(#softShadow)">
+    <rect width="190" height="66" rx="14" fill="url(#cardBg)" stroke="#065F46" stroke-width="1.5"/>
+    <circle cx="26" cy="33" r="10" fill="#06B6D4" fill-opacity="0.2"/>
+    <circle cx="26" cy="33" r="4" fill="#06B6D4"/>
+
+    <text x="46" y="27" font-family="system-ui, monospace" font-size="10" font-weight="700" fill="#94A3B8" letter-spacing="0.5">WEBSOCKET STREAM</text>
+    <text x="46" y="47" font-family="system-ui, monospace" font-size="15" font-weight="900" fill="#F8FAFC">100% Real-Time</text>
+  </g>
+
+  <!-- Floating Telemetry HUD Card 3: Fixed-Point Precision (Bottom Center) -->
+  <g transform="translate(290, 570)" filter="url(#softShadow)">
+    <rect width="220" height="56" rx="14" fill="url(#cardBg)" stroke="#4F46E5" stroke-width="1.5"/>
+    <text x="110" y="24" font-family="system-ui, monospace" font-size="10" font-weight="700" fill="#A5B4FC" text-anchor="middle" letter-spacing="0.5">FIXED-POINT PRECISION</text>
+    <text x="110" y="44" font-family="system-ui, monospace" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle">10^18 BigInt • Big.js</text>
+  </g>
+
+  <!-- Flowing Network Particle Connectors -->
+  <g stroke="#6366F1" stroke-width="1" stroke-dasharray="3 3" opacity="0.4">
+    <line x1="200" y1="240" x2="350" y2="330"/>
+    <line x1="590" y1="260" x2="450" y2="330"/>
+    <line x1="280" y1="420" x2="340" y2="380"/>
+    <line x1="530" y1="370" x2="465" y2="370"/>
+    <line x1="400" y1="570" x2="400" y2="480"/>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 "use client";
-import Image from "next/image";
-import Link from "next/link";
+import { AuthVisualPanel } from "@/features/auth/components/authVisualPanel";
+import { LandingHeaderControls } from "@/features/landing/components/landingHeaderControls";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { otpStepSchema } from "@/features/auth/schema/schema";
 import { normalizeMobile } from "@/lib/normalizeDigits";
 import { fieldValidators } from "@/lib/validation/fieldValidator";
 import { mobileSchema } from "@/lib/validation/primitivesValidations";
+import { Link } from "@/lib/i18nNavigation";
 
 const phoneValidators = fieldValidators(mobileSchema);
 const codeValidators = fieldValidators(otpStepSchema.shape.code);
@@ -30,6 +31,9 @@ export default function OtpLoginPage() {
     <div className="min-h-screen w-full flex flex-col md:flex-row">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-background">
         <div className="w-full max-w-md">
+          <div className="mb-4 flex items-center justify-end">
+            <LandingHeaderControls />
+          </div>
           <Card>
             <CardHeader className="relative">
               <CardTitle>{isOtp ? tAuth("verifyTitle") : tAuth("title")}</CardTitle>
@@ -110,9 +114,7 @@ export default function OtpLoginPage() {
         </div>
       </div>
 
-      <div className="hidden md:flex flex-1 relative bg-muted overflow-hidden">
-        <Image src="/images/auth.png" alt="" fill priority sizes="50vw" className="object-cover" />
-      </div>
+      <AuthVisualPanel />
     </div>
   );
 }
