@@ -5,31 +5,23 @@ import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import type { GetRecentTradesReply, OrderStatus } from "@repo/types";
+import { useTranslations } from "next-intl";
 
 export type Order = GetRecentTradesReply["items"][number];
 
-const STATUS_META: Record<
-  string,
-  { label: string; dot: string; text: string }
-> = {
-  open: { label: "باز", dot: "bg-blue-500", text: "text-blue-600" },
-  partial: { label: "نیمه‌پر", dot: "bg-amber-500", text: "text-amber-600" },
-  filled: {
-    label: "انجام‌شده",
-    dot: "bg-emerald-500",
-    text: "text-emerald-600",
-  },
-  // cancelled is neutral grey on purpose: red everywhere = visual noise
+const STATUS_META: Record<string, { dot: string; text: string }> = {
+  open: { dot: "bg-blue-500", text: "text-blue-600" },
+  partial: { dot: "bg-amber-500", text: "text-amber-600" },
+  filled: { dot: "bg-emerald-500", text: "text-emerald-600" },
   cancelled: {
-    label: "لغو شده",
     dot: "bg-muted-foreground/50",
     text: "text-muted-foreground",
   },
 };
 
-const SIDE_META: Record<string, { label: string; text: string }> = {
-  buy: { label: "خرید", text: "text-emerald-600" },
-  sell: { label: "فروش", text: "text-red-600" },
+const SIDE_META: Record<string, { text: string }> = {
+  buy: { text: "text-emerald-600" },
+  sell: { text: "text-red-600" },
 };
 
 function formatDecimal(value: string) {
@@ -47,15 +39,15 @@ export function Num({ value }: { value: string }) {
 }
 
 export function StatusCell({ status }: { status: OrderStatus }) {
+  const t = useTranslations("trade.statusFilters");
   const m = STATUS_META[status];
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs", m?.text)}>
       <span className={cn("h-1.5 w-1.5 rounded-full", m?.dot)} />
-      {m?.label ?? status}
+      {t(status)}
     </span>
   );
 }
-
 
 function SortHeader({
   column,
@@ -97,7 +89,6 @@ export function FilledCell({
   return (
     <div className="flex flex-col items-center gap-1">
       <Num value={filled} />
-      {/* bar only when something is filled: an empty track on every row is noise */}
       {pct > 0 && (
         <div className="h-1 w-16 overflow-hidden rounded-full bg-muted">
           <div
@@ -112,8 +103,14 @@ export function FilledCell({
     </div>
   );
 }
-/** Jalali date + time on two lines, Latin digits (consistent with prices/quantities) */
-export function DateCell({ value , align = "center"}: { value: Date | string , align?: "center" | "start"}) {
+
+export function DateCell({
+  value,
+  align = "center",
+}: {
+  value: Date | string;
+  align?: "center" | "start";
+}) {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return <span>-</span>;
 
@@ -130,7 +127,13 @@ export function DateCell({ value , align = "center"}: { value: Date | string , a
   });
 
   return (
-    <div dir="ltr" className={cn("flex flex-col leading-tight", align === "start" ? "items-start" : "items-center")}>
+    <div
+      dir="ltr"
+      className={cn(
+        "flex flex-col leading-tight",
+        align === "start" ? "items-start" : "items-center",
+      )}
+    >
       <span className="text-xs tabular-nums">{date}</span>
       <span className="text-[10px] tabular-nums text-muted-foreground">
         {time}
@@ -139,10 +142,6 @@ export function DateCell({ value , align = "center"}: { value: Date | string , a
   );
 }
 
-/**
- * Column ids (accessorKey) MUST match the backend sort whitelist (OrderSortField).
- * `cancellingId` = id of the order currently being cancelled (only that row is locked).
- */
 export function SymbolCell({
   order,
   align = "center",
@@ -150,6 +149,7 @@ export function SymbolCell({
   order: Order;
   align?: "center" | "start";
 }) {
+  const t = useTranslations("trade.sides");
   const side = SIDE_META[order.side];
   return (
     <div
@@ -160,46 +160,57 @@ export function SymbolCell({
     >
       <span className="text-xs font-bold">{order.symbol}</span>
       <span className="flex items-center gap-1.5 text-[10px]">
-        <span className={cn("font-medium", side?.text)}>
-          {side?.label ?? order.side}
-        </span>
+        <span className={cn("font-medium", side?.text)}>{t(order.side)}</span>
         <span className="uppercase text-muted-foreground">{order.type}</span>
       </span>
     </div>
   );
 }
+
+type Translate = ReturnType<typeof useTranslations<"trade.orderColumns">>;
+
 export function buildOrderColumns(
   onCancel: (order: Order) => void,
+  t: Translate,
   cancellingId?: string,
 ): ColumnDef<Order>[] {
   return [
     {
       accessorKey: "symbol",
-      header: ({ column }) => <SortHeader column={column} title="جفت ارز" />,
+      header: ({ column }) => (
+        <SortHeader column={column} title={t("symbol")} />
+      ),
       cell: ({ row }) => <SymbolCell order={row.original} />,
     },
-
     {
       accessorKey: "status",
-      header: ({ column }) => <SortHeader column={column} title="وضعیت" />,
+      header: ({ column }) => (
+        <SortHeader column={column} title={t("status")} />
+      ),
       cell: ({ row }) => <StatusCell status={row.original.status} />,
     },
     {
       accessorKey: "price",
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} title="قیمت" />,
+      header: ({ column }) => (
+        <SortHeader column={column} title={t("price")} />
+      ),
       cell: ({ row }) => <Num value={row.original.price} />,
     },
     {
       accessorKey: "quantity",
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} title="مقدار" />,
+      header: ({ column }) => (
+        <SortHeader column={column} title={t("quantity")} />
+      ),
       cell: ({ row }) => <Num value={row.original.quantity} />,
     },
     {
       accessorKey: "filledQuantity",
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} title="پر شده" />,
+      header: ({ column }) => (
+        <SortHeader column={column} title={t("filledQuantity")} />
+      ),
       cell: ({ row }) => (
         <FilledCell
           filled={row.original.filledQuantity}
@@ -210,18 +221,19 @@ export function buildOrderColumns(
     {
       accessorKey: "createdAt",
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} title="تاریخ" />,
+      header: ({ column }) => (
+        <SortHeader column={column} title={t("createdAt")} />
+      ),
       cell: ({ row }) => <DateCell value={row.original.createdAt} />,
     },
     {
       id: "actions",
-      header: "عملیات",
+      header: t("actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const o = row.original;
         const cancellable = o.status === "open" || o.status === "partial";
         if (!cancellable) {
-          // no disabled red buttons on every finished row
           return <span className="text-muted-foreground">—</span>;
         }
 
@@ -233,7 +245,7 @@ export function buildOrderColumns(
             disabled={isThisCancelling}
             onClick={() => onCancel(o)}
           >
-            {isThisCancelling ? "در حال لغو..." : "لغو"}
+            {isThisCancelling ? t("cancelling") : t("cancel")}
           </Button>
         );
       },

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-const staticKeys = ["dashboard", "wallet", "settings", "profile"] as const;
+const staticKeys = ["dashboard", "wallet", "trade", "account"] as const;
 type StaticKey = (typeof staticKeys)[number];
 
 function isStaticKey(value: string): value is StaticKey {

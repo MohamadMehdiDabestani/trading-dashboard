@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLivePrices } from "@/hooks/useLivePrice";
 import { cn } from "@/lib/cn";
+import { useRouter } from "@/lib/i18nNavigation";
 import { SYMBOLS, SymbolValue } from "@repo/types";
 import { Edit2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const WATCHLIST = [
   { symbol: "BTCUSDT", name: "Bitcoin", icon: "B", color: "text-orange-500" },
@@ -13,19 +14,19 @@ const WATCHLIST = [
   { symbol: "BNBUSDT", name: "Binance coin", icon: "B", color: "text-yellow-500" },
 ] as const;
 const WATCH_SYMBOLS = WATCHLIST.map((w) => w.symbol) as SymbolValue[];
-
-export const  MarketWatchCard =  () =>{
+export const MarketWatchCard = () => {
   const { prices, status } = useLivePrices(WATCH_SYMBOLS);
   const router = useRouter();
+  const t = useTranslations("dashboard.marketWatch");
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center  justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-bold">مارکت لحظه ای</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-lg font-bold">{t("title")}</CardTitle>
         <div className="flex items-center gap-2">
           {status !== "live" && (
             <span className="text-[10px] text-muted-foreground">
-              {status === "reconnecting" ? "اتصال مجدد..." : "در حال اتصال..."}
+              {status === "reconnecting" ? t("reconnecting") : t("connecting")}
             </span>
           )}
           <Button variant="ghost" size="icon">
@@ -64,11 +65,16 @@ export const  MarketWatchCard =  () =>{
             </div>
           );
         })}
-        <Button variant="outline" size="sm" className="w-full mt-2 border-dashed border-blue-200" color="primary" 
-        onClick={() => router.push(`/dashboard/markets`)}>
-          همه ی نماد ها
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-2 border-dashed border-blue-200"
+          color="primary"
+          onClick={() => router.push(`/dashboard/markets`)}
+        >
+          {t("allSymbols")}
         </Button>
       </CardContent>
     </Card>
   );
-}
+};

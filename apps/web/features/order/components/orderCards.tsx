@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { ReactNode } from "react";
 import type { SortingState } from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,16 +22,15 @@ import {
   type Order,
 } from "../utils/columns";
 
-const SORT_OPTIONS = [
-  { id: "createdAt", label: "تاریخ" },
-  { id: "price", label: "قیمت" },
-  { id: "quantity", label: "مقدار" },
-  { id: "filledQuantity", label: "پر شده" },
-  { id: "symbol", label: "جفت ارز" },
-  { id: "status", label: "وضعیت" },
-];
+const SORT_OPTION_IDS = [
+  "createdAt",
+  "price",
+  "quantity",
+  "filledQuantity",
+  "symbol",
+  "status",
+] as const;
 
-/** Replaces clickable table headers on mobile */
 export function OrderSortBar({
   sorting,
   onChange,
@@ -38,11 +38,12 @@ export function OrderSortBar({
   sorting: SortingState;
   onChange: (s: SortingState) => void;
 }) {
+  const t = useTranslations("trade.orderCards");
   const current = sorting[0] ?? { id: "createdAt", desc: true };
 
   return (
     <div className="flex items-center gap-2 border-b px-3 py-2">
-      <span className="text-xs text-muted-foreground">مرتب‌سازی</span>
+      <span className="text-xs text-muted-foreground">{t("sortLabel")}</span>
       <Select
         value={current.id}
         onValueChange={(id) => onChange([{ id, desc: current.desc }])}
@@ -51,9 +52,9 @@ export function OrderSortBar({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {SORT_OPTIONS.map((o) => (
-            <SelectItem key={o.id} value={o.id}>
-              {o.label}
+          {SORT_OPTION_IDS.map((id) => (
+            <SelectItem key={id} value={id}>
+              {t(`sortOptions.${id}`)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -62,7 +63,7 @@ export function OrderSortBar({
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        aria-label="تغییر جهت مرتب‌سازی"
+        aria-label={t("sortDirection")}
         onClick={() => onChange([{ id: current.id, desc: !current.desc }])}
       >
         {current.desc ? (
@@ -99,8 +100,10 @@ export function OrderCards({
   isFetching,
   cancellingId,
   onCancel,
-  emptyText = "داده‌ای وجود ندارد",
+  emptyText,
 }: Props) {
+  const t = useTranslations("trade.orderCards");
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2 p-3">
@@ -114,7 +117,7 @@ export function OrderCards({
   if (orders.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
-        {emptyText}
+        {emptyText ?? t("empty")}
       </p>
     );
   }
@@ -144,13 +147,13 @@ export function OrderCards({
             </div>
 
             <dl className="grid grid-cols-3 gap-2">
-              <Field label="قیمت">
+              <Field label={t("fields.price")}>
                 <Num value={o.price} />
               </Field>
-              <Field label="مقدار">
+              <Field label={t("fields.quantity")}>
                 <Num value={o.quantity} />
               </Field>
-              <Field label="پر شده">
+              <Field label={t("fields.filled")}>
                 <FilledCell filled={o.filledQuantity} quantity={o.quantity} />
               </Field>
             </dl>
@@ -164,7 +167,7 @@ export function OrderCards({
                   disabled={isCancelling}
                   onClick={() => onCancel(o)}
                 >
-                  {isCancelling ? "در حال لغو..." : "لغو سفارش"}
+                  {isCancelling ? t("cancelling") : t("cancel")}
                 </Button>
               )}
             </div>

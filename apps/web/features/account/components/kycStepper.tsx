@@ -1,4 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Stepper,
   StepperContent,
@@ -9,20 +12,18 @@ import {
   StepperSeparator,
   StepperTrigger,
 } from "@/components/ui/stepper";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShieldCheck, MapPin, User, Diamond, Check } from "lucide-react";
 
 export function KYCStepper() {
+  const t = useTranslations("account.kyc");
   const [activeStep, setActiveStep] = useState(3);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
-
     const update = () => setIsMobile(mq.matches);
     update();
-
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
@@ -32,27 +33,27 @@ export function KYCStepper() {
   const steps = [
     {
       step: 1,
-      title: "سطح ۱: برنزی",
-      description: "ایمیل و موبایل",
-      content: "تکمیل ایمیل و شماره موبایل برای شروع احراز هویت.",
+      title: t("steps.bronze.title"),
+      description: t("steps.bronze.description"),
+      content: t("steps.bronze.content"),
     },
     {
       step: 2,
-      title: "سطح ۲: نقره‌ای (فعلی)",
-      description: "کارت ملی و سلفی",
-      content: "در حال بررسی کارت ملی و سلفی شما هستیم.",
+      title: t("steps.silver.title"),
+      description: t("steps.silver.description"),
+      content: t("steps.silver.content"),
     },
     {
       step: 3,
-      title: "سطح ۳: طلایی",
-      description: "تایید آدرس سکونت",
-      content: "برای ارتقاء، تایید آدرس محل سکونت لازم است.",
+      title: t("steps.gold.title"),
+      description: t("steps.gold.description"),
+      content: t("steps.gold.content"),
     },
     {
       step: 4,
-      title: "VIP / حقوقی",
-      description: "قرارداد شرکتی",
-      content: "مخصوص حساب‌های حقوقی و قراردادهای سازمانی.",
+      title: t("steps.vip.title"),
+      description: t("steps.vip.description"),
+      content: t("steps.vip.content"),
     },
   ];
 
@@ -64,17 +65,17 @@ export function KYCStepper() {
             <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
               <ShieldCheck className="h-6 w-6" />
             </div>
-
             <div className="text-start">
               <h3 className="font-extrabold text-foreground text-md">
-                احراز هویت
+                {t("title")}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                افزایش سطح برای کاهش محدودیت های تراکنش‌های مالی.
+                {t("description")}
               </p>
             </div>
           </div>
         </div>
+
         <Stepper
           value={activeStep}
           onValueChange={setActiveStep}
@@ -88,9 +89,7 @@ export function KYCStepper() {
         >
           <StepperNav
             className={`items-start ms-[10%] ${
-              orientation === "horizontal"
-                ? "w-full"
-                : "flex-col gap-4"
+              orientation === "horizontal" ? "w-full" : "flex-col gap-4"
             }`}
           >
             {steps.map((item, index) => {
@@ -105,7 +104,7 @@ export function KYCStepper() {
                   completed={completed}
                   className={
                     orientation === "horizontal"
-                      ? "flex-1 flex flex-row items-start" 
+                      ? "flex-1 flex flex-row items-start"
                       : "w-full"
                   }
                 >
@@ -126,7 +125,9 @@ export function KYCStepper() {
 
                       <div className="space-y-1">
                         <div
-                          className={`text-xs font-bold ${inactive ? "text-muted-foreground" : "text-foreground"}`}
+                          className={`text-xs font-bold ${
+                            inactive ? "text-muted-foreground" : "text-foreground"
+                          }`}
                         >
                           {item.title}
                         </div>

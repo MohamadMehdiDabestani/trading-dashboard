@@ -1,4 +1,7 @@
+"use client";
+
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useWalletBalances } from "../hooks/useDashboard";
 import { SymbolValue } from "@repo/types";
 import { baseToSymbol } from "@/lib/marketSocket";
@@ -10,8 +13,9 @@ import { Wallet } from "lucide-react";
 const usd = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const PortfolioCard = ()=> {
+export const PortfolioCard = () => {
   const { data: balances, isLoading } = useWalletBalances();
+  const t = useTranslations("dashboard.cards.portfolio");
 
   const symbols = useMemo(() => {
     const set = new Set<SymbolValue>();
@@ -48,7 +52,7 @@ export const PortfolioCard = ()=> {
       <CardContent className="p-6 flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground">
-            ارزش کل دارایی‌ها (تخمینی)
+            {t("title")}
           </span>
           {isLoading ? (
             <Pulse className="h-8 w-36" />
@@ -58,12 +62,12 @@ export const PortfolioCard = ()=> {
             </span>
           )}
           <span className="text-xs text-muted-foreground">
-            قفل‌شده در سفارش‌ها:{" "}
+            {t("locked")}{" "}
             <span dir="ltr" className="font-bold text-foreground">{usd(locked)}</span>
           </span>
           {missing && (
             <span className="text-[10px] text-amber-600">
-              قیمت برخی دارایی‌ها در دسترس نیست و محاسبه نشده است
+              {t("missingPrices")}
             </span>
           )}
         </div>
@@ -73,4 +77,4 @@ export const PortfolioCard = ()=> {
       </CardContent>
     </Card>
   );
-}
+};

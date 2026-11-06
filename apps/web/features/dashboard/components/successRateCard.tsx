@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTradeStats } from "../hooks/useDashboard";
 import { Target } from "lucide-react";
@@ -11,13 +12,14 @@ const fa = (n: number) => n.toLocaleString("fa-IR");
 export const SuccessRateCard = () => {
   const { data, isLoading } = useTradeStats();
   const delta = data?.deltaPercent ?? null;
+  const t = useTranslations("dashboard.cards.successRate");
 
   return (
     <Card className="overflow-hidden border border-border bg-card transition-all hover:shadow-sm">
       <CardContent className="p-6 flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground">
-            نرخ موفقیت معاملات
+            {t("title")}
           </span>
           {isLoading ? (
             <Pulse className="h-8 w-28" />
@@ -36,20 +38,17 @@ export const SuccessRateCard = () => {
                   )}
                 >
                   {delta > 0 ? "+" : ""}
-                  {fa(delta)}٪ نسبت به ماه قبل
+                  {fa(delta)}
+                  {t("deltaSuffix")}
                 </span>
               )}
             </div>
           )}
           <span className="text-xs text-muted-foreground">
-            <span className="font-bold text-foreground">
-              {fa(data?.filled ?? 0)}
-            </span>{" "}
-            سفارش انجام‌شده از{" "}
-            <span className="font-bold text-foreground">
-              {fa(data?.total ?? 0)}
-            </span>{" "}
-            سفارش نهایی‌شده
+            {t("summary", {
+              filled: fa(data?.filled ?? 0),
+              total: fa(data?.total ?? 0),
+            })}
           </span>
         </div>
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">

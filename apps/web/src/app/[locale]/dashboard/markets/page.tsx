@@ -1,32 +1,29 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowUpDown, RefreshCw, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { SYMBOLS } from "@repo/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { useAssetPrices } from "@/hooks/useAssetPrice";
+import { Link, useRouter } from "@/lib/i18nNavigation";
 
-// فقط متادیتای نمایشی (نام فارسی/آیکن). قیمت‌ها از API می‌آیند.
-// پیشنهاد: این آرایه را به یک فایل مشترک (مثلاً lib/coinMeta.ts) منتقل کنید
-// تا بین صفحه‌ی کیف پول و بازارها تکرار نشود.
 const COIN_META: Record<
   string,
-  { name: string; iconBg: string; iconText: string }
+  { iconBg: string; iconText: string }
 > = {
-  BTC: { name: "بیت کوین", iconBg: "bg-amber-500/10 text-amber-500", iconText: "₿" },
-  ETH: { name: "اتریوم", iconBg: "bg-indigo-500/10 text-indigo-500", iconText: "Ξ" },
-  SOL: { name: "سولانا", iconBg: "bg-purple-500/10 text-purple-400", iconText: "S" },
-  BNB: { name: "بایننس کوین", iconBg: "bg-yellow-500/10 text-yellow-500", iconText: "B" },
-  ADA: { name: "کاردانو", iconBg: "bg-blue-600/10 text-blue-600", iconText: "A" },
-  XRP: { name: "ریپل", iconBg: "bg-slate-500/10 text-slate-400", iconText: "X" },
-  USDT: { name: "تتر", iconBg: "bg-emerald-500/10 text-emerald-500", iconText: "₮" },
+  BTC: { iconBg: "bg-amber-500/10 text-amber-500", iconText: "₿" },
+  ETH: { iconBg: "bg-indigo-500/10 text-indigo-500", iconText: "Ξ" },
+  SOL: { iconBg: "bg-purple-500/10 text-purple-400", iconText: "S" },
+  BNB: { iconBg: "bg-yellow-500/10 text-yellow-500", iconText: "B" },
+  ADA: { iconBg: "bg-blue-600/10 text-blue-600", iconText: "A" },
+  XRP: { iconBg: "bg-slate-500/10 text-slate-400", iconText: "X" },
+  USDT: { iconBg: "bg-emerald-500/10 text-emerald-500", iconText: "₮" },
 };
+
 const FALLBACK_META = {
-  name: "",
   iconBg: "bg-muted text-muted-foreground",
   iconText: "?",
 };
@@ -41,6 +38,8 @@ const fmtUsd = (v: number) =>
   });
 
 export default function MarketsPage() {
+  const t = useTranslations("markets");
+  const tCoins = useTranslations("wallet.coins");
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("default");
@@ -60,13 +59,13 @@ export default function MarketsPage() {
           slug: s.slug,
           label: s.label,
           base: s.baseAsset,
-          name: meta.name,
+          name: tCoins.has(s.baseAsset) ? tCoins(s.baseAsset) : s.baseAsset,
           iconBg: meta.iconBg,
           iconText: meta.iconText,
           price: priceOf(s.baseAsset),
         };
       }),
-    [priceOf],
+    [priceOf, tCoins],
   );
 
   const visible = useMemo(() => {
@@ -85,7 +84,6 @@ export default function MarketsPage() {
       list.sort((a, b) => dir * a.base.localeCompare(b.base));
     } else if (sortKey === "price") {
       const dir = sortDir === "asc" ? 1 : -1;
-      // نمادهای بدون قیمت در هر دو جهت آخر لیست بمانند
       list.sort((a, b) => {
         if (a.price == null && b.price == null) return 0;
         if (a.price == null) return 1;
@@ -112,9 +110,11 @@ export default function MarketsPage() {
       <section className="bg-card border border-border rounded-2xl p-6 flex flex-col gap-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-foreground">بازارها</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("title")}</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {visible.length.toLocaleString("fa-IR")} نماد قابل معامله
+              {t("countLabel", {
+                count: visible.length.toLocaleString("fa-IR"),
+              })}
             </p>
           </div>
 
@@ -123,46 +123,46 @@ export default function MarketsPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="جستجو (مثلاً بیت کوین یا BTC)..."
+              placeholder={t("searchPlaceholder")}
               className="ps-9"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground">مرتب‌سازی:</span>
+          <span className="text-xs text-muted-foreground">{t("sortLabel")}</span>
           <div className="flex items-center gap-1 bg-secondary p-1 rounded-lg">
             <Button
               variant={sortKey === "name" ? "default" : "ghost"}
               onClick={() => toggleSort("name")}
             >
-              نام
+              {t("sort.name")}
               <ArrowUpDown className="w-3.5 h-3.5" />
             </Button>
             <Button
               variant={sortKey === "price" ? "default" : "ghost"}
               onClick={() => toggleSort("price")}
             >
-              قیمت
+              {t("sort.price")}
               <ArrowUpDown className="w-3.5 h-3.5" />
             </Button>
           </div>
           {sortKey !== "default" && (
             <Button
-            variant="link"
+              variant="link"
               onClick={() => setSortKey("default")}
               size="xs"
-              // className="text-xs text-primary font-bold hover:underline"
             >
-              حذف مرتب‌سازی
+              {t("removeSort")}
             </Button>
           )}
         </div>
 
-        {/* هدر جدول (فقط دسکتاپ) */}
         <div className="hidden sm:grid grid-cols-[1fr_auto_auto] gap-4 px-4 text-xs text-muted-foreground">
-          <span>نماد</span>
-          <span className="w-40 text-end">قیمت (USDT)</span>
+          <span>{t("headers.symbol")}</span>
+          <span className="w-40 text-end">
+            {t("headers.price", { quote: "USDT" })}
+          </span>
           <span className="w-28" />
         </div>
 
@@ -201,7 +201,7 @@ export default function MarketsPage() {
                   </span>
                 ) : pricesReady ? (
                   <span className="text-xs text-muted-foreground">
-                    قیمت در دسترس نیست
+                    {t("unavailablePrice")}
                   </span>
                 ) : (
                   <span className="inline-block h-4 w-24 animate-pulse rounded bg-muted" />
@@ -214,14 +214,14 @@ export default function MarketsPage() {
                 onClick={() => router.push(`/dashboard/trade/${r.slug}`)}
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>معامله</span>
+                <span>{t("trade")}</span>
               </Button>
             </div>
           ))}
 
           {visible.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-6">
-              نمادی با این جستجو یافت نشد
+              {t("empty")}
             </p>
           )}
         </div>

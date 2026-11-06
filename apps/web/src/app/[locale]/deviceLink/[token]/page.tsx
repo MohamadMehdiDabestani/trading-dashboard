@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Loader2, ShieldQuestion, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { ApiError } from "@/lib/apiError";
 import { deviceLinkApi } from "@/features/account/api/qrLogin";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/lib/i18nNavigation";
 
 type Phase =
   | "ready"
@@ -24,14 +26,13 @@ type Phase =
   | "expired"
   | "invalid";
 
-const POST_LOGIN_PATH = "/"; 
+const POST_LOGIN_PATH = "/dashboard";
 
 export default function DeviceLinkPage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
-
-  // لینک فقط با کلیک کاربر مصرف می‌شود (نه موقع لود صفحه)،
-  // تا پیش‌نمایش‌سازهای لینک آن را نسوزانند.
+  const t = useTranslations("deviceLink");
+  const buttons = useTranslations("common.buttons");
   const open = useMutation({ mutationFn: () => deviceLinkApi.open(token) });
   const requestId = open.data?.requestId;
 
@@ -81,20 +82,15 @@ export default function DeviceLinkPage() {
     >
       <Card className="w-full max-w-sm text-center">
         <CardHeader>
-          <CardTitle>ورود با QR</CardTitle>
-          <CardDescription>
-            ورود به حساب با تایید یک دستگاه دیگر
-          </CardDescription>
+          <CardTitle>{t("title")}</CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
         </CardHeader>
 
         <CardContent className="flex flex-col items-center gap-4">
           {(phase === "ready" || phase === "opening") && (
             <>
               <ShieldQuestion className="size-12 text-primary" />
-              <p className="text-sm text-muted-foreground">
-                برای ادامه، روی دکمه زیر بزنید. سپس یک کد ۴ رقمی نمایش داده
-                می‌شود که باید روی دستگاه لاگین‌شده وارد کنید.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("readyHint")}</p>
               <Button
                 className="w-full"
                 disabled={phase === "opening"}
@@ -103,7 +99,7 @@ export default function DeviceLinkPage() {
                 {phase === "opening" && (
                   <Loader2 className="size-4 animate-spin" />
                 )}
-                ادامه
+                {buttons("continue")}
               </Button>
             </>
           )}
@@ -111,7 +107,7 @@ export default function DeviceLinkPage() {
           {phase === "waiting" && (
             <>
               <p className="text-sm text-muted-foreground">
-                این کد را روی دستگاه لاگین‌شده وارد و تایید کنید:
+                {t("waitingHint")}
               </p>
               <div
                 className="rounded-xl border border-border bg-muted px-8 py-4 text-5xl font-bold tracking-widest tabular-nums"
@@ -121,7 +117,7 @@ export default function DeviceLinkPage() {
               </div>
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
-                منتظر تایید...
+                {t("waitingStatus")}
               </p>
             </>
           )}
@@ -129,7 +125,7 @@ export default function DeviceLinkPage() {
           {phase === "success" && (
             <>
               <CheckCircle2 className="size-12 text-success" />
-              <p className="font-medium">با موفقیت وارد شدید.</p>
+              <p className="font-medium">{t("success")}</p>
             </>
           )}
 
@@ -139,13 +135,12 @@ export default function DeviceLinkPage() {
             <>
               <XCircle className="size-12 text-destructive" />
               <p className="font-medium">
-                {phase === "denied" && "درخواست رد شد."}
-                {phase === "expired" && "زمان درخواست تمام شد."}
-                {phase === "invalid" &&
-                  "این لینک معتبر نیست یا قبلاً استفاده شده."}
+                {phase === "denied" && t("denied")}
+                {phase === "expired" && t("expired")}
+                {phase === "invalid" && t("invalid")}
               </p>
               <p className="text-sm text-muted-foreground">
-                از دستگاه لاگین‌شده یک QR جدید بسازید.
+                {t("regenerateHint")}
               </p>
             </>
           )}

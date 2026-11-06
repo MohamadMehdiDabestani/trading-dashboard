@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -12,19 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ShieldCheck, Monitor, Smartphone, AlertCircle } from "lucide-react";
-import { useLocale } from "next-intl";
 import type { LoginMethod } from "@repo/types";
 import { cn } from "@/lib/cn";
 import { useLoginHistory } from "@/features/auth/hooks/useAuthMutations";
 
-const METHOD_LABEL: Record<LoginMethod, string> = {
-  otp: "کد پیامکی",
-  password: "رمز عبور",
-  qr: "QR کد",
-};
-
 function parseUserAgent(ua: string | null) {
-  if (!ua) return { label: "نامشخص", mobile: false };
+  if (!ua) return { label: null, mobile: false };
 
   const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
   const browser = /Edg\//.test(ua)
@@ -38,7 +32,6 @@ function parseUserAgent(ua: string | null) {
           : /Safari\//.test(ua)
             ? "Safari"
             : "Browser";
-  // order matters: Android UAs contain "Linux", iOS UAs contain "Mac OS X"
   const os = /Windows/.test(ua)
     ? "Windows"
     : /Android/.test(ua)
@@ -54,7 +47,6 @@ function parseUserAgent(ua: string | null) {
   return { label: os ? `${browser} / ${os}` : browser, mobile };
 }
 
-/** 188.158.12.34 -> 188.158.xx.xx ; IPv6 -> first 2 groups */
 function maskIp(ip: string | null) {
   if (!ip) return "—";
   if (ip.includes(".")) {
@@ -66,6 +58,7 @@ function maskIp(ip: string | null) {
 
 export const SecuritySettings = () => {
   const locale = useLocale();
+  const t = useTranslations("account.security");
   const { data, isLoading, isError, refetch } = useLoginHistory();
 
   const fmt = new Intl.DateTimeFormat(locale, {
@@ -78,36 +71,33 @@ export const SecuritySettings = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-bold flex items-center gap-2">
           <ShieldCheck className="h-4.5 w-4.5 text-primary" />
-          تنظیمات امنیتی
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 2FA */}
         <div className="flex items-center justify-between p-3.5 rounded-xl border border-border/40 bg-muted/10">
           <div className="text-start">
-            <p className="text-sm font-bold">تایید دو مرحله‌ای (2FA)</p>
+            <p className="text-sm font-bold">{t("twoFactor.title")}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              استفاده از Google Authenticator جهت افزایش امنیت ورود.
+              {t("twoFactor.description")}
             </p>
           </div>
           <Switch dir="ltr" />
         </div>
 
-        {/* SMS Alert */}
         <div className="flex items-center justify-between p-3.5 rounded-xl border border-border/40 bg-muted/10">
           <div className="text-start">
-            <p className="text-sm font-bold">هشدارهای پیامکی تراکنش</p>
+            <p className="text-sm font-bold">{t("smsAlerts.title")}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              ارسال سریع پیامک به محض ورود یا برداشت دارایی.
+              {t("smsAlerts.description")}
             </p>
           </div>
           <Switch dir="ltr" defaultChecked />
         </div>
 
-        {/* تاریخچه ورودها */}
         <div className="pt-4">
           <p className="text-xs font-bold text-muted-foreground mb-3 text-start">
-            تاریخچه ورودهای اخیر به حساب
+            {t("loginHistory.title")}
           </p>
           <div className="rounded-lg border border-border/50 overflow-hidden bg-card">
             <div className="overflow-x-auto">
@@ -115,19 +105,19 @@ export const SecuritySettings = () => {
                 <TableHeader className="bg-muted/30">
                   <TableRow>
                     <TableHead className="text-start text-xs font-bold">
-                      تاریخ و زمان
+                      {t("loginHistory.columns.date")}
                     </TableHead>
                     <TableHead className="text-start text-xs font-bold">
-                      مرورگر / دستگاه
+                      {t("loginHistory.columns.device")}
                     </TableHead>
                     <TableHead className="text-start text-xs font-bold">
-                      روش ورود
+                      {t("loginHistory.columns.method")}
                     </TableHead>
                     <TableHead className="text-start text-xs font-bold">
-                      آدرس IP
+                      {t("loginHistory.columns.ip")}
                     </TableHead>
                     <TableHead className="text-start text-xs font-bold">
-                      وضعیت
+                      {t("loginHistory.columns.status")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -138,7 +128,7 @@ export const SecuritySettings = () => {
                         colSpan={5}
                         className="text-center text-xs text-muted-foreground py-6"
                       >
-                        در حال بارگذاری...
+                        {t("loginHistory.loading")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -147,14 +137,14 @@ export const SecuritySettings = () => {
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-xs py-6">
                         <span className="text-destructive">
-                          دریافت تاریخچه ناموفق بود.
+                          {t("loginHistory.error")}
                         </span>{" "}
                         <button
                           type="button"
                           onClick={() => refetch()}
                           className="underline text-primary"
                         >
-                          تلاش مجدد
+                          {t("loginHistory.retry")}
                         </button>
                       </TableCell>
                     </TableRow>
@@ -166,7 +156,7 @@ export const SecuritySettings = () => {
                         colSpan={5}
                         className="text-center text-xs text-muted-foreground py-6"
                       >
-                        هنوز ورودی ثبت نشده است.
+                        {t("loginHistory.empty")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -174,12 +164,16 @@ export const SecuritySettings = () => {
                   {data?.map((item) => {
                     const ua = parseUserAgent(item.userAgent);
                     const success = item.status === "success";
+                    const methodLabel = t(
+                      `loginMethods.${item.method as LoginMethod}`,
+                    );
+
                     return (
                       <TableRow
                         key={item.id}
                         className="hover:bg-muted/40 transition-colors"
                       >
-                        <TableCell className="text-xs " dir="ltr">
+                        <TableCell className="text-xs" dir="ltr">
                           {fmt.format(new Date(item.createdAt))}
                         </TableCell>
                         <TableCell className="text-xs">
@@ -189,13 +183,16 @@ export const SecuritySettings = () => {
                             ) : (
                               <Monitor className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            {ua.label}
+                            {ua.label ?? t("unknownDevice")}
                           </span>
                         </TableCell>
                         <TableCell className="text-xs">
-                          {METHOD_LABEL[item.method]}
+                          {methodLabel}
                           {item.isNewUser && (
-                            <span className="text-muted-foreground"> (ثبت‌نام)</span>
+                            <span className="text-muted-foreground">
+                              {" "}
+                              {t("loginHistory.newUserSuffix")}
+                            </span>
                           )}
                         </TableCell>
                         <TableCell className="text-xs font-mono" dir="ltr">
@@ -212,7 +209,9 @@ export const SecuritySettings = () => {
                             )}
                           >
                             {!success && <AlertCircle className="h-3 w-3" />}
-                            {success ? "موفق" : "ناموفق"}
+                            {success
+                              ? t("loginHistory.statusSuccess")
+                              : t("loginHistory.statusFailed")}
                           </Badge>
                         </TableCell>
                       </TableRow>

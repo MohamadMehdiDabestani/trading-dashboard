@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "next-themes";
 import { GripVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { OrderSortField } from "@repo/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,19 +37,22 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type TradingFormProps = { initialSymbol: SymbolValue };
 
-const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "همه" },
-  { value: "open", label: "باز" },
-  { value: "partial", label: "نیمه‌پر" },
-  { value: "filled", label: "انجام‌شده" },
-  { value: "cancelled", label: "لغو شده" },
+const STATUS_FILTER_IDS: StatusFilter[] = [
+  "all",
+  "open",
+  "partial",
+  "filled",
+  "cancelled",
 ];
 
 export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
+  const t = useTranslations("trade.tradingForm");
+  const tStatus = useTranslations("trade.statusFilters");
   const [order, setOrder] = useState(["form", "chart", "orderbook"]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const tColumns = useTranslations("trade.orderColumns");
 
   const [symbol, setSymbol] = useState<SymbolValue>(initialSymbol);
   const { resolvedTheme } = useTheme();
@@ -65,9 +69,10 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
     () =>
       buildOrderColumns(
         (o: Order) => cancelMutate({ symbol: o.symbol, orderId: o.id }),
+        tColumns,
         cancellingId,
       ),
-    [cancelMutate, cancellingId],
+    [cancelMutate, cancellingId, tColumns],
   );
   const {
     status,
@@ -95,13 +100,10 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
     if (!next) return;
 
     setSymbol(v);
-
     const nextPath = pathname.replace(/[^/]+\/?$/, next.slug);
-
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
     const qs = params.toString();
-
     router.push(qs ? `${nextPath}?${qs}` : nextPath, { scroll: false });
   };
   useEffect(() => {
@@ -115,6 +117,9 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
     () => SYMBOLS.find((s) => s.value === symbol) ?? SYMBOLS[0],
     [symbol],
   );
+
+  const emptyText = status === "all" ? t("emptyAll") : t("emptyFiltered");
+
   return (
     <div className="flex flex-col gap-4">
       <DraggableLayout
@@ -127,7 +132,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
             key={id}
             id={id}
             className={cn(
-              "min-h-0", // خیلی مهم برای جلوگیری از overflow
+              "min-h-0",
               id === "chart" && "md:col-span-2 xl:col-span-1",
               id === "form" && "md:col-span-1 xl:col-span-1",
               id === "orderbook" && "md:col-span-1 xl:col-span-1",
@@ -148,7 +153,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
                         >
                           <GripVertical className="h-4 w-4" />
                         </Button>
-                        <p className="font-bold">باز کردن معامله</p>
+                        <p className="font-bold">{t("formPanel")}</p>
                       </CardHeader>
                       <CardContent className="flex flex-col h-full">
                         <OpenOrderForm
@@ -181,7 +186,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
                           }
                         >
                           <SelectTrigger className="w-40" dir="ltr">
-                            <SelectValue placeholder="انتخاب سمبل" />
+                            <SelectValue placeholder={t("symbolPlaceholder")} />
                           </SelectTrigger>
                           <SelectContent dir="ltr">
                             {SYMBOLS.map((s) => (
@@ -205,7 +210,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
 
                 case "orderbook":
                   return (
-                    <Card className="h-full flex flex-col pt-3 ">
+                    <Card className="h-full flex flex-col pt-3">
                       <CardHeader className="flex items-center flex-row">
                         <Button
                           variant="ghost"
@@ -216,7 +221,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
                         >
                           <GripVertical className="h-4 w-4" />
                         </Button>
-                        <p className="font-bold">دفتر چه سفاراشات</p>
+                        <p className="font-bold">{t("orderBookPanel")}</p>
                       </CardHeader>
                       <CardContent className="h-full px-0">
                         <OrderBook
@@ -238,29 +243,29 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
 
       <Card className="shrink-0 overflow-hidden flex flex-col">
         <CardHeader className="py-2 flex flex-wrap items-center gap-2 flex-row">
-          <p className="font-bold">سفارش‌های اخیر</p>
+          <p className="font-bold">{t("recentOrders")}</p>
           {recentTrades.isFetching && (
             <span className="text-[10px] text-muted-foreground">
-              در حال به‌روزرسانی...
+              {t("refreshing")}
             </span>
           )}
 
           <div className="ms-auto flex items-center gap-1" role="tablist">
-            {STATUS_FILTERS.map((f) => (
+            {STATUS_FILTER_IDS.map((id) => (
               <button
-                key={f.value}
+                key={id}
                 type="button"
                 role="tab"
-                aria-selected={status === f.value}
-                onClick={() => setStatus(f.value)}
+                aria-selected={status === id}
+                onClick={() => setStatus(id)}
                 className={cn(
                   "rounded-full px-3 py-1 text-xs transition-colors",
-                  status === f.value
+                  status === id
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted",
                 )}
               >
-                {f.label}
+                {tStatus(id)}
               </button>
             ))}
           </div>
@@ -277,11 +282,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
               onCancel={(o) =>
                 cancelMutate({ symbol: o.symbol, orderId: o.id })
               }
-              emptyText={
-                status === "all"
-                  ? "هنوز سفارشی ثبت نشده است"
-                  : "سفارشی با این فیلتر پیدا نشد"
-              }
+              emptyText={emptyText}
             />
           </div>
 
@@ -298,11 +299,7 @@ export const TradingForm = ({ initialSymbol }: TradingFormProps) => {
               getRowClassName={(o: Order) =>
                 o.status === "cancelled" ? "opacity-60" : undefined
               }
-              emptyText={
-                status === "all"
-                  ? "هنوز سفارشی ثبت نشده است"
-                  : "سفارشی با این فیلتر پیدا نشد"
-              }
+              emptyText={emptyText}
             />
           </div>
         </CardContent>

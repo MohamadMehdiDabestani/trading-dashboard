@@ -6,10 +6,9 @@ import { SecuritySettings } from "@/features/account/components/scuritySettings"
 import { ProfileCard } from "@/features/account/components/profileCard";
 import { AccountLimitsCard } from "@/features/account/components/accountLimits";
 
-export default function DozBanehDashboard() {
+export default function AccountPage() {
   return (
     <div className="space-y-6">
-      {/* هدر کنترل پلتفرم */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-border/40">
         <div>
           <h1 className="text-2xl font-black text-foreground"> پنل کاربری</h1>

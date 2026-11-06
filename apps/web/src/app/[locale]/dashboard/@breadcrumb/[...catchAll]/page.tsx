@@ -1,5 +1,4 @@
 
-import Link from "next/link";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,6 +8,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { getBreadcrumbLabel } from "@/lib/breadcrumbs";
+import { Link } from "@/lib/i18nNavigation";
 
 
 type Props = {
@@ -27,7 +27,7 @@ export default async function BreadcrumbPage({ params }: Props) {
       label: await getBreadcrumbLabel(segment),
     }))
   );
-
+  console.log(items)
   return (
     <Breadcrumb>
       <BreadcrumbList>

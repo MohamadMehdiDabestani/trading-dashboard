@@ -8,8 +8,10 @@ import { PortfolioCard } from "@/features/dashboard/components/portfolioCard";
 import { BalanceCard } from "@/features/dashboard/components/balanceCard";
 import { MarketWatchCard } from "@/features/dashboard/components/marketWatch";
 import { OrdersPanel } from "@/features/dashboard/components/orederPanel";
+import { useTranslations } from "next-intl";
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   return (
     <Fragment>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
@@ -32,13 +34,13 @@ export default function DashboardPage() {
                     value="history"
                     className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary bg-transparent"
                   >
-                    تاریخچه معاملات
+                    {t("tabs.history")}
                   </TabsTrigger>
                   <TabsTrigger
                     value="orders"
                     className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary bg-transparent"
                   >
-                    سفارشات باز
+                    {t("tabs.orders")}
                   </TabsTrigger>
                 </TabsList>
               </CardHeader>

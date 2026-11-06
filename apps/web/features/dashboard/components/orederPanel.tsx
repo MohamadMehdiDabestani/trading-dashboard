@@ -1,19 +1,24 @@
 import { DataTable } from "@/components/data-table";
 import { DataTablePagination } from "@/components/data-table-pagination";
-import { OrderCards, OrderSortBar } from "@/features/order/components/orderCards";
+import {
+  OrderCards,
+  OrderSortBar,
+} from "@/features/order/components/orderCards";
 import { useMemo, useState } from "react";
 import { DashboardOrdersKind, useDashboardOrders } from "../hooks/useDashboard";
 import { OrderSortField } from "@repo/types";
 import { useCancelOrder } from "@/features/order/hooks/useTradeMutations";
 import { buildOrderColumns, Order } from "@/features/order/utils/columns";
 import { OnChangeFn, SortingState } from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
 
-export const OrdersPanel = ({ kind }: { kind: DashboardOrdersKind }) =>{
+export const OrdersPanel = ({ kind }: { kind: DashboardOrdersKind }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sorting, setSortingState] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
+  const tColumns = useTranslations("trade.orderColumns");
 
   const sort = sorting[0];
   const q = useDashboardOrders(kind, {
@@ -31,9 +36,10 @@ export const OrdersPanel = ({ kind }: { kind: DashboardOrdersKind }) =>{
     () =>
       buildOrderColumns(
         (o: Order) => cancelMutate({ symbol: o.symbol, orderId: o.id }),
+        tColumns,
         cancellingId,
       ),
-    [cancelMutate, cancellingId],
+    [cancelMutate, cancellingId, tColumns],
   );
 
   const setSorting: OnChangeFn<SortingState> = (u) => {
@@ -94,4 +100,4 @@ export const OrdersPanel = ({ kind }: { kind: DashboardOrdersKind }) =>{
       )}
     </>
   );
-}
+};

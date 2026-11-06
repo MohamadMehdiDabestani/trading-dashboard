@@ -12,13 +12,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "next-intl";
 
 export const BalanceCard = () => {
   const { data: balances, isLoading } = useWalletBalances();
   const deposit = useDeposit();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
-
+  const t = useTranslations('dashboard.cards.balance');
   const usdt = balances?.find((b) => b.asset === "USDT");
   const valid = /^\d+(\.\d{1,18})?$/.test(amount) && Number(amount) > 0;
 
@@ -35,7 +36,7 @@ export const BalanceCard = () => {
       <CardContent className="p-6 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground">
-            موجودی قابل استفاده
+            {t('title')}
           </span>
           {isLoading ? (
             <Pulse className="h-8 w-32" />
@@ -59,14 +60,14 @@ export const BalanceCard = () => {
           onClick={() => setOpen(true)}
         >
           <Plus className="size-4" />
-          واریز
+          {t('deposit')}
         </Button>
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>واریز USDT</DialogTitle>
+            <DialogTitle>{t('dialogTitle')}</DialogTitle>
           </DialogHeader>
           <Input
             dir="ltr"
@@ -77,7 +78,7 @@ export const BalanceCard = () => {
           />
           <DialogFooter>
             <Button onClick={submit} disabled={!valid || deposit.isPending}>
-              {deposit.isPending ? "در حال ثبت..." : "تایید واریز"}
+              {deposit.isPending ? t('submitting') : t('confirmDeposit')}
             </Button>
           </DialogFooter>
         </DialogContent>

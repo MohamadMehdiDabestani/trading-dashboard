@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState, useMemo, Fragment } from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowDown,
   ArrowUp,
@@ -21,7 +24,7 @@ import { useOrderBookSocket } from "../hooks/useOrderBookSocket";
 type ViewMode = "both" | "buys" | "sells";
 
 type OrderBookProps = {
-  symbol: string; // مثلاً "BTCUSDT"
+  symbol: string;
   baseAsset?: string;
   quoteAsset?: string;
 };
@@ -37,6 +40,7 @@ export const OrderBook = ({
   baseAsset = "BTC",
   quoteAsset = "USDT",
 }: OrderBookProps) => {
+  const t = useTranslations("trade.orderBook");
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [isLive, setIsLive] = useState(true);
 
@@ -69,7 +73,7 @@ export const OrderBook = ({
                 <ChevronUp className="w-4 h-4 text-destructive" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>فقط سفارش های فروش</TooltipContent>
+            <TooltipContent>{t("view.sellsOnly")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -82,7 +86,7 @@ export const OrderBook = ({
                 <ChevronDown className="w-4 h-4 text-emerald-600" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>فقط سفارش های خرید</TooltipContent>
+            <TooltipContent>{t("view.buysOnly")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -95,20 +99,22 @@ export const OrderBook = ({
                 <Layers className="w-4 h-4 rotate-90" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>همه ی موارد</TooltipContent>
+            <TooltipContent>{t("view.both")}</TooltipContent>
           </Tooltip>
         </div>
         {status !== "live" && (
           <span className="pe-3 text-[10px] text-muted-foreground">
-            {status === "connecting" ? "در حال اتصال..." : "اتصال مجدد..."}
+            {status === "connecting"
+              ? t("status.connecting")
+              : t("status.reconnecting")}
           </span>
         )}
       </div>
 
       <div className="grid grid-cols-3 px-4 py-2 text-xs font-medium text-muted-foreground border-b border-border/30">
-        <div className="text-right">قیمت ({quoteAsset})</div>
-        <div className="text-center">مقدار ({baseAsset})</div>
-        <div className="text-left">کل</div>
+        <div className="text-right">{t("columns.price", { quote: quoteAsset })}</div>
+        <div className="text-center">{t("columns.amount", { base: baseAsset })}</div>
+        <div className="text-left">{t("columns.total")}</div>
       </div>
 
       {(viewMode === "both" || viewMode === "sells") && (
@@ -148,7 +154,7 @@ export const OrderBook = ({
         <Button
           onClick={() => setIsLive(!isLive)}
           className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-          title={isLive ? "توقف به‌روزرسانی زنده" : "شروع به‌روزرسانی زنده"}
+          title={isLive ? t("pauseTooltip") : t("playTooltip")}
           variant="ghost"
         >
           {isLive ? (
@@ -156,7 +162,7 @@ export const OrderBook = ({
           ) : (
             <Play className="w-3 h-3" />
           )}
-          <span>{isLive ? "Live" : "Static"}</span>
+          <span>{isLive ? t("live") : t("static")}</span>
         </Button>
 
         {lastPrice ? (

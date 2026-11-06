@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { ValueOrderSortField, ValueOrderStatus, type OrderSortField, type OrderStatus } from "@repo/types";
+import { usePathname, useRouter } from "@/lib/i18nNavigation";
+import { useSearchParams } from "next/navigation";
 
 export type StatusFilter = OrderStatus | "all";
 

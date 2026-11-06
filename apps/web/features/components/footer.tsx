@@ -1,6 +1,6 @@
 import React from "react"
-import Link from "next/link"
 import {  ExternalLink, Activity, FolderCode } from "lucide-react"
+import { Link } from "@/lib/i18nNavigation"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -16,7 +16,7 @@ export function Footer() {
 
           <div className="flex flex-wrap items-center justify-center gap-6 order-1 md:order-2">
             
-            <Link 
+            <Link
               href="https://github.com/your-repo" 
               target="_blank"
               className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

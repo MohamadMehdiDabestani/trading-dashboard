@@ -6,6 +6,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/cn";
+import { useDirection } from "./ui/direction";
 
 type Props = {
   page: number;
@@ -27,7 +29,7 @@ type Props = {
   disabled?: boolean;
 };
 
-const fa = (n: number) => n.toLocaleString("en-US");
+const num = (n: number) => n.toLocaleString("en-US");
 
 function getPageRange(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -58,6 +60,8 @@ export function DataTablePagination({
   pageSizeOptions = [10, 20, 50],
   disabled,
 }: Props) {
+  const t = useTranslations("dataTable.pagination");
+  const dir = useDirection();
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
   const canPrev = page > 1;
@@ -69,11 +73,14 @@ export function DataTablePagination({
     <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-2 text-xs">
       <div className="flex items-center gap-3 text-muted-foreground">
         <span>
-          نمایش <bdi dir="ltr">{fa(from)}</bdi> تا <bdi dir="ltr">{fa(to)}</bdi>{" "}
-          از <bdi dir="ltr">{fa(total)}</bdi>
+          {t("showing", {
+            from: num(from),
+            to: num(to),
+            total: num(total),
+          })}
         </span>
         <div className="flex items-center gap-2">
-          <span>تعداد در صفحه</span>
+          <span>{t("rowsPerPage")}</span>
           <Select
             value={String(pageSize)}
             onValueChange={(v) => onPageSizeChange(Number(v))}
@@ -85,7 +92,7 @@ export function DataTablePagination({
             <SelectContent>
               {pageSizeOptions.map((s) => (
                 <SelectItem key={s} value={String(s)}>
-                  {fa(s)}
+                  {num(s)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -100,9 +107,13 @@ export function DataTablePagination({
           className={nav}
           disabled={!canPrev || disabled}
           onClick={() => onPageChange(1)}
-          aria-label="صفحه اول"
+          aria-label={t("firstPage")}
         >
-          <ChevronsRight className="h-4 w-4" />
+          {dir == "rtl" ? (
+            <ChevronsRight className="h-4 w-4" />
+          ) : (
+            <ChevronsLeft className="h-4 w-4" />
+          )}
         </Button>
         <Button
           variant="ghost"
@@ -110,12 +121,16 @@ export function DataTablePagination({
           className={nav}
           disabled={!canPrev || disabled}
           onClick={() => onPageChange(page - 1)}
-          aria-label="صفحه قبل"
+          aria-label={t("previousPage")}
         >
-          <ChevronRight className="h-4 w-4" />
+          {dir == "rtl" ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
         </Button>
         <span className="px-2 tabular-nums sm:hidden">
-          {fa(page)} / {fa(totalPage)}
+          {num(page)} / {num(totalPage)}
         </span>
         <div className="hidden items-center gap-1 sm:flex">
           {getPageRange(page, totalPage).map((p, i) =>
@@ -133,7 +148,7 @@ export function DataTablePagination({
                 onClick={() => onPageChange(p)}
                 aria-current={p === page ? "page" : undefined}
               >
-                {fa(p)}
+                {num(p)}
               </Button>
             ),
           )}
@@ -145,9 +160,13 @@ export function DataTablePagination({
           className={nav}
           disabled={!canNext || disabled}
           onClick={() => onPageChange(page + 1)}
-          aria-label="صفحه بعد"
+          aria-label={t("nextPage")}
         >
-          <ChevronLeft className="h-4 w-4" />
+          {dir == "rtl" ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </Button>
         <Button
           variant="ghost"
@@ -155,9 +174,13 @@ export function DataTablePagination({
           className={nav}
           disabled={!canNext || disabled}
           onClick={() => onPageChange(totalPage)}
-          aria-label="صفحه آخر"
+          aria-label={t("lastPage")}
         >
-          <ChevronsLeft className="h-4 w-4" />
+          {dir == "rtl" ? (
+            <ChevronsLeft className="h-4 w-4" />
+          ) : (
+            <ChevronsRight className="h-4 w-4" />
+          )}
         </Button>
       </div>
     </div>

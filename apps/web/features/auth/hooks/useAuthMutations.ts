@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import type {
   OtpSendDto,
   OtpVerifyDto,
@@ -11,6 +10,7 @@ import type {
 } from "@repo/types";
 import { authApi } from "../api/auth.api";
 import { authKeys } from "../api/auth.keys";
+import { useRouter } from "@/lib/i18nNavigation";
 
 export function useSendOtp() {
   return useMutation({
@@ -38,7 +38,6 @@ export function useLoginWithPassword() {
   return useMutation({
     mutationFn: (body: PasswordLoginDto) => authApi.loginWithPassword(body),
     onSuccess: async () => {
-         console.log("first =====");
 
       await qc.invalidateQueries({ queryKey: authKeys.me() });
       router.replace("/dashboard");
