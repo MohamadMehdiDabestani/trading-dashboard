@@ -1,3 +1,766 @@
 {
-  "d": { "a": "ddddd" }
+  "breadcrumbs": {
+    "dashboard": "Dashboard",
+    "wallet": "Wallet",
+    "account": "Account",
+    "trade": "Trade"
+  },
+  "common": {
+    "fields": {
+      "phone": "Mobile number",
+      "code": "Verification code",
+      "email": "Email",
+      "otp": "One-time password"
+    },
+    "validation": {
+      "VALIDATION_REQUIRED": "{field} is required",
+      "VALIDATION_INVALID": "{field} is invalid",
+      "VALIDATION_MIN_LENGTH": "{field} has too few characters",
+      "VALIDATION_MAX_LENGTH": "{field} has too many characters",
+      "VALIDATION_PATTERN": "{field} format is incorrect",
+      "required": "This field is required",
+      "invalid": "The entered value is invalid",
+      "invalidType": "The entered value is invalid",
+      "minLength": "Enter at least {min, number} characters",
+      "maxLength": "Maximum {max, number} characters allowed",
+      "length": "Must be exactly {length, number} characters",
+      "minValue": "Value must not be less than {min}",
+      "maxValue": "Value must not be greater than {max, number}",
+      "minItems": "Select at least {min, number} items",
+      "maxItems": "Maximum {max, number} items allowed",
+      "email": "Email is not valid",
+      "phone": "Mobile number is not valid (example: 09123456789)",
+      "digitsOnly": "Enter numbers only",
+      "otpLength": "Code must be {length, number} digits",
+      "passwordMin": "Must be at least {min, number} characters",
+      "passwordMax": "Maximum {max, number} characters allowed",
+      "passwordLetter": "Must contain at least one English letter",
+      "passwordDigit": "Must contain at least one number",
+      "nameMin": "Name must be at least {min, number} letters",
+      "nameMax": "Name must not be more than {max, number} letters",
+      "deviceLinkCodeInvalid": "Incorrect code. Try again."
+    },
+    "buttons": {
+      "submit": "Submit",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "continue": "Continue"
+    }
+  },
+  "sidebar": {
+    "overview": "Overview",
+    "trade": "Trade",
+    "wallet": "Wallet",
+    "account": "Account",
+    "footer": {
+      "themeToggle": "Toggle Dark/Light",
+      "logout": "Logout"
+    }
+  },
+  "dataTable": {
+    "pagination": {
+      "showing": "Showing {from} to {to} of {total}",
+      "rowsPerPage": "Rows per page",
+      "firstPage": "First page",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "lastPage": "Last page"
+    }
+  },
+  "auth": {
+    "tabs": {
+      "login": "Login",
+      "register": "Register"
+    },
+    "otp": {
+      "title": "Login with one-time password",
+      "descritpion": "Enter your mobile number",
+      "verifyTitle": "Verify code",
+      "verifyDescritpion": "Enter the 6-digit code sent to you",
+      "sendButton": "Send code",
+      "verifyButton": "Login",
+      "resendButton": "Resend",
+      "successSent": "The code was sent to your number",
+      "successResent": "The code was resent",
+      "classicLogin": "Classic login"
+    },
+    "classic": {
+      "login": {
+        "title": "Welcome",
+        "description": "Enter your account information to log in.",
+        "phoneLabel": "Mobile number",
+        "phonePlaceholder": "09...",
+        "passwordLabel": "Password",
+        "easyLogin": "Easy login"
+      },
+      "register": {
+        "title": "Create a new account",
+        "description": "Enter your information to create an account.",
+        "nameLabel": "Full name",
+        "namePlaceholder": "Ali Ahmadi",
+        "phoneLabel": "Phone number",
+        "phonePlaceholder": "09...",
+        "passwordLabel": "Password",
+        "easyRegister": "Easy registration"
+      }
+    },
+    "hero": {
+      "badge": "Institutional-Grade Core",
+      "title": "High-Frequency Order Engine & Real-Time Liquidity",
+      "subtitle": "Built from scratch with an in-memory B-Tree matching engine, zero-hallucination JEV AI agent, and end-to-end cryptographic double-entry ledger.",
+      "statLatency": "<0.4ms",
+      "statLatencyLabel": "Order Matching",
+      "statEngine": "10^18",
+      "statEngineLabel": "BigInt Precision",
+      "statStream": "100%",
+      "statStreamLabel": "WebSocket L2",
+      "statSecurity": "OTP & QR",
+      "statSecurityLabel": "Cross-Device Auth"
+    }
+  },
+  "trade": {
+    "successCloseTrade": "Order cancelled successfully",
+    "sides": {
+      "buy": "Buy",
+      "sell": "Sell"
+    },
+    "orderColumns": {
+      "symbol": "Trading pair",
+      "status": "Status",
+      "price": "Price",
+      "quantity": "Quantity",
+      "filledQuantity": "Filled",
+      "createdAt": "Date",
+      "actions": "Actions",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling..."
+    },
+    "statusFilters": {
+      "all": "All",
+      "open": "Open",
+      "partial": "Partially filled",
+      "filled": "Filled",
+      "cancelled": "Cancelled"
+    },
+    "orderForm": {
+      "side": {
+        "buy": "Buy (Buy)",
+        "sell": "Sell (Sell)"
+      },
+      "type": {
+        "limit": "Limit",
+        "market": "Market"
+      },
+      "price": {
+        "label": "Price ({quote})",
+        "marketPrice": "Live market price",
+        "bestAsk": "Best ask",
+        "bestBid": "Best bid",
+        "live": "Live",
+        "loading": "Loading…",
+        "setPriceTooltip": "Click to set price"
+      },
+      "amount": {
+        "label": "Amount ({base})",
+        "balance": "Balance",
+        "max": "Max",
+        "totalPreview": "Estimated total",
+        "insufficient": "Insufficient balance — required: {required} {asset}"
+      },
+      "submit": {
+        "submitting": "Submitting...",
+        "insufficient": "Insufficient balance",
+        "buy": "Buy {base}",
+        "sell": "Sell {base}"
+      }
+    },
+    "orderBook": {
+      "view": {
+        "sellsOnly": "Sell orders only",
+        "buysOnly": "Buy orders only",
+        "both": "All"
+      },
+      "status": {
+        "connecting": "Connecting...",
+        "reconnecting": "Reconnecting..."
+      },
+      "columns": {
+        "price": "Price ({quote})",
+        "amount": "Amount ({base})",
+        "total": "Total"
+      },
+      "live": "Live",
+      "static": "Static",
+      "pauseTooltip": "Pause live updates",
+      "playTooltip": "Start live updates"
+    },
+    "orderCards": {
+      "sortLabel": "Sort",
+      "sortDirection": "Change sort direction",
+      "sortOptions": {
+        "createdAt": "Date",
+        "price": "Price",
+        "quantity": "Quantity",
+        "filledQuantity": "Filled",
+        "symbol": "Trading pair",
+        "status": "Status"
+      },
+      "fields": {
+        "price": "Price",
+        "quantity": "Quantity",
+        "filled": "Filled"
+      },
+      "cancel": "Cancel order",
+      "cancelling": "Cancelling...",
+      "empty": "No data"
+    },
+    "tradingForm": {
+      "formPanel": "Open trade",
+      "orderBookPanel": "Order book",
+      "symbolPlaceholder": "Select symbol",
+      "recentOrders": "Recent orders",
+      "refreshing": "Refreshing...",
+      "emptyAll": "No orders have been placed yet",
+      "emptyFiltered": "No orders found with this filter"
+    }
+  },
+  "markets": {
+    "title": "Markets",
+    "countLabel": "{count} tradable symbols",
+    "searchPlaceholder": "Search (e.g. Bitcoin or BTC)...",
+    "sortLabel": "Sort:",
+    "sort": {
+      "name": "Name",
+      "price": "Price"
+    },
+    "removeSort": "Remove sort",
+    "headers": {
+      "symbol": "Symbol",
+      "price": "Price ({quote})"
+    },
+    "unavailablePrice": "Price unavailable",
+    "trade": "Trade",
+    "empty": "No symbols found for this search"
+  },
+  "deviceLink": {
+    "title": "Login with QR",
+    "description": "Log in to your account by approving on another device",
+    "readyHint": "To continue, press the button below. Then a 4-digit code will be displayed that you must enter on the logged-in device.",
+    "waitingHint": "Enter this code on the logged-in device and approve:",
+    "waitingStatus": "Waiting for approval...",
+    "success": "You logged in successfully.",
+    "denied": "Request denied.",
+    "expired": "Request expired.",
+    "invalid": "This link is invalid or has already been used.",
+    "regenerateHint": "Generate a new QR from the logged-in device."
+  },
+  "dashboard": {
+    "cards": {
+      "successRate": {
+        "title": "Trade success rate",
+        "emptyValue": "—",
+        "deltaSuffix": "% vs last month",
+        "summary": "{filled} filled orders out of {total} finalized orders"
+      },
+      "portfolio": {
+        "title": "Total assets value (estimated)",
+        "locked": "Locked in orders:",
+        "missingPrices": "Prices for some assets are unavailable and have not been calculated"
+      },
+      "balance": {
+        "title": "Available balance",
+        "deposit": "Deposit",
+        "dialogTitle": "Deposit USDT",
+        "amountPlaceholder": "0.00",
+        "submitting": "Submitting...",
+        "confirmDeposit": "Confirm deposit"
+      }
+    },
+    "marketWatch": {
+      "title": "Live market",
+      "reconnecting": "Reconnecting...",
+      "connecting": "Connecting...",
+      "allSymbols": "All symbols"
+    },
+    "tabs": {
+      "history": "Trade history",
+      "orders": "Open orders"
+    }
+  },
+  "account": {
+    "page": {
+      "title": "User panel",
+      "subtitle": "Manage account, identity verification, and security settings"
+    },
+    "profile": {
+      "username": "Username",
+      "level": "Individual level"
+    },
+    "limits": {
+      "title": "Account limits",
+      "dailyCrypto": "Daily crypto withdrawal",
+      "dailyFiat": "Daily fiat withdrawal",
+      "tradingFee": "Trading fee (Maker/Taker)"
+    },
+    "connectedAccounts": {
+      "title": "Institutions and connected accounts",
+      "addNew": "Add new account",
+      "verified": "Verified"
+    },
+    "kyc": {
+      "title": "Identity verification",
+      "description": "Increase your level to reduce financial transaction limits.",
+      "steps": {
+        "bronze": {
+          "title": "Level 1: Bronze",
+          "description": "Email and mobile",
+          "content": "Complete email and mobile number to start identity verification."
+        },
+        "silver": {
+          "title": "Level 2: Silver (current)",
+          "description": "National ID card and selfie",
+          "content": "Your national ID card and selfie are being reviewed."
+        },
+        "gold": {
+          "title": "Level 3: Gold",
+          "description": "Residential address verification",
+          "content": "To upgrade, residential address verification is required."
+        },
+        "vip": {
+          "title": "VIP / Corporate",
+          "description": "Corporate contract",
+          "content": "For corporate accounts and organizational contracts."
+        }
+      }
+    },
+    "security": {
+      "title": "Security settings",
+      "twoFactor": {
+        "title": "Two-factor authentication (2FA)",
+        "description": "Use Google Authenticator to increase login security."
+      },
+      "smsAlerts": {
+        "title": "SMS transaction alerts",
+        "description": "Send an SMS immediately upon login or asset withdrawal."
+      },
+      "loginHistory": {
+        "title": "Recent account login history",
+        "columns": {
+          "date": "Date and time",
+          "device": "Browser / device",
+          "method": "Login method",
+          "ip": "IP address",
+          "status": "Status"
+        },
+        "loading": "Loading...",
+        "error": "Failed to retrieve history.",
+        "retry": "Retry",
+        "empty": "No logins recorded yet.",
+        "statusSuccess": "Successful",
+        "statusFailed": "Failed",
+        "newUserSuffix": "(Registration)"
+      },
+      "loginMethods": {
+        "otp": "SMS code",
+        "password": "Password",
+        "qr": "QR code"
+      },
+      "unknownDevice": "Unknown"
+    }
+  },
+  "wallet": {
+    "title": "Assets",
+    "totalValue": "Total assets value",
+    "assets": {
+      "title": "Your assets",
+      "searchPlaceholder": "Search asset name",
+      "loading": "Loading...",
+      "error": "Error retrieving assets",
+      "retry": "Retry",
+      "noResults": "No results found"
+    },
+    "coin": {
+      "totalBalance": "Total balance",
+      "available": "Available:",
+      "locked": "Locked:",
+      "priceUnit": "(1 {symbol} = ${price})"
+    },
+    "periods": {
+      "all": "All",
+      "1D": "24 hours",
+      "1W": "7 days",
+      "1M": "30 days",
+      "1Y": "1 year"
+    },
+    "typeGroups": {
+      "all": "All",
+      "deposit": "Deposit",
+      "withdraw": "Withdrawal",
+      "trade": "Trade",
+      "fee": "Fee",
+      "lock": "Lock / Unlock",
+      "transfer": "Transfer"
+    },
+    "typeLabels": {
+      "deposit": "Deposit",
+      "withdraw": "Withdrawal",
+      "trade_buy": "Buy",
+      "trade_sell": "Sell",
+      "fee": "Fee",
+      "lock": "Order lock",
+      "unlock": "Order unlock",
+      "transfer_in": "Incoming transfer",
+      "transfer_out": "Outgoing transfer"
+    },
+    "coins": {
+      "BTC": "Bitcoin",
+      "ETH": "Ethereum",
+      "SOL": "Solana",
+      "BNB": "Binance Coin",
+      "ADA": "Cardano",
+      "XRP": "Ripple",
+      "USDT": "Tether"
+    },
+    "ranges": {
+      "1D": "1 day",
+      "1W": "1 week",
+      "1M": "1 month",
+      "1Y": "1 year"
+    },
+    "actions": {
+      "depositTo": "Deposit to {symbol}",
+      "withdraw": "Withdraw",
+      "trade": "Trade"
+    },
+    "deposit": {
+      "amountPlaceholder": "Amount {symbol}",
+      "submitting": "Submitting...",
+      "confirm": "Confirm deposit",
+      "error": "Deposit failed. Try again."
+    },
+    "withdraw": {
+      "availableLabel": "Available to withdraw",
+      "amountPlaceholder": "Amount {symbol}",
+      "max": "Max",
+      "submitting": "Submitting...",
+      "confirm": "Confirm withdrawal",
+      "exceeds": "The entered amount exceeds the available withdrawal balance.",
+      "error": "Withdrawal failed. Try again."
+    },
+    "trend": {
+      "title": "Balance trend for {symbol}",
+      "error": "Error retrieving trend",
+      "retry": "Retry",
+      "loading": "Loading...",
+      "empty": "No data to display",
+      "tooltipApprox": "≈ ${value} (at current price)"
+    },
+    "transactions": {
+      "title": "Transactions for {symbol}",
+      "clearFilters": "Clear filters",
+      "timeLabel": "Time:",
+      "typeLabel": "Type:",
+      "loading": "Loading...",
+      "error": "Error retrieving transactions",
+      "retry": "Retry",
+      "emptyFiltered": "No transactions found with these filters",
+      "empty": "No transactions recorded",
+      "statusSuccess": "Successful",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "{page} / {total}"
+    }
+  },
+  "errors": {
+    "VALIDATION_ERROR": "Validation error",
+    "SESSION_EXPIRED": "Session expired",
+    "OTP_RATE_LIMIT": "Please wait a moment and try again",
+    "OTP_INVALID": "Invalid code",
+    "OTP_MAX_ATTEMPTS": "Unauthorized attempts",
+    "OTP_WRONG": "Invalid code",
+    "VALIDATION_INVALID_VALUE": "{field} is invalid",
+    "INSUFFICIENT_BALANCE": "Insufficient balance",
+    "RATE_LIMIT": "Please wait a moment and try again",
+    "USER_EXISTS": "A user with these details already exists",
+    "LOGIN_LOCKED": "Your account is locked",
+    "INTERNAL_SERVER_ERROR": "Internal server error",
+    "FORBIDDEN": "Access forbidden",
+    "BAD_REQUEST": "Invalid request",
+    "NOT_FOUND": "Not found",
+    "AUTH_FAIL": "Authentication failed",
+    "USER_NOTFOUND": "User not found",
+    "UNAUTHORIZED": "Please log in to your account",
+    "INVALID_CREDENTIALS": "Username or password is incorrect",
+    "INVALID_REFRESH": "Invalid refresh token",
+    "WALLET_INVALID_AMOUNT": "The entered amount is invalid",
+    "DEPOSIT_FAILED": "Deposit failed, please try again",
+    "INVALID_BALANCE_LOCK_STATE": "Invalid balance lock state",
+    "INVALID_LOCK_AMOUNT": "Invalid locked amount",
+    "INVALID_QUANTITY": "Invalid order quantity",
+    "INVALID_PRICE": "Invalid order price",
+    "INVALID_SYMBOL": "Invalid trading symbol",
+    "ORDER_NOT_OPEN": "Order is not open",
+    "ORDER_NOT_FOUND": "Order not found",
+    "ORDER_NOT_FOUND_IN_ENGINE": "Order not found in trading engine",
+    "NEGATIVE_LEDGER_BALANCE": "Ledger balance is negative",
+    "BALANCE_ROW_NOT_FOUND": "Balance record not found",
+    "SELF_TRADE_BLOCKED": "Self-trade is not allowed",
+    "DEVICE_LINK_CODE_INVALID": "Invalid device link code",
+    "DEVICE_LINK_INVALID": "Invalid device link"
+  },
+  "landing": {
+    "nav": {
+      "brand": "CryptoTrade Pro",
+      "badge": "Portfolio Case Study",
+      "engine": "Matching Engine",
+      "architecture": "Architecture",
+      "features": "Capabilities",
+      "auth": "Auth & QR",
+      "login": "Sign In",
+      "cta": "Launch Terminal",
+      "ai": "JEV AI Agent"
+    },
+    "hero": {
+      "eyebrow": "Full-Stack TypeScript Portfolio • Demo Crypto Exchange",
+      "titleLine1": "High-Frequency Order Engine",
+      "titleHighlight": "Engineered End-to-End",
+      "subtitle": "A production-grade demo cryptocurrency exchange built from scratch in a Turborepo monorepo — featuring an in-memory B-Tree matching engine, automated local market makers, BFF & SSR React Query hydration, and multiplexed WebSocket streams.",
+      "primaryCta": "Launch Live Terminal",
+      "secondaryCta": "OTP / QR Sign In",
+      "exploreCta": "Explore Architecture",
+      "livePreview": "Interactive Matching Engine Preview",
+      "marketMakerActive": "Local Market Maker Active",
+      "simulateOrder": "Inject Market Order",
+      "simBuy": "Buy",
+      "simSell": "Sell",
+      "spread": "Spread",
+      "depth": "Order Book Depth",
+      "executionLog": "Real-Time Execution Tape",
+      "price": "Price (USDT)",
+      "amount": "Amount (BTC)",
+      "total": "Total",
+      "matchedIn": "Matched in <0.4ms"
+    },
+    "metrics": {
+      "engine": {
+        "value": "O(log n)",
+        "label": "B-Tree Price-Time Priority",
+        "detail": "10^18 BigInt fixed-point precision"
+      },
+      "streaming": {
+        "value": "1 WS",
+        "label": "Multiplexed Socket Store",
+        "detail": "Ref-counted subscriptions & REST seed"
+      },
+      "rendering": {
+        "value": "SSR + BFF",
+        "label": "Zero-Waterfall Hydration",
+        "detail": "Next.js 16 Server Prefetch + React Query"
+      },
+      "monorepo": {
+        "value": "100% TS",
+        "label": "End-to-End Type Safety",
+        "detail": "Shared DTOs, Zod 4 schemas & CASL RBAC"
+      }
+    },
+    "pillars": {
+      "eyebrow": "Core Engineering Focus",
+      "title": "14 Architectural Pillars Built from First Principles",
+      "subtitle": "Every layer of this exchange was custom-built to solve real financial-systems engineering challenges — from B-Tree order matching and local market makers to SSR React Query hydration.",
+      "items": {
+        "realtimeOrders": {
+          "tag": "Execution",
+          "title": "Real-Time Order Lifecycle",
+          "desc": "Instantaneous order placement, partial fills, and atomic cancellations with optimistic UI feedback and automatic React Query cache invalidation."
+        },
+        "orderEngine": {
+          "tag": "Core Engine",
+          "title": "Powerful Matching Engine",
+          "desc": "Price-time priority (FIFO) matching engine backed by sorted B-Trees and Big.js / 10^18 scaled integers to eliminate floating-point drift."
+        },
+        "orderbookManager": {
+          "tag": "State Sync",
+          "title": "Order Book Manager",
+          "desc": "Deterministic L2 depth aggregation with instant WebSocket snapshots, live bid/ask volume bars, directional tick indicators, and pause/resume controls."
+        },
+        "marketMaker": {
+          "tag": "Liquidity",
+          "title": "Local Market Maker Bot",
+          "desc": "Built-in autonomous liquidity provider that continuously quotes realistic bid-ask spreads and executes synthetic trades so the demo book is always alive."
+        },
+        "ssrBff": {
+          "tag": "Next.js 16",
+          "title": "SSR & BFF Architecture",
+          "desc": "Server-side cookie forwarding, JWT expiry inspection in edge proxy, silent token rotation, and dehydrated TanStack Query state for instant first paint."
+        },
+        "multilanguage": {
+          "tag": "i18n + RTL/LTR",
+          "title": "Bilingual & Bi-Directional",
+          "desc": "Complete Persian (RTL, Vazir font, Jalali calendar) and English (LTR, Inter font, UTC) localization powered by next-intl with zero hydration mismatches."
+        },
+        "advancedUx": {
+          "tag": "Interface",
+          "title": "Advanced Trading UX",
+          "desc": "Drag-and-drop customizable workspace panels (@dnd-kit), TradingView charts, natural-language AI trading assistant, and responsive mobile order cards."
+        },
+        "otpLogin": {
+          "tag": "Passwordless",
+          "title": "OTP Easy Login",
+          "desc": "Frictionless two-step mobile verification flow with auto-advancing 6-digit OTP inputs, countdown resend timers, and automatic digit normalization."
+        },
+        "qrLogin": {
+          "tag": "Cross-Device",
+          "title": "QR Code Device Link",
+          "desc": "Telegram/Discord-style cross-device authentication: scan a live SVG QR code, verify a confirmation code on the primary session, and approve or deny in real time."
+        },
+        "fullstackJs": {
+          "tag": "Unified Stack",
+          "title": "Full-Stack TypeScript",
+          "desc": "Next.js 16 & React 19 on the frontend paired with a high-throughput Fastify 5 API, Drizzle ORM, and PostgreSQL double-entry ledger on the backend."
+        },
+        "wsManager": {
+          "tag": "Networking",
+          "title": "WebSocket Connection Manager",
+          "desc": "Singleton external store integrated via useSyncExternalStore with reference-counted channel subscriptions, REST price seeding, idle auto-close, and exponential backoff."
+        },
+        "monorepo": {
+          "tag": "Turborepo",
+          "title": "Modular Monorepo",
+          "desc": "Clean separation across apps/web, apps/api, and shared workspace packages (@repo/types, @repo/db, @repo/casl, @repo/ui) with unified linting and builds."
+        },
+        "genericQuery": {
+          "tag": "Performance",
+          "title": "Generic Query & Cache Layer",
+          "desc": "Isomorphic queryOptions factories shared between server prefetch and client hooks, URL-synced table filters, keepPreviousData pagination, and smart active-order polling."
+        },
+        "securityLedger": {
+          "tag": "Integrity",
+          "title": "Double-Entry Wallet Ledger",
+          "desc": "Auditable balance locking on order creation, fee deduction, self-trade prevention, and historical balance trend reconstruction."
+        }
+      }
+    },
+    "architecture": {
+      "eyebrow": "System Blueprint",
+      "title": "End-to-End Data & Execution Pipeline",
+      "subtitle": "How a single trade travels through the BFF layer, matching engine, double-entry ledger, and WebSocket broadcast pipeline.",
+      "steps": {
+        "client": {
+          "title": "1. Client & URL State",
+          "tech": "React 19 • TanStack Query & Form • useSyncExternalStore",
+          "desc": "Shared queryOptions hydrate from SSR, while marketSocket subscribes to live symbols with reference counting."
+        },
+        "bff": {
+          "title": "2. Next.js SSR & BFF Proxy",
+          "tech": "Next.js 16 • Edge Proxy • Cookie Forwarding",
+          "desc": "Inspects JWT expiration before render, performs silent token refresh redirects, and prefetches API data on the server."
+        },
+        "api": {
+          "title": "3. Fastify 5 API & Auth Guard",
+          "tech": "Fastify • Zod 4 • CASL • Rate Limit",
+          "desc": "Validates DTOs, enforces role abilities, manages OTP & QR device-link state machines, and routes orders."
+        },
+        "engine": {
+          "title": "4. Matching Engine & Market Maker",
+          "tech": "sorted-btree • Big.js • EventEmitter3",
+          "desc": "Matches incoming orders against the B-Tree book, emits L2 snapshots & tickers, and runs local market-making bots."
+        },
+        "db": {
+          "title": "5. PostgreSQL & Drizzle Ledger",
+          "tech": "Drizzle ORM • PostgreSQL • Atomic Locks",
+          "desc": "Persists orders, trades, and immutable ledger entries (deposit, withdraw, lock, unlock, trade, fee)."
+        }
+      }
+    },
+    "authSpotlight": {
+      "eyebrow": "Authentication Engineering",
+      "title": "Multi-Modal Security: Classic, OTP & Live QR Handshake",
+      "subtitle": "Designed for both speed and security — complete with IP masking, User-Agent device parsing, and real-time cross-device session approval.",
+      "otp": {
+        "badge": "Zero-Friction Flow",
+        "title": "One-Time Password (OTP) Easy Login",
+        "step1": "Persian/Arabic digits are normalized to ASCII on the fly",
+        "step2": "6-digit OTP input with keyboard navigation & paste support",
+        "step3": "Automatic token rotation with HttpOnly cookies",
+        "action": "Test OTP Login"
+      },
+      "qr": {
+        "badge": "Real-Time Handshake",
+        "title": "QR Code Cross-Device Login",
+        "step1": "Authenticated session generates a time-boxed SVG QR link",
+        "step2": "Second device opens the link and receives a verification code",
+        "step3": "Primary device inspects IP/OS and approves or denies live",
+        "action": "Inspect Account & QR"
+      }
+    },
+    "cta": {
+      "badge": "Interactive Portfolio Demo",
+      "title": "Ready to Test the Matching Engine Live?",
+      "subtitle": "Jump straight into the trading terminal, inspect the live order book, test the AI order assistant, or try the OTP and QR login flows.",
+      "primary": "Open Trading Terminal",
+      "secondary": "Try Auth & OTP Flow",
+      "markets": "Browse Markets",
+      "wallet": "Explore SSR Wallet"
+    },
+    "footer": {
+      "builtAs": "Engineered as a Full-Stack TypeScript Portfolio Project.",
+      "dashboard": "Dashboard",
+      "trade": "BTC/USDT Terminal",
+      "wallet": "Wallet",
+      "markets": "Markets",
+      "auth": "OTP / QR Login"
+    },
+    "aiSection": {
+      "eyebrow": "Neuro-Symbolic AI Workflow • Powered by JEV Agent",
+      "title": "Bilingual Trading Assistant with Zero-Hallucination Execution",
+      "subtitle": "Instead of letting a raw LLM guess numbers or execute unchecked trades, this exchange pairs the JEV decision agent (free/jev-1.13) with a deterministic slot extractor, Zod schema validation, interactive slot-filling, and a human-in-the-loop confirmation card.",
+      "tryPrompts": "Click a real user prompt to inspect the 4-stage JEV AI pipeline",
+      "userInputLabel": "Raw User Message (FA / EN)",
+      "stage1Title": "1. JEV Multi-Head Classifier",
+      "stage1Desc": "After normalizing Persian/Arabic digits, JevClassifier queries the JEV Decision API across 3 constrained axes (intent, side, coin) and enforces minimum confidence thresholds.",
+      "stage2Title": "2. Deterministic Slot & Math Parser",
+      "stage2Desc": "The LLM never touches numbers. Regex & lexical rules extract exact amounts (USDT, BASE coin, or portfolio percentages like 'نصف' = 50%) and validate against IntentSchema.",
+      "stage3Title": "3. Slot-Filling & Safe Execution",
+      "stage3Desc": "Code determines which fields are missing (symbol, amount, or limit price), checks live wallet balances & WebSocket prices, and renders an explicit confirmation card.",
+      "openLiveAssistant": "Test JEV Assistant in Dashboard",
+      "scenarios": {
+        "quickBuy": {
+          "title": "Instant Market Buy"
+        },
+        "percentSell": {
+          "title": "Percentage Limit Sell"
+        },
+        "slotFill": {
+          "title": "Interactive Slot-Filling"
+        },
+        "balance": {
+          "title": "Live Balance & Valuation"
+        },
+        "cancelOrder": {
+          "title": "Open Orders & Cancel"
+        },
+        "howto": {
+          "title": "Contextual Trading Guide"
+        }
+      },
+      "widget": {
+        "confirmTitle": "Human-in-the-Loop Order Confirmation",
+        "humanInLoop": "Verified against live USDT balance & WS price before POST /trade/new",
+        "slotTitle": "Deterministic Missing-Slot Prompt",
+        "slotPrompt": "Symbol SOLUSDT detected. Assistant asks for the missing amount & limit price via quick chips:",
+        "balanceTitle": "Instant Asset & USD Valuation",
+        "cancelTitle": "Active Order Lookup & One-Click Cancel",
+        "howtoTitle": "Step-by-Step Interactive Walkthrough",
+        "howtoBody": "Explains how to place a $100 BTC order and offers a one-click button to pre-fill the order draft."
+      },
+      "capabilities": {
+        "capTrade": "Limit & Market Orders",
+        "capQuick": "Quick Convert (Market)",
+        "capPercent": "Percentage Sizing (50%, All)",
+        "capBalance": "Balance & Portfolio Worth",
+        "capCancel": "List & Cancel Open Orders",
+        "capHowto": "Interactive How-To Guides"
+      }
+    }
+  }
 }
