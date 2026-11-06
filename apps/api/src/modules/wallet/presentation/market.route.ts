@@ -6,6 +6,7 @@ export async function marketPlugin(fastify: FastifyInstance) {
   fastify.get<{ Reply: APIResult<MarketPricesReply> }>(
     "/prices",
     async (_req, reply) => {
+      
       const prices: MarketPricesReply = { USDT: "1" };
       for (const s of SYMBOLS) {
         if (s.quoteAsset !== "USDT") continue;
