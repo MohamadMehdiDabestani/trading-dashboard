@@ -657,7 +657,7 @@
         "monorepo": {
           "tag": "Turborepo",
           "title": "معماری مونورپوی ماژولار",
-          "desc": "تفکیک تمیز کدها در apps/web و apps/api به همراه پکیج‌های مشترک (@repo/types، @repo/db، @repo/casl و @repo/ui) با بیلد و تایپ‌چک یکپارچه."
+          "desc": "تفکیک تمیز کدها در apps/web و apps/api به همراه پکیج‌های مشترک (@repo/types، @repo/db، @repo/casl) با بیلد و تایپ‌چک یکپارچه."
         },
         "genericQuery": {
           "tag": "بهینه‌سازی",

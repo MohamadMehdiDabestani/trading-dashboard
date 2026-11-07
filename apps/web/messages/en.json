@@ -657,7 +657,7 @@
         "monorepo": {
           "tag": "Turborepo",
           "title": "Modular Monorepo",
-          "desc": "Clean separation across apps/web, apps/api, and shared workspace packages (@repo/types, @repo/db, @repo/casl, @repo/ui) with unified linting and builds."
+          "desc": "Clean separation across apps/web, apps/api, and shared workspace packages (@repo/types, @repo/db, @repo/casl) with unified linting and builds."
         },
         "genericQuery": {
           "tag": "Performance",

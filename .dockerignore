@@ -7,4 +7,3 @@ node_modules
 .vercel
 .env*
 apps/web
-apps/docs
