@@ -10,6 +10,7 @@ import { QueryProvider } from "@/provider/reactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/provider/themeProvider";
+import { ScrollToTop } from "@/components/scrollToTop";
 const vazir = localFont({
   display: "swap",
   src: [
@@ -56,7 +57,10 @@ export default async function RootLayout({
           <NextIntlClientProvider locale={locale} messages={messages}>
             <QueryProvider>
               <DirectionProvider dir={getDirection(locale)}>
-                <TooltipProvider>{children}</TooltipProvider>
+                <TooltipProvider>
+                  <ScrollToTop />
+                  {children}
+                </TooltipProvider>
                 <Toaster className={font} />
               </DirectionProvider>
             </QueryProvider>

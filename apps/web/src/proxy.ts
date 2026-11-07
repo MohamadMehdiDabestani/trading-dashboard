@@ -1,6 +1,7 @@
 import { routing } from "@/i18n/routing";
 import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
+
 function isExpired(token?: string, skew = 30) {
   if (!token) return true;
   try {
@@ -16,34 +17,45 @@ function isExpired(token?: string, skew = 30) {
     return true;
   }
 }
+
 const handleI18nRouting = createMiddleware(routing);
+
 export default function proxy(request: NextRequest) {
-  console.log("proxy ===");
-  const access = request.cookies.get("access_token")?.value;
-  const refresh = request.cookies.get("refresh_token")?.value;
-  console.log("proxy", request.nextUrl.pathname, {
-    hasAccess: !!access,
-    hasRefresh: !!refresh,
-    expired: isExpired(access),
-  });
-  const isPrefetch =
-  request.headers.get("next-router-prefetch") ||
-  request.headers.get("purpose") === "prefetch" ||
-  request.headers.has("rsc");
-  if (isExpired(access) && refresh && !isPrefetch) {
-    console.log("expired");
-    const url = new URL("/api/auth/refresh-redirect", request.url);
-    url.searchParams.set(
-      "next",
-      request.nextUrl.pathname + request.nextUrl.search,
-    );
-    return NextResponse.redirect(url);
+  const pathname = request.nextUrl.pathname;
+  const cleanPath = pathname.replace(/\/$/, "");
+  const isHomePage =
+    cleanPath === "" ||
+    routing.locales.some((locale) => cleanPath === `/${locale}`);
+
+  if (!isHomePage) {
+    const access = request.cookies.get("access_token")?.value;
+    const refresh = request.cookies.get("refresh_token")?.value;
+    console.log("proxy", pathname, {
+      hasAccess: !!access,
+      hasRefresh: !!refresh,
+      expired: isExpired(access),
+    });
+
+    const isPrefetch =
+      request.headers.get("next-router-prefetch") ||
+      request.headers.get("purpose") === "prefetch" ||
+      request.headers.has("rsc");
+
+    if (isExpired(access) && refresh && !isPrefetch) {
+      console.log("expired");
+      const url = new URL("/api/auth/refresh-redirect", request.url);
+      url.searchParams.set(
+        "next",
+        pathname + request.nextUrl.search,
+      );
+      return NextResponse.redirect(url);
+    }
   }
 
   const res = handleI18nRouting(request);
   res.headers.set(
     "x-pathname",
-    request.nextUrl.pathname + request.nextUrl.search,
+    pathname + request.nextUrl.search,
   );
   return res;
 }

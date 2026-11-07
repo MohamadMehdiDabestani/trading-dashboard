@@ -17,6 +17,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { AssistantWidget } from "@/components/assistanceWidget";
+import { ScrollToTop } from "@/components/scrollToTop";
 
 export default async function Layout({
   children,

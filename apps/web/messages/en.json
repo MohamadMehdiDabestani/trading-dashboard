@@ -750,7 +750,7 @@
       "stage1Title": "1. JEV Multi-Head Classifier",
       "stage1Desc": "After normalizing Persian/Arabic digits, JevClassifier queries the JEV Decision API across 3 constrained axes (intent, side, coin) and enforces minimum confidence thresholds.",
       "stage2Title": "2. Deterministic Slot & Math Parser",
-      "stage2Desc": "The LLM never touches numbers. Regex & lexical rules extract exact amounts (USDT, BASE coin, or portfolio percentages like 'نصف' = 50%) and validate against IntentSchema.",
+      "stage2Desc": "The LLM never touches numbers. Regex & lexical rules extract exact amounts (USDT, BASE coin, or portfolio percentages like 'half' = 50%) and validate against IntentSchema.",
       "stage3Title": "3. Slot-Filling & Safe Execution",
       "stage3Desc": "Code determines which fields are missing (symbol, amount, or limit price), checks live wallet balances & WebSocket prices, and renders an explicit confirmation card.",
       "openLiveAssistant": "Test JEV Assistant in Dashboard",
@@ -1010,5 +1010,14 @@
       "logout": "Logout",
       "verified": "Verified"
     }
+  },
+  "footer": {
+    "copyright": "© {year} CryptoTrade Pro. All rights reserved.",
+    "sourceCode": "Source Code",
+    "vercelDeploy": "Deploy to vercel",
+    "networkStatus": "Network Status",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "api": "API"
   }
 }

@@ -82,23 +82,45 @@ const fmtAsset = (v: unknown, symbol: string, fixed = false) => {
   });
 };
 
-const faDateTime = (d: string | Date, timeZone: string) => {
+const formatWalletDateTime = (
+  d: string | Date | number,
+  locale: string,
+  timeZone: string,
+) => {
   const date = new Date(d);
+  if (locale === "fa") {
+    return {
+      date: date.toLocaleDateString("fa-IR-u-ca-persian", {
+        timeZone,
+      }),
+      time: date.toLocaleTimeString("fa-IR", {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  }
+
   return {
-    date: date.toLocaleDateString("fa-IR-u-ca-persian", {
+    date: date.toLocaleDateString("en-US", {
       timeZone,
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
     }),
-    time: date.toLocaleTimeString("fa-IR", {
+    time: `${date.toLocaleTimeString("en-US", {
       timeZone,
       hour: "2-digit",
       minute: "2-digit",
-    }),
+      hour12: false,
+    })} UTC`,
   };
 };
 
 export function WalletView() {
   const t = useTranslations("wallet");
-  const timeZone = getWalletTimeZone(useLocale());
+  const locale = useLocale();
+  const timeZone = getWalletTimeZone(locale);
   const [selected, setSelected] = useState<string>(WALLET_DEFAULT_ASSET);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -593,16 +615,15 @@ export function WalletView() {
                           | { time: number; balance: number }
                           | undefined;
                         if (!active || !p) return null;
-                        const d = new Date(p.time);
+                        const { date, time } = formatWalletDateTime(
+                          p.time,
+                          locale,
+                          timeZone,
+                        );
                         return (
                           <div className="bg-popover border border-border p-3 rounded-lg shadow-xl backdrop-blur-md">
                             <p className="text-[10px] text-muted-foreground mb-1">
-                              {d.toLocaleDateString("fa-IR-u-ca-persian", { timeZone })}{" "}
-                              {d.toLocaleTimeString("fa-IR", {
-                                timeZone,
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {date} {time}
                             </p>
                             <p className="text-sm font-mono font-bold">
                               {fmtAsset(p.balance, activeCoin.symbol)}{" "}
@@ -716,7 +737,11 @@ export function WalletView() {
             >
               {history?.items.map((tx, i) => {
                 const incoming = INCOMING_TYPES.has(tx.type);
-                const { date, time } = faDateTime(tx.time, timeZone);
+                const { date, time } = formatWalletDateTime(
+                  tx.time,
+                  locale,
+                  timeZone,
+                );
                 return (
                   <div
                     key={`${String(tx.time)}-${i}`}

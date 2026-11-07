@@ -133,7 +133,7 @@ export const TradingForm = ({
       <DraggableLayout
         items={order}
         onChange={setOrder}
-        className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[384px_minmax(0,1fr)_288px] min-w-0 w-full gap-4"
+        className="flex-1 grid grid-cols-12 xl:grid-cols-[384px_minmax(0,1fr)_288px] min-w-0 w-full gap-4"
       >
         {order.map((id) => (
           <SortablePanel
@@ -141,9 +141,12 @@ export const TradingForm = ({
             id={id}
             className={cn(
               "min-h-0 min-w-0",
-              id === "chart" && "md:col-span-2 xl:col-span-1",
-              id === "form" && "md:col-span-1 xl:col-span-1",
-              id === "orderbook" && "md:col-span-1 xl:col-span-1",
+              id === "chart" &&
+                "col-span-12 md:col-span-12 xl:col-span-1 order-3 xl:order-none",
+              id === "form" &&
+                "col-span-12 md:col-span-6 xl:col-span-1 order-1 xl:order-none",
+              id === "orderbook" &&
+                "col-span-12 md:col-span-6 xl:col-span-1 order-2 xl:order-none",
             )}
           >
             {({ attributes, listeners }) => {

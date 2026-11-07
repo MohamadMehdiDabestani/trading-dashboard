@@ -1010,5 +1010,14 @@
       "logout": "خروج از حساب",
       "verified": "تایید شده"
     }
+  },
+  "footer": {
+    "copyright": "© {year} CryptoTrade Pro. تمامی حقوق محفوظ است.",
+    "sourceCode": "سورس کد",
+    "vercelDeploy": "دیپلوی در ورسل",
+    "networkStatus": "وضعیت شبکه",
+    "terms": "شرایط",
+    "privacy": "حریم خصوصی",
+    "api": "API"
   }
 }
