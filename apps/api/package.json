@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "tsx --test src/engine/matchingEngine.test.ts",
+    "bench": "tsx src/engine/benchmark.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc --noEmit -p tsconfig.build.json",
     "start": "tsx src/server.ts"

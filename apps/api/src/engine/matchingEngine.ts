@@ -161,6 +161,11 @@ export class MatchingEngine {
       throw new Error("Order.filled must be zero on creation");
     const book = this.getBook(order.symbol);
 
+    // Pre-check: جلوگیری از هرگونه self-trade (در هر قیمت یا سفارش market) قبل از تغییر حافظه بوک
+    if (book.wouldSelfTrade(order)) {
+      throw new Error("SELF_TRADE_BLOCKED");
+    }
+
     const result: MatchResult = { trades: [], updates: [], deltas: [] };
 
     // true یعنی matching به‌خاطر self-trade متوقف شده
@@ -240,8 +245,8 @@ export class MatchingEngine {
       // buy @70000 نباید با sell @75000 معامله شود
       if (taker.type === "limit" && maker.price > taker.price) break;
 
-      // جلوگیری از wash trade (مثل matchSell)
-      if (maker.userId === taker.userId && maker.price === taker.price) {
+      // جلوگیری از wash trade در هر قیمتی (مثل matchSell)
+      if (maker.userId === taker.userId) {
         return true;
       }
 
@@ -277,8 +282,8 @@ export class MatchingEngine {
       // sell @75000 نباید با buy @70000 معامله شود
       if (taker.type === "limit" && maker.price < taker.price) break;
 
-      // جلوگیری از wash trade: تیکر با مِیکر همان کاربر در همان قیمت کنسل می‌شود
-      if (maker.userId === taker.userId && maker.price === taker.price) {
+      // جلوگیری از wash trade: تیکر با مِیکر همان کاربر در هر قیمتی مسدود می‌شود
+      if (maker.userId === taker.userId) {
         return true;
       }
 

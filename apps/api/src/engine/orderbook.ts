@@ -263,6 +263,68 @@ export class OrderBook {
     return this.orderIndex.get(orderId)?.order ?? null;
   }
 
+  /**
+   * بررسی پیش از اجرا (Pre-check) بدون تغییر وضعیت بوک:
+   * آیا اجرای این سفارش تیکر باعث برخورد با سفارش فعال خودِ همان کاربر در هر قیمتی می‌شود؟
+   */
+  wouldSelfTrade(taker: EngineOrder): boolean {
+    const userOrders = this.byUser.get(taker.userId);
+    if (!userOrders || userOrders.size === 0) return false;
+
+    const targetSide = taker.side === "buy" ? "sell" : "buy";
+    let hasCrossableOwnOrder = false;
+
+    for (const o of userOrders.values()) {
+      if (o.side !== targetSide) continue;
+      if (taker.type === "market") {
+        hasCrossableOwnOrder = true;
+        break;
+      }
+      if (taker.side === "buy" && o.price <= taker.price) {
+        hasCrossableOwnOrder = true;
+        break;
+      }
+      if (taker.side === "sell" && o.price >= taker.price) {
+        hasCrossableOwnOrder = true;
+        break;
+      }
+    }
+
+    if (!hasCrossableOwnOrder) return false;
+
+    let remaining = taker.quantity - taker.filled;
+
+    if (taker.side === "buy") {
+      for (const [, level] of this.asks.entries()) {
+        if (taker.type === "limit" && level.price > taker.price) break;
+        for (const maker of (level.orders as EngineOrder[])) {
+          if (remaining <= 0n) return false;
+          if (maker.userId === taker.userId) return true;
+          const avail = maker.quantity - maker.filled;
+          remaining -= avail < remaining ? avail : remaining;
+        }
+        if (remaining <= 0n) return false;
+      }
+    } else {
+      const bidIt = this.bids.entriesReversed();
+      while (true) {
+        const next = bidIt.next();
+        if (next.done) break;
+        const [, level] = next.value;
+        if (taker.type === "limit" && level.price < taker.price) break;
+        for (const maker of (level.orders as EngineOrder[])) {
+          if (remaining <= 0n) return false;
+          if (maker.userId === taker.userId) return true;
+          const avail = maker.quantity - maker.filled;
+          remaining -= avail < remaining ? avail : remaining;
+        }
+        if (remaining <= 0n) return false;
+      }
+    }
+
+    return false;
+  }
+
   // snapshot بدون reduce
   getSnapshot(depth = 20): OrderBookSnapshot {
     const bids = [];
