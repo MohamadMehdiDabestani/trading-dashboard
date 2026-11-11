@@ -46,7 +46,7 @@
       "minLength": "حداقل {min, number} کاراکتر وارد کنید",
       "maxLength": "حداکثر {max, number} کاراکتر مجاز است",
       "length": "باید دقیقاً {length, number} کاراکتر باشد",
-      "minValue": "مقدار نباید کمتر از {min} باشد",
+      "minValue": "مقداری وارد کنید",
       "maxValue": "مقدار نباید بیشتر از {max, number} باشد",
       "minItems": "حداقل {min, number} مورد انتخاب کنید",
       "maxItems": "حداکثر {max, number} مورد مجاز است",

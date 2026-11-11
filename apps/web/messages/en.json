@@ -25,7 +25,7 @@
       "minLength": "Enter at least {min, number} characters",
       "maxLength": "Maximum {max, number} characters allowed",
       "length": "Must be exactly {length, number} characters",
-      "minValue": "Value must not be less than {min}",
+      "minValue": "This field is required",
       "maxValue": "Value must not be greater than {max, number}",
       "minItems": "Select at least {min, number} items",
       "maxItems": "Maximum {max, number} items allowed",
