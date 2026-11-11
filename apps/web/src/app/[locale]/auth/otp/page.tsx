@@ -2,10 +2,15 @@
 import { AuthVisualPanel } from "@/features/auth/components/authVisualPanel";
 import { LandingHeaderControls } from "@/features/landing/components/landingHeaderControls";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { FieldGroup } from "@/components/ui/field";
 import { useOtpLoginFlow } from "@/features/auth/hooks/useOtpLoginFlow";
@@ -14,6 +19,7 @@ import { normalizeMobile } from "@/lib/normalizeDigits";
 import { fieldValidators } from "@/lib/validation/fieldValidator";
 import { mobileSchema } from "@/lib/validation/primitivesValidations";
 import { Link } from "@/lib/i18nNavigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const phoneValidators = fieldValidators(mobileSchema);
 const codeValidators = fieldValidators(otpStepSchema.shape.code);
@@ -36,10 +42,16 @@ export default function OtpLoginPage() {
           </div>
           <Card>
             <CardHeader className="relative">
-              <CardTitle>{isOtp ? tAuth("verifyTitle") : tAuth("title")}</CardTitle>
+              <CardTitle>
+                {isOtp ? tAuth("verifyTitle") : tAuth("title")}
+              </CardTitle>
               {isOtp && (
-                <Button size="icon" variant="ghost" onClick={f.backToPhone}
-                  className="absolute inset-e-4">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={f.backToPhone}
+                  className="absolute inset-e-4"
+                >
                   <BackIcon className="w-5 h-5" />
                 </Button>
               )}
@@ -53,10 +65,16 @@ export default function OtpLoginPage() {
                 <form
                   id="phone-form"
                   noValidate
-                  onSubmit={(e) => { e.preventDefault(); f.phoneForm.handleSubmit(); }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    f.phoneForm.handleSubmit();
+                  }}
                 >
                   <FieldGroup>
-                    <f.phoneForm.AppField name="phone" validators={phoneValidators}>
+                    <f.phoneForm.AppField
+                      name="phone"
+                      validators={phoneValidators}
+                    >
                       {(field) => (
                         <field.TextField
                           label={t("common.fields.phone")}
@@ -75,7 +93,10 @@ export default function OtpLoginPage() {
                 <form
                   id="otp-form"
                   noValidate
-                  onSubmit={(e) => { e.preventDefault(); f.otpForm.handleSubmit(); }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    f.otpForm.handleSubmit();
+                  }}
                 >
                   <FieldGroup>
                     <f.otpForm.AppField name="code" validators={codeValidators}>
@@ -90,25 +111,49 @@ export default function OtpLoginPage() {
               {!isOtp ? (
                 <>
                   <f.phoneForm.AppForm>
-                    <f.phoneForm.SubmitButton form="phone-form" className="w-full"
-                      label={tAuth("sendButton")} />
+                    <f.phoneForm.SubmitButton
+                      form="phone-form"
+                      className="w-full"
+                      label={tAuth("sendButton")}
+                    />
                   </f.phoneForm.AppForm>
                   <Link href="/auth" className="block w-full">
-                    <Button variant="outline" className="w-full">{tAuth("classicLogin")}</Button>
+                    <Button variant="outline" className="w-full">
+                      {tAuth("classicLogin")}
+                    </Button>
                   </Link>
                 </>
               ) : (
                 <>
                   <f.otpForm.AppForm>
-                    <f.otpForm.SubmitButton form="otp-form" className="w-full"
-                      label={tAuth("verifyButton")} />
+                    <f.otpForm.SubmitButton
+                      form="otp-form"
+                      className="w-full"
+                      label={tAuth("verifyButton")}
+                    />
                   </f.otpForm.AppForm>
-                  <Button variant="outline" className="w-full"
-                    disabled={!f.canResend} onClick={f.resend}>
-                    {f.timer > 0 ? `${tAuth("resendButton")} (${f.timer})` : tAuth("resendButton")}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={!f.canResend}
+                    onClick={f.resend}
+                  >
+                    {f.timer > 0
+                      ? `${tAuth("resendButton")} (${f.timer})`
+                      : tAuth("resendButton")}
                   </Button>
                 </>
               )}
+              <Alert className="max-w-md border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-50">
+                <AlertTriangleIcon />
+                <AlertTitle>
+                  {tAuth("otpUnavailableTitle")}
+                  
+                </AlertTitle>
+                <AlertDescription>
+                  {tAuth("otpUnavailable")}
+                </AlertDescription>
+              </Alert>
             </CardFooter>
           </Card>
         </div>

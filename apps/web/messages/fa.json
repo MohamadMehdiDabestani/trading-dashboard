@@ -84,7 +84,10 @@
       "resendButton": "ارسال مجدد",
       "successSent": "کد به شماره شما ارسال شد",
       "successResent": "کد مجدداً ارسال شد",
-      "classicLogin": "ورود کلاسیک"
+      "classicLogin": "ورود کلاسیک",
+      "otpUnavailableTitle" : "otp در  دسترسی نمیباشد",
+      "otpUnavailable" : "به دلیل محدودیت های موجود در ایران سرویس ارسال پیامک به پروژه های دمو دسترسی داده نمیشود اما کد ها ساختار ها موجود میباشد"
+      
     },
     "classic": {
       "login": {

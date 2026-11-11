@@ -84,7 +84,9 @@
       "resendButton": "Resend",
       "successSent": "The code was sent to your number",
       "successResent": "The code was resent",
-      "classicLogin": "Classic login"
+      "classicLogin": "Classic login",
+      "otpUnavailableTitle" : "Otp is unavailable",
+      "otpUnavailable": "Due to restrictions in Iran, the SMS sending service is not granted access to demo projects, but the codes and structures are available."
     },
     "classic": {
       "login": {
