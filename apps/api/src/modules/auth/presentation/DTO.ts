@@ -75,6 +75,17 @@ export const deviceLinkOpenSchema = {
 
 export const deviceLinkIdSchema = { params: idParams } as const;
 
+export const deviceLinkStatusSchema = {
+  params: idParams,
+  querystring: {
+    type: "object",
+    properties: {
+      pollSecret: { type: "string" },
+    },
+    additionalProperties: true,
+  },
+} as const;
+
 export const deviceLinkApproveSchema = {
   params: idParams,
   body: {

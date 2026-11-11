@@ -3,7 +3,7 @@ import type { FastifyReply } from "fastify";
 export const REFRESH_COOKIE = "refresh_token";
 export const ACCESS_COOKIE = "access_token";
 export const POLL_COOKIE = "device_link_poll";
-export const POLL_COOKIE_PATH = "/auth/device-link";
+export const POLL_COOKIE_PATH = "/";
 
 const secure = process.env.NODE_ENV === "production";
 
@@ -37,7 +37,7 @@ export function setPollCookie(reply: FastifyReply, secret: string) {
   reply.setCookie(POLL_COOKIE, secret, {
     httpOnly: true,
     secure,
-    sameSite: "strict",
+    sameSite: "lax",
     path: POLL_COOKIE_PATH,
     maxAge: 120,
   });

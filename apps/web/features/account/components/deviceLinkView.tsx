@@ -37,10 +37,11 @@ export function DeviceLinkView({ token }: { token: string }) {
   const buttons = useTranslations("common.buttons");
   const open = useMutation({ mutationFn: () => deviceLinkApi.open(token) });
   const requestId = open.data?.requestId;
+  const pollSecret = open.data?.pollSecret;
 
   const poll = useQuery({
-    queryKey: ["device-link-status", requestId],
-    queryFn: () => deviceLinkApi.status(requestId!),
+    queryKey: ["device-link-status", requestId, pollSecret],
+    queryFn: () => deviceLinkApi.status(requestId!, pollSecret),
     enabled: !!requestId,
     // Network errors retry up to 2 times; 4xx errors fail immediately without retry
     retry: (count, e) => !(e instanceof ApiError) && count < 2,

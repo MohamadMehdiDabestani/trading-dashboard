@@ -48,9 +48,22 @@ export const deviceLinkApi = {
 
   // second device
   open: (token: string) =>
-    apiFetch<{ requestId: string; verificationCode: string }>(`${BASE}/open`, {
-      method: "POST",
-      body: JSON.stringify({ token }),
-    }),
-  status: (id: string) => apiFetch<{ status: PollStatus }>(`${BASE}/${id}/status`),
+    apiFetch<{ requestId: string; verificationCode: string; pollSecret?: string }>(
+      `${BASE}/open`,
+      {
+        method: "POST",
+        body: JSON.stringify({ token }),
+      },
+      { retryOn401: false },
+    ),
+  status: (id: string, pollSecret?: string) => {
+    const qs = pollSecret ? `?pollSecret=${encodeURIComponent(pollSecret)}` : "";
+    return apiFetch<{ status: PollStatus }>(
+      `${BASE}/${id}/status${qs}`,
+      {
+        headers: pollSecret ? { "x-poll-secret": pollSecret } : undefined,
+      },
+      { retryOn401: false },
+    );
+  },
 };

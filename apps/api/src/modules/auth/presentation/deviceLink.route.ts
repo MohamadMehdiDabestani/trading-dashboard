@@ -3,10 +3,12 @@ config();
 import { FastifyInstance, FastifyRequest } from "fastify";
 import QRCode from "qrcode";
 import { ok, fail } from "@/utils/apiResponse";
+import { AppError } from "@/errors/appError";
 import {
   deviceLinkApproveSchema,
   deviceLinkIdSchema,
   deviceLinkOpenSchema,
+  deviceLinkStatusSchema,
 } from "./DTO";
 import {
   POLL_COOKIE,
@@ -132,19 +134,22 @@ export async function deviceLinkRoutes(
       reply.header("Cache-Control", "no-store");
       return reply.code(200).send(
         ok(
-          { requestId: r.id, verificationCode: r.code },
+          { requestId: r.id, verificationCode: r.code, pollSecret: r.pollSecret },
           { message: { key: "DEVICE_LINK_OPENED" } },
         ),
       );
     },
   );
 
-  fastify.get<{ Params: { id: string } }>(
+  fastify.get<{ Params: { id: string }; Querystring: { pollSecret?: string } }>(
     "/:id/status",
-    { schema: deviceLinkIdSchema, ...limit(60) },
+    { schema: deviceLinkStatusSchema, ...limit(60) },
     async (req, reply) => {
-      const secret = req.cookies?.[POLL_COOKIE];
-      if (!secret) return reply.code(401).send(fail("DEVICE_LINK_INVALID"));
+      const secret =
+        (req.headers["x-poll-secret"] as string | undefined) ??
+        req.query?.pollSecret ??
+        req.cookies?.[POLL_COOKIE];
+      if (!secret) throw new AppError("DEVICE_LINK_INVALID");
 
       const meta = {
         ip: req.ip,

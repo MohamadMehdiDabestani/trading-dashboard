@@ -41,6 +41,14 @@ await app.register(cors, {
   origin: process.env.WEB_URL,
   credentials: true,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+    "x-poll-secret",
+  ],
 });
 await app.register(errorHandlerPlugin);
 await app.register(dbPlugin);

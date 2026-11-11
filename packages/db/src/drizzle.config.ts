@@ -5,6 +5,6 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: "postgresql://postgres:admin@localhost:5432/trading",
+    url: "postgresql://postgres:onliQj4AzxWGq5O7AeTx@pgapi-orx-service:5432/pgapihxa_db",
   },
 });
